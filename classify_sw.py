@@ -109,7 +109,7 @@ else:
     print("Operating System --> %s\n" % OS)
 
     # images properties (inherit from trainning?)
-    IMAGE   = 80   
+    IMAGE   = 96   
     HEIGHT  = IMAGE
     WIDTH   = HEIGHT
     classes = 7
@@ -235,7 +235,7 @@ else:
                             segmented.putpixel((z,k),color)
 
         # show progress at each 3 lines
-        if(showProgress and (i%3 == 0)):
+        if(showProgress and (i%4 == 0)):
             background = background.convert("RGBA")
             segmented = segmented.convert("RGBA")
             new_img = Image.blend(background, segmented, 0.3)           

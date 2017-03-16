@@ -4,7 +4,7 @@
 from PIL import Image
 import sys,os
 
-CROP      = 8
+CROP      = 128
 NIMAGES   = 324
 
 fname = os.path.splitext(sys.argv[1])[0]   # /canvas1/canvas1-a-p001.png -> /canvas1/canvas1-a-p001~
