@@ -68,7 +68,7 @@ else:
     # network definition
     network = input_data(shape=[None, WIDTH, HEIGHT, 3],    # shape=[None,IMAGE, IMAGE] for RNN
                         data_preprocessing=img_prep,       
-                        data_augmentation=None) 
+                        data_augmentation=img_aug) 
     
     network = architectures.build_network(arch,network,CLASSES)
 
