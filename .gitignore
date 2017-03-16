@@ -1,0 +1,33 @@
+# exclude everything except:
+#   classify.py
+#   training.py
+#   utils/
+#   scripts/
+#   dataset/
+#   error/
+#   .gitignore
+#   README.md
+
+# ignore everything
+*
+
+# except
+!README.md
+!.gitignore
+!classify.py
+!classify_sw.py
+!training.py
+
+!utils/
+!utils/**
+
+!scripts/
+!scripts/**
+
+!error/
+!error/**
+
+!logs/
+!logs/**
+
+!plot.py
