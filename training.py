@@ -60,7 +60,7 @@ else:
     img_aug = ImageAugmentation()
     img_aug.add_random_flip_leftright()
     img_aug.add_random_flip_updown()
-    #img_aug.add_random_rotation(max_angle=45.)
+    img_aug.add_random_rotation(max_angle=45.)
 
     # computational resources definition
     tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
