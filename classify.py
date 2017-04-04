@@ -95,8 +95,8 @@ def display_convolutions(model, layer, padding=4, filename='', nrows=1):
 
 # script arguments' check
 if(len(sys.argv) < 4):
-    print(colored("Call: $ python classify.py {architecture} {model} {image} {classid}","yellow"))
-    sys.exit(colored("ERROR: Not enough arguments!","yellow"))
+    print(colored("Call: $ python classify.py {architecture} {model} {image} {classid}","red"))
+    sys.exit(colored("ERROR: Not enough arguments!","red"))
 else:
     # specify OS
     OS = platform.system() 

@@ -13,7 +13,6 @@ from tflearn.layers.core import input_data
 from tflearn.data_augmentation import ImageAugmentation
 from utils import architectures
 
-import scipy.ndimage
 import numpy as np 
 from PIL import Image,ImageDraw
 
@@ -95,8 +94,8 @@ def display_convolutions(model, layer, padding=4, filename='', nrows=1):
 
 # script arguments' check
 if(len(sys.argv) < 5):
-    print(colored("Call: $ python classify_sw.py {architecture} {model} {image} {classid}","yellow"))
-    sys.exit(colored("ERROR: Not enough arguments!","yellow"))
+    print(colored("Call: $ python classify_sw.py {architecture} {model} {image} {classid}","red"))
+    sys.exit(colored("ERROR: Not enough arguments!","red"))
 else:
     # specify OS
     OS = platform.system() 
@@ -109,7 +108,7 @@ else:
     print("Operating System --> %s\n" % OS)
 
     # images properties (inherit from trainning?)
-    IMAGE   = 96   
+    IMAGE   = 128   
     HEIGHT  = IMAGE
     WIDTH   = HEIGHT
     classes = 7
@@ -174,7 +173,7 @@ else:
     # do the same for the background image
     background = background.crop((0,0,minimun,minimun))
     
-    BLOCK     = 8                                               # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE
+    BLOCK     = 128                                               # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE
     padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window    
     nhDIM     = minimun - 2*padding
     nwDIM     = minimun - 2*padding
@@ -235,7 +234,7 @@ else:
                             segmented.putpixel((z,k),color)
 
         # show progress at each 3 lines
-        if(showProgress and (i%4 == 0)):
+        if(showProgress and (i%3 == 0)):
             background = background.convert("RGBA")
             segmented = segmented.convert("RGBA")
             new_img = Image.blend(background, segmented, 0.3)           

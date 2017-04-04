@@ -11,8 +11,8 @@ from termcolor import colored
 init()
 
 if(len(sys.argv) < 2):
-    print(colored("Call: $ python scripts\horizontal_split.py {image}","yellow"))
-    sys.exit(colored("ERROR: Not enough arguments!","yellow"))
+    print(colored("Call: $ python scripts\horizontal_split.py {image}","red"))
+    sys.exit(colored("ERROR: Not enough arguments!","red"))
 else:
     # example: filename.jpg
     fname        = os.path.splitext(sys.argv[1])[0]    # filename

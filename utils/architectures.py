@@ -479,6 +479,23 @@ def build_resnet(network,classes):
     
     return network
 
+# dlib (used on mnist)
+def build_dlib(network,classes):
+    network = conv_2d(network, 6, 5, activation='relu', strides=2) 
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 16, 5, activation='relu', strides=2)
+    network = max_pool_2d(network, 2) 
+
+    network = fully_connected(network, 120, activation='relu') 
+    network = fully_connected(network, 84, activation='relu') 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.001)    # 0.0001
+    return network
+
+
 # network builder function
 def build_network(name,network,classes):
     print("Loading network...")
@@ -538,11 +555,14 @@ def build_network(name,network,classes):
         network = build_rnn(network,classes)
     # all cnn ---------------------------------------- 
     elif(name == "allcnn"):
-        network = build_all_cnn(network,classes)    
+        network = build_all_cnn(network,classes) 
+    # dlib ------------------------------------------- 
+    elif(name == "dlib"):
+        network = build_dlib(network,classes)      
     else:
         sys.exit("ERROR: Unknown architecture!")
 
-    print("\tArchitecture:",name)
+    print("\tArchitecture: ",name)
     print("Network loaded!\n")
 
     return network

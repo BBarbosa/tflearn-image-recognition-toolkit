@@ -21,8 +21,8 @@ from termcolor import colored
 init()
 
 if (len(sys.argv) < 4):
-    print(colored("Call: $ python training.py {dataset} {architecture} {output}","yellow"))
-    sys.exit(colored("ERROR: Not enough arguments!","yellow"))
+    print(colored("Call: $ python training.py {dataset} {architecture} {output}","red"))
+    sys.exit(colored("ERROR: Not enough arguments!","red"))
 else:
     # specify OS
     OS = platform.system() 
@@ -43,18 +43,19 @@ else:
     arch = sys.argv[2]  # name of architecture
     out  = sys.argv[3]  # name for output model
 
+    vs = 0.1            # percentage of dataset for validation (manually)
+    
     # load dataset and get image dimensions
-    if(OS == 'Windows'):
-        CLASSES,X,Y,HEIGHT,WIDTH = dataset.load_dataset_windows(data,HEIGHT,WIDTH)
+    if(vs):
+        CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xt,Yt = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffle=False,validation=vs)
     else:
-        CLASSES,X,Y = dataset.load_dataset(data,HEIGHT,WIDTH)
+        CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_= dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffle=False)
+    
     
     # Real-time data preprocessing
     img_prep = ImagePreprocessing()
-    #img_prep.add_featurewise_zero_center()
-    #img_prep.add_featurewise_stdnorm()
-    img_prep.add_samplewise_zero_center()   # samplewise produces better results
-    img_prep.add_samplewise_stdnorm()       # samplewise produces better results
+    img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
+    img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
  
     # Real-time data augmentation
     img_aug = ImageAugmentation()
@@ -66,19 +67,12 @@ else:
     tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
 
     # network definition
-    network = input_data(shape=[None, WIDTH, HEIGHT, 3],    # shape=[None,IMAGE, IMAGE] for RNN
+    network = input_data(shape=[None, WIDTH, HEIGHT, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
                         data_preprocessing=img_prep,       
-                        data_augmentation=img_aug) 
+                        data_augmentation=None) 
     
     network = architectures.build_network(arch,network,CLASSES)
-
-    # fix for Windows
-    if(OS == 'Windows'):
-        col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        for x in col:
-            tf.add_to_collection(tf.GraphKeys.VARIABLES, x)
-            tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, x)   # to see if it shows images
-
+        
     # model definition
     model = tflearn.DNN(network, checkpoint_path=out, tensorboard_dir='logs/', #session=sess,
                         max_checkpoints=1, tensorboard_verbose=0)  
@@ -89,12 +83,42 @@ else:
     dsize = X.shape[0]                       # size of dataset
     snap  = 50*(dsize - vs * dsize) // bs    # snapshot for each X times it passes through all data (integer division)     
     
+    # callback definition for early stop 
+    # NOTE: requires snapshoe_epoch=True
+    class EarlyStoppingCallback(tflearn.callbacks.Callback):
+        def __init__(self, acc_thresh):
+            """
+            Args:
+                acc_thresh - if our accuracy > acc_thresh, terminate training.
+            """
+            self.acc_thresh = acc_thresh
+            self.accs = []
+        
+        def on_epoch_end(self, training_state):
+            """ """
+            self.accs.append(training_state.global_acc)
+            if training_state.val_acc is not None and training_state.val_acc > self.acc_thresh:
+                raise StopIteration
+    
+    class MonitorCallback(tflearn.callbacks.Callback):
+        def __init__(self, api):
+            self.my_monitor_api = api
+
+        def on_epoch_end(self, training_state):
+            self.my_monitor_api.send({
+                accuracy: training_state.global_acc,
+                loss: training_state.global_loss,
+            })
+
+    # Initializae our callback.
+    early_stopping_cb = EarlyStoppingCallback(acc_thresh=0.8)
 
     # training operation (default = 25epochs,10epochs 9 classes)
     model.fit(X, Y, n_epoch=200, shuffle=True, 
             show_metric=True, batch_size=bs, snapshot_step=snap,
-            snapshot_epoch=False, run_id=out, validation_set=vs)
-
+            snapshot_epoch=False, run_id=out, validation_set=(Xt,Yt),
+            callbacks=None)
+    
     # save model
     modelname = "models/%s%s" % (out,".tflearn")
     model.save(modelname)

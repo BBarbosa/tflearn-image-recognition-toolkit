@@ -4,8 +4,6 @@ BEGIN {
     count=0;
     top=1;
     bot=9;
-    max=0;
-    min=100;
 }
 
 /Total:/ {

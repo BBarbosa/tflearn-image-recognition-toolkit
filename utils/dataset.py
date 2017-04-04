@@ -1,8 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import tflearn
-#import h5py # used on linux only
-import sys
+import sys,math,time,operator
 import numpy as np
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_utils import build_image_dataset_from_dir                 # for windows
@@ -72,29 +71,86 @@ def load_dataset_ipl(train_path,height,width,test_path=None,mode='folder'):
     return classes,X,Y,Xt,Yt 
 
 # load images directly from images folder (ex: cropped/5/)
-def load_dataset_windows(train_path,height=None,width=None,test=None):
-    classes = X = Y = None
+def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=False,validation=0):
+    """ 
+    Given a folder containing images separated by folders (classes) returns training and testing
+    data, if specified.
+    """
+    classes = X = Y = Xtr = Ytr = Xte = Yte= None
 
     print("Loading dataset (from directory)...")
     if(width and height):
         X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=False, 
-                                           dataset_file=train_path, filetypes=None, shuffle_data=True, 
+                                           dataset_file=train_path, filetypes=None, shuffle_data=shuffle, 
                                            categorical_Y=True)
     else:
         X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=False, dataset_file=train_path, 
-                                           filetypes=None, shuffle_data=True, categorical_Y=True)
+                                           filetypes=None, shuffle_data=shuffle, categorical_Y=True)
+    
+    width,height,ch = X[0].shape            # get images dimensions
+    nimages,classes = Y.shape               # get number of images and classes    
 
-    # convert to array
-    Y = np.array(Y)
-    X = np.array(X)
+    #------------------------------ validation split ------------------------------------------------
+    if(validation > 0 and validation < 1):  # validation = [0,1] float
+        counts  = [0] * classes             # create an array to store the number of images per class
 
-    width,height,_ = X[0].shape
-    X = np.reshape(X,(-1,height,width,3))
-    classes = Y.shape[1]
+        for i in range(0,nimages):
+            counts[np.argmax(Y[i])] += 1    # counts the number of images per every class
+        
+        print("\t       Images: ", nimages)
+        print("\t       Counts: ", counts)
+        print("\t      Classes: ", classes)
+
+        Xtr = []
+        Xte = []
+        Ytr = []
+        Yte = []
+
+        # split train and test data manually, according to the value of the validation set
+        it = 0
+        for i in range(0,classes):
+            it = 0 
+            it += sum(counts[j] for j in range(0,i))
+            
+            per_class = counts[i]                           # gets the number of images per class
+            to_test   = math.ceil(validation * per_class)   # calculates how many images to test per class
+            split     = it + per_class - to_test            # calculates the index that splits data in train/test
+            
+            if False: print("%4d %4d %4d" % (it,split,split+to_test))
+
+            Xtr += X[it:split]
+            Ytr = np.concatenate([Ytr, Y[it:split]]) if len(Ytr)>0 else Y[it:split] 
+        
+            #print(Ytr[i*per_class:i*per_class+split])
+            #inp = input("Press any key...")
+            
+            Xte += X[split:split+to_test]
+            Yte = np.concatenate([Yte, Y[split:split+to_test]]) if len(Yte)>0 else Y[split:split+to_test]
+        
+            #print(Yte[i*45:i*45+to_test])
+            #inp = input("Press any key...")
+
+    #----------------------------------------------------------------------------------------------
+    else:
+        Xtr = X
+        Ytr = Y
+    
+    del(X)
+    del(Y)
+    
+    Xtr = np.array(Xtr)     # convert train images list to array
+    Ytr = np.array(Ytr)     # convert train labels list to array
+    Xte = np.array(Xte)     # convert test images list to array
+    Yte = np.array(Yte)     # convert test labels list to array
+
+    Xtr = np.reshape(Xtr,(-1,height,width,ch))          # reshape array to fit on network format
 
     print("\t         Path: ",train_path)
-    print("\tShape (train): ",X.shape,Y.shape)
+    print("\tShape (train): ",Xtr.shape,Ytr.shape)
+    if(validation > 0):
+        # only prints if they are allocated
+        print("\tShape  (test): ",Xte.shape,Yte.shape)
     print("Data loaded!\n")
 
-    return classes,X,Y,height,width
+    return classes,Xtr,Ytr,height,width,ch,Xte,Yte
 

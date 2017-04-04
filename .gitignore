@@ -24,10 +24,12 @@
 !scripts/
 !scripts/**
 
+#!dataset/
+#!dataset/**
+
 !error/
 !error/**
 
-!logs/
-!logs/**
-
-!plot.py
+!visual.py
+!communicator.py
+!classify_sv.py
