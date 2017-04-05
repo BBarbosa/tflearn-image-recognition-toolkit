@@ -1,4 +1,4 @@
-# Texture classifier
+# Image classifier
 
 ## Folders descriptions
 * scripts/ - auxiliary scripts to preprocessing data 
