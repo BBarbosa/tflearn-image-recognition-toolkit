@@ -16,6 +16,7 @@
 !.gitignore
 !classify.py
 !classify_sw.py
+!classify_sv.py
 !training.py
 
 !utils/
@@ -24,6 +25,9 @@
 !scripts/
 !scripts/**
 
+!logs/
+!logs/**
+
 #!dataset/
 #!dataset/**
 
@@ -31,5 +35,3 @@
 !error/**
 
 !visual.py
-!communicator.py
-!classify_sv.py

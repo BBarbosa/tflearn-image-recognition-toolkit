@@ -2,7 +2,8 @@
 
 import os
 
-command = ["python training_no_pp.py"]
+commands = ["python training_nopp.py", "python training_flips.py", "python training_rot.py", 
+           "python training_flips_rot.py"]
 
 datasets = ["dataset/ori/side128"]
 
@@ -13,7 +14,7 @@ for command in commands:
         for data in datasets:
             for run in range(1):
                 # example: data = cropped\genie35\ -> runid = genie35
-                runid = data.split("/")[2] + "_" + arch 
+                runid = command.split(" ")[1].split(".")[0] + "_" + arch 
                 new_command = "%s %s %s %s" % (command,data,arch,runid)
                 print("Command: ", new_command)
                 os.system(new_command)

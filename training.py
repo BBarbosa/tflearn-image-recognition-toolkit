@@ -43,7 +43,7 @@ else:
     arch = sys.argv[2]  # name of architecture
     out  = sys.argv[3]  # name for output model
 
-    vs = None           # percentage of dataset for validation (manually)
+    vs = 0.1           # percentage of dataset for validation (manually)
     
     # load dataset and get image dimensions
     if(vs):
@@ -116,7 +116,7 @@ else:
     # training operation (default = 25epochs,10epochs 9 classes)
     model.fit(X, Y, n_epoch=200, shuffle=True, 
             show_metric=True, batch_size=bs, snapshot_step=snap,
-            snapshot_epoch=False, run_id=out, validation_set=0.1, #validation_set=(Xt,Yt),
+            snapshot_epoch=False, run_id=out, validation_set=(Xt,Yt),
             callbacks=None)
     
     # save model
