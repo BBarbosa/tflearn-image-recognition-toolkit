@@ -68,56 +68,26 @@ else:
 
     # network definition
     network = input_data(shape=[None, WIDTH, HEIGHT, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
-                        data_preprocessing=img_prep,       
-                        data_augmentation=None) 
+                         data_preprocessing=img_prep,       
+                         data_augmentation=None) 
     
     network = architectures.build_network(arch,network,CLASSES)
         
     # model definition
-    model = tflearn.DNN(network, checkpoint_path=out, tensorboard_dir='logs/', #session=sess,
-                        max_checkpoints=1, tensorboard_verbose=0)  
+    model = tflearn.DNN(network, checkpoint_path="models/%s" % out, tensorboard_dir='logs/',
+                        max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95,
+                        best_checkpoint_path=None)  
     
     # training parameters
     bs    = 32                               # batch size [default=32]
     vs    = 0.1                              # percentage of dataset for validation
     dsize = X.shape[0]                       # size of dataset
-    snap  = 50*(dsize - vs * dsize) // bs    # snapshot for each X times it passes through all data (integer division)     
+    snap  = 10*dsize // bs                   # snapshot for each X times it passes through all data (integer division)     
     
-    # callback definition for early stop 
-    # NOTE: requires snapshoe_epoch=True
-    class EarlyStoppingCallback(tflearn.callbacks.Callback):
-        def __init__(self, acc_thresh):
-            """
-            Args:
-                acc_thresh - if our accuracy > acc_thresh, terminate training.
-            """
-            self.acc_thresh = acc_thresh
-            self.accs = []
-        
-        def on_epoch_end(self, training_state):
-            """ """
-            self.accs.append(training_state.global_acc)
-            if training_state.val_acc is not None and training_state.val_acc > self.acc_thresh:
-                raise StopIteration
-    
-    class MonitorCallback(tflearn.callbacks.Callback):
-        def __init__(self, api):
-            self.my_monitor_api = api
-
-        def on_epoch_end(self, training_state):
-            self.my_monitor_api.send({
-                accuracy: training_state.global_acc,
-                loss: training_state.global_loss,
-            })
-
-    # Initializae our callback.
-    early_stopping_cb = EarlyStoppingCallback(acc_thresh=0.8)
-
-    # training operation (default = 25epochs,10epochs 9 classes)
-    model.fit(X, Y, n_epoch=200, shuffle=True, 
-            show_metric=True, batch_size=bs, snapshot_step=snap,
-            snapshot_epoch=False, run_id=out, validation_set=(Xt,Yt),
-            callbacks=None)
+    # training operation 
+    model.fit(X, Y, n_epoch=200, shuffle=True, show_metric=True, 
+              batch_size=bs, snapshot_step=snap, snapshot_epoch=False, 
+              run_id=out, validation_set=(Xt,Yt), callbacks=None)
     
     # save model
     modelname = "models/%s%s" % (out,".tflearn")
