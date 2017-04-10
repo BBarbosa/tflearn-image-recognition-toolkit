@@ -38,60 +38,6 @@ def getColor(x):
         8 : (128,0,128),    # purple
     }[x]
 
-# function to display convolutions
-def display_convolutions(model, layer, padding=4, filename='', nrows=1):
-    if isinstance(layer, six.string_types):
-        vars = tflearn.get_layer_variables_by_name(layer)
-        variable = vars[0]
-    else:
-        variable = layer.W
-
-    data = model.get_weights(variable)
-
-    # N is the total number of convolutions
-    N = data.shape[2] * data.shape[3]
-
-    # Ensure the resulting image is square
-    filters_per_row = int(np.ceil(np.sqrt(N)))
-    # Assume the filters are square
-    filter_size = data.shape[0]
-    # Size of the result image including padding
-    result_size = filters_per_row * (filter_size + padding) - padding
-    # Initialize result image to all zeros
-    result = np.zeros((result_size, result_size))
-
-    # Tile the filters into the result image
-    filter_x = 0
-    filter_y = 0
-    for n in range(data.shape[3]):
-        for c in range(data.shape[2]):
-            if filter_x == filters_per_row:
-                filter_y += 1
-                filter_x = 0
-            for i in range(filter_size):
-                for j in range(filter_size):
-                    result[filter_y * (filter_size + padding) + i, filter_x * (filter_size + padding) + j] = \
-                        data[i, j, c, n]
-            filter_x += 1
-
-    # Normalize image to 0-1
-    min = result.min()
-    max = result.max()
-    result = (result - min) / (max - min)
-
-    
-    # Plot figure according to the number of rows to show
-    limit = filter_size * nrows + (nrows-1) * padding   # limit the number of lines to show on figure
-
-    plt.figure(figsize=(16,16))
-    plt.axis('off')
-    plt.imshow(result[0:limit], cmap='gray', interpolation='nearest')
-
-    # Save plot if filename is set
-    if filename != '':
-        plt.savefig(filename, bbox_inches='tight', pad_inches=0)
-
-    plt.show()
 
 # script arguments' check
 if(len(sys.argv) < 4):
@@ -126,17 +72,11 @@ else:
     tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
 
     # network definition
-    network = input_data(shape=[None, WIDTH, HEIGHT, 3],     # shape=[None,IMAGE, IMAGE] for RNN
+    network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
                         data_preprocessing=None,       
                         data_augmentation=None) 
 
     network = architectures.build_network(arch,network,classes)
-
-    # fix for Windows
-    if(OS == 'Windows'):
-        col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        for x in col:
-            tf.add_to_collection(tf.GraphKeys.VARIABLES, x)
 
     # model definition
     model = tflearn.DNN(network, checkpoint_path='models',

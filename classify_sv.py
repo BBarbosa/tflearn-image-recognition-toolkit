@@ -72,7 +72,7 @@ else:
     tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
 
     # network definition
-    network = input_data(shape=[None, WIDTH, HEIGHT, 3],     # shape=[None,IMAGE, IMAGE] for RNN
+    network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
                         data_preprocessing=None,       
                         data_augmentation=None) 
 
@@ -178,8 +178,8 @@ else:
             h = i*BLOCK
             for j in range(0,wshifts):
                 w = j*BLOCK
-                img2 = img[h:h+IMAGE,w:w+IMAGE]
-                img2 = np.reshape(img2,(1,IMAGE,IMAGE,3))
+                img2 = img[h:h+HEIGHT,w:w+WIDTH]
+                img2 = np.reshape(img2,(1,HEIGHT,WIDTH,3))
                 #img2 = np.reshape(img2,(1,IMAGE,IMAGE))    # for RNN 
 
                 probs = model.predict(img2)

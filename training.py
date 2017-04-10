@@ -67,7 +67,7 @@ else:
     tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
 
     # network definition
-    network = input_data(shape=[None, WIDTH, HEIGHT, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
+    network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
                          data_preprocessing=img_prep,       
                          data_augmentation=None) 
     
