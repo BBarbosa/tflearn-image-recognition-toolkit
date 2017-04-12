@@ -52,7 +52,7 @@ else:
         os.system('cls')
     else:
         os.system('clear')
-    print("Operating System --> %s\n" % OS)
+    print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)   
     HEIGHT  = 306

@@ -2,8 +2,7 @@
 
 import os
 
-commands = ["python training_nopp.py", "python training_flips.py", "python training_rot.py", 
-           "python training_flips_rot.py"]
+commands = ["python training_20e.py", "python training_200e.py", "python training_2000e.py"]
 
 datasets = ["dataset/ori/side128"]
 
@@ -17,4 +16,4 @@ for command in commands:
                 runid = command.split(" ")[1].split(".")[0] + "_" + arch 
                 new_command = "%s %s %s %s" % (command,data,arch,runid)
                 print("Command: ", new_command)
-                os.system(new_command)
+                #os.system(new_command)

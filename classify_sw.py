@@ -50,7 +50,7 @@ else:
         os.system('cls')
     else:
         os.system('clear')
-    print("Operating System --> %s\n" % OS)
+    print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)
     IMAGE   = 128   
@@ -65,7 +65,7 @@ else:
     classid   = int(sys.argv[4])  # test image class id. -1 for collages
 
     # a bunch of flags
-    saveOutputImage = True
+    saveOutputImage = False
     showProgress    = False
     showConvolution = False
 

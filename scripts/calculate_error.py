@@ -21,7 +21,7 @@ else:
         os.system('cls')
     else:
         os.system('clear')
-    print("Operating System --> %s\n" % OS)
+    print("Operating System: %s\n" % OS)
 
     # variable to ID each class
     classid   = -1

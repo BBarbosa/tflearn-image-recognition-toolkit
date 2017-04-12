@@ -41,7 +41,7 @@ def getColor(x):
 
 # script arguments' check
 if(len(sys.argv) < 3):
-    print(colored("Call: $ python classify_sw.py {architecture} {model}","red"))
+    print(colored("Call: $ python classify_sv.py {architecture} {model}","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 else:
     # specify OS
@@ -52,13 +52,15 @@ else:
         os.system('cls')
     else:
         os.system('clear')
-    print("Operating System --> %s\n" % OS)
+    print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)
     IMAGE   = 128   
-    HEIGHT  = IMAGE
-    WIDTH   = HEIGHT
+    HEIGHT  = 128   
+    WIDTH   = 128
     classes = 7
+
+    minimum = min(IMAGE, HEIGHT, WIDTH)
 
     # get command line arguments
     arch      = sys.argv[1]       # name of architecture
@@ -66,7 +68,7 @@ else:
 
     # a bunch of flags
     saveOutputImage = True
-    showProgress    = False and saveOutputImage # requires saveOutputImage = True
+    showProgress    = False and saveOutputImage # required saveOutputImage flag to show the progress
 
     # computational resources definition
     tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
@@ -92,7 +94,7 @@ else:
     port = 8090
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.bind((ip, port))
-    serversocket.listen(classes) # become a server socket, maximum 1 connections
+    serversocket.listen(1) # become a server socket, maximum 1 connections
     print("Starting server '%s' on port %d...\n" % (ip,port))
 
     while True:
@@ -124,47 +126,45 @@ else:
 
         wDIM,hDIM  = background.size     
         img        = scipy.ndimage.imread(filename, mode='RGB')     # mode='L', flatten=True -> grayscale
-        img        = scipy.misc.imresize(img, (wDIM,hDIM), interp="bicubic").astype(np.float32, casting='unsafe')
-        img       -= scipy.ndimage.measurements.mean(img)           # confirmed. check data_utils.py on github
-        img       /= np.std(img)                                    # confirmed. check data_utils.py on github
-
-        # select the minimum side
-        if(wDIM < hDIM):
-            minimun = wDIM
-        else:
-            minimun = hDIM
-
-        # ensures that test image is a square (checked)
-        img = img[0:minimun,0:minimun]
-        # do the same for the background image
-        background = background.crop((0,0,minimun,minimun))
+        img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
+        img       -= scipy.ndimage.measurements.mean(img)           # check data_utils.py on tflearn's github
+        img       /= np.std(img)                                    # check data_utils.py on tflearn's github
     
-        BLOCK     = 8                                           # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE
-        padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window    
-        nhDIM     = minimun - 2*padding
-        nwDIM     = minimun - 2*padding
+        BLOCK     = 16                                              # side of square block for painting: BLOCKxBLOCK
+        if(BLOCK > minimum):                                        # checks if it isn't too big
+            BLOCK = IMAGE
+
+        padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window
+        paddingh  = (HEIGHT - BLOCK) // 2                           # padding for centering sliding window (rectangles)
+        paddingw  = (WIDTH - BLOCK) // 2                            # padding for centering sliding window (rectangles)
+        
+        nhDIM     = hDIM - 2*(paddingh)                             # calculates the new dimension that restricts the sliding window 
+        nwDIM     = wDIM - 2*(paddingw)                             # calculates the new dimension that restricts the sliding window 
+        
         hshifts   = nhDIM // BLOCK                                  # number of sliding window shifts on height
         wshifts   = nwDIM // BLOCK                                  # number of sliding window shifts on width
-        segmented = Image.new('RGB', (minimun,minimun), "black")    # create mask for segmentation
-        
+        total     = hshifts*wshifts                                 # total number of windows
+        segmented = Image.new('RGB', (wDIM,hDIM), "black")          # create mask for segmentation. same dimension as background
+
         counts = [0] * classes                                      # will count the occurences of each class
 
         # to check dims
         if(False):
-            print("   Side:",minimun)
-            print("Padding:",padding)
-            print("  nhDIM:",nhDIM)
-            print("  nwDIM:",nwDIM)
-            print("hshifts:",hshifts)
-            print("wshifts:",wshifts)
-            exit(1)
+            print("  height:",hDIM)
+            print("   width:",wDIM)
+            print(" padding:",padding)
+            print("hpadding:",paddingh)
+            print("wpadding:",paddingw)
+            print("   nhDIM:",nhDIM)
+            print("   nwDIM:",nwDIM)
+            print(" hshifts:",hshifts)
+            print(" wshifts:",wshifts)
 
         # sliding window (center)
         print("Classification started...")
         print("\t  Image: ", filename)
         print("\t   Size: ", wDIM, "x", hDIM)
         print("\t  Block: ", BLOCK)
-        print("\tResized: ", minimun, "x", minimun)
     
         # show progress
         if(showProgress):
@@ -179,25 +179,40 @@ else:
             for j in range(0,wshifts):
                 w = j*BLOCK
                 img2 = img[h:h+HEIGHT,w:w+WIDTH]
-                img2 = np.reshape(img2,(1,HEIGHT,WIDTH,3))
-                #img2 = np.reshape(img2,(1,IMAGE,IMAGE))    # for RNN 
 
+                try:
+                    img2 = np.reshape(img2,(1,HEIGHT,WIDTH,3))
+                    #img2 = np.reshape(img2,(1,IMAGE,IMAGE))    # for RNN
+                except:
+                    print("reshape")
+                    pass
+                    
                 probs = model.predict(img2)
                 index = np.argmax(probs)
-                counts[index] += 1
+                counts[index] = counts[index] + 1
 
                 # to show the probability of every sample sent to the network 
                 if(False):
                     val = probs[0][index]
                     print("Pixel %3d %3d | Class %d | Probability %f" % (h,w,index,val))
                     print("Probablilities ", probs,"\n")
+                    input("Press any key to continue...\n")    
 
                 # segment block
                 if(saveOutputImage):
                     color = getColor(index)
-                    for k in range(h+padding,h+BLOCK+padding):
-                            for z in range(w+padding,w+BLOCK+padding):
-                                segmented.putpixel((z,k),color)
+                    
+                    ki = h + paddingh                   # to calculate only once
+                    kf = h + paddingh + BLOCK           # to calculate only once
+                    for k in range(ki,kf):
+                            zi = w + paddingw           # to calculate only once per loop iteration
+                            zf = w + paddingw + BLOCK   # to calculate only once per loop iterarion
+                            for z in range(zi,zf):
+                                try:
+                                    segmented.putpixel((z,k),color)
+                                except:
+                                    print("segmentation")
+                                    pass
 
             # show progress at each 3 lines
             if(showProgress and (i%3 == 0)):
@@ -212,6 +227,7 @@ else:
     
         # stop measuring time
         cls_time = time.time() - start_time
+        print("\t  Total:  %d images" % total)
         print("\t   Time:  %s seconds" % cls_time)
         print("Classification done!\n")
 
@@ -230,14 +246,14 @@ else:
             # for a test image identifies 
             if (classid != -1):
                 # assuming: "dataset\\fabric\\test_r\\c1\\A8_1_test.jpg" -> A8
-                test_id = filename.split('\\')[4].split('_')[0] 
-                output  = "%s_%s_%d_C%d_%s.png" % (modelname,arch,minimun,classid,test_id) # allows many test images per class 
+                test_id = filename.split('\\')[3].split('_')[0] 
+                output  = "%s_%s_C%d_%s.png" % (modelname,arch,classid,test_id) # allows many test images per class 
             else:
-                output  = "%s_%s_%d_C%d.png" % (modelname,arch,minimun,classid) # works for 1 test image per class too
+                output  = "%s_%s.png" % (modelname,arch) # works for 1 test image per class too
     
             new_img.save(output,"png")
         
-        # Error check if not a collage
+        # Error check if not a collage or a multiclass image
         if (classid != -1):
             total = hshifts*wshifts                 # total number of windows
             acc   = counts[classid] / total * 100   # accuracy
@@ -266,4 +282,4 @@ else:
             dur  = 1000 
             ws.Beep(freq,dur)
     
-    #connection.close()
+    connection.close()

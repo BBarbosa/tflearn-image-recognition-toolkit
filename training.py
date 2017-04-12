@@ -32,7 +32,7 @@ else:
         os.system('cls')
     else:
         os.system('clear')
-    print("Operating System --> %s\n" % OS)
+    print("Operating System: %s\n" % OS)
 
     # change if you want a specific size
     HEIGHT = None
@@ -74,7 +74,7 @@ else:
     network = architectures.build_network(arch,network,CLASSES)
         
     # model definition
-    model = tflearn.DNN(network, checkpoint_path="models/%s" % out, tensorboard_dir='logs/',
+    model = tflearn.DNN(network, checkpoint_path="models/epochs/%s" % out, tensorboard_dir='logs/',
                         max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95,
                         best_checkpoint_path=None)  
     
@@ -82,11 +82,11 @@ else:
     bs    = 32                               # batch size [default=32]
     vs    = 0.1                              # percentage of dataset for validation
     dsize = X.shape[0]                       # size of dataset
-    snap  = 10*dsize // bs                   # snapshot for each X times it passes through all data (integer division)     
+    snap  = 20*dsize // bs                   # snapshot for each X times it passes through all data (integer division)     
     
     # training operation 
-    model.fit(X, Y, n_epoch=200, shuffle=True, show_metric=True, 
-              batch_size=bs, snapshot_step=snap, snapshot_epoch=False, 
+    model.fit(X, Y, n_epoch=10, shuffle=True, show_metric=True, 
+              batch_size=bs, snapshot_step=snap, snapshot_epoch=True, 
               run_id=out, validation_set=(Xt,Yt), callbacks=None)
     
     # save model
