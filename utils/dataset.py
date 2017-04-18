@@ -1,11 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
 import tflearn
-import sys,math,time,operator
+import sys,math,time,os
 import numpy as np
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_utils import build_image_dataset_from_dir                 # for windows
 #from tflearn.data_utils import build_hdf5_image_dataset,image_preloader     # for linux
+from PIL import Image
 
 # create dataset for HDF5 format
 def create_dataset(train_path,height,width,output_path,test_path=None,mode='folder'): 
@@ -154,3 +155,29 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=Fal
 
     return classes,Xtr,Ytr,height,width,ch,Xte,Yte
 
+# function that loads a set of test images
+def load_test_images(testdir=None):
+    image_list = []
+    label_list = []
+    classid = -1
+    
+    if(testdir):
+        print("Loading test images...")
+        # picks every sa
+        for root, dirs, files in os.walk(testdir):
+            for file in files:
+                if file.endswith((".bmp",".jpg")):
+                    image_path = os.path.join(root, file)
+                    image      = Image.open(image_path)
+                    image_list.append(image)
+                    label_list.append(classid)
+
+            classid += 1
+        
+        print("\t       Images: ",len(image_list))
+        print("\t       Labels: ",len(label_list))
+        print("Test images loaded...\n")
+    else:
+        print("WARNING: Path to test image is not set")
+    
+    return image_list,label_list

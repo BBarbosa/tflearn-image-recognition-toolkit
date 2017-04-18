@@ -14,7 +14,7 @@ import tflearn.helpers.summarizer as s
 
 import winsound as ws
 import numpy as np
-from utils import architectures, dataset
+from utils import architectures,dataset,classifier
 from colorama import init
 from termcolor import colored
 
@@ -51,10 +51,10 @@ modelsdir = sys.argv[3]       # path for trained model
 testdir   = sys.argv[4]       # path for test directory
 
 # loads train and validation sets
-CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xt,Yt = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffle=False,validation=0.1)
+CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffle=False,validation=0.1)
 
-# NOTE: needs to load test images 
-
+# load test images 
+Xt,Yt = dataset.load_test_images(testdir)
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -79,11 +79,14 @@ model = tflearn.DNN(network, checkpoint_path=None, tensorboard_dir='logs/',
                     max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95,
                     best_checkpoint_path=None)
 
-epoch = 0
+epoch = 1
 array = []
 
 train_acc = np.array(array, dtype = np.float32)
 val_acc   = np.array(array, dtype = np.float32)
+test_acc  = np.array(array, dtype = np.float32)
+max_acc   = np.array(array, dtype = np.float32)
+min_acc   = np.array(array, dtype = np.float32)
 epochs    = np.array(array, dtype = np.int8)
 
 # picks every saved model
@@ -93,45 +96,59 @@ for root, dirs, files in os.walk(modelsdir):
             modelpath = os.path.join(root, file)
             modelpath = modelpath.split(".")[0]
 
-            print("-----------------------------")
+            print("----------------------------------")
             print("Loading trained model...")  
             model.load(modelpath)
             print("\tModel: ",modelpath)
             print("Trained model loaded!\n")
 
+            print("EPOCH: ",epoch)
+
             stime = time.time()  
             
             train = model.evaluate(X,Y)[0]
-            val   = model.evaluate(Xt,Yt)[0]
-
-            train_acc = np.append(train_acc,train)
-            val_acc   = np.append(val_acc,val)
-            epochs    = np.append(epochs,epoch)
-                
-            print("  Training set:",train)
-            print("Validation set:",val)
+            val   = model.evaluate(Xv,Yv)[0]
+            test,maximum,minimum = classifier.classify_sliding_window(model,Xt,Yt,epoch)
             
             ftime = time.time() - stime
+                
+            print("  Training set: ", train)
+            print("Validation set: ", val)
+            print("      Test set: ", test)
+            print("           Max: ", maximum)
+            print("           Min: ", minimum)
             print("          Time: %.3f\n" % ftime)
+
+            train_acc = np.append(train_acc,train*100)  
+            val_acc   = np.append(val_acc,val*100)
+            test_acc  = np.append(test_acc,test)        # already multiplied by factor 100
+            max_acc   = np.append(max_acc,maximum)      # already multiplied by factor 100
+            min_acc   = np.append(min_acc,minimum)      # already multiplied by factor 100
+
+            epochs    = np.append(epochs,epoch)
 
             epoch += 1
 
 # plot properties 
 # fig = plt.figure()
-plt.title("Impact of epochs number")
+plt.title("Impact of epochs number",fontweight='bold')
+
 ptrain = plt.plot(epochs,train_acc,color='red')
-ptest  = plt.plot(epochs,val_acc,color='blue')
+pval   = plt.plot(epochs,val_acc,color='blue')
+ptest  = plt.plot(epochs,test_acc,color='green')
+pmax   = plt.plot(epochs,max_acc,'go')          # green dots for maximums
+pmin   = plt.plot(epochs,min_acc,'gs')          # green squares for minimums 
 
 red_patch   = mpatches.Patch(color='red', label='Train')
 blue_patch  = mpatches.Patch(color='blue', label='Validation')
 green_patch = mpatches.Patch(color='green', label='Test')
 
-legend = plt.legend(handles=[red_patch,blue_patch],loc=7)
+legend = plt.legend(handles=[red_patch,blue_patch,green_patch],loc=7)
 # location docs: http://matplotlib.org/1.3.1/users/legend_guide.html 
 
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy (%)')
-plt.xlim(0,epoch-1)
+plt.xlim(1,epoch-1)
 plt.xticks(epochs)
 
 plt.grid(True)

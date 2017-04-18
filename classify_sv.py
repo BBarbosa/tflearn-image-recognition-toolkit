@@ -94,7 +94,7 @@ else:
     port = 8090
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.bind((ip, port))
-    serversocket.listen(1) # become a server socket, maximum 1 connections
+    serversocket.listen(7) # become a server socket, maximum 1 connections
     print("Starting server '%s' on port %d...\n" % (ip,port))
 
     while True:
@@ -130,7 +130,7 @@ else:
         img       -= scipy.ndimage.measurements.mean(img)           # check data_utils.py on tflearn's github
         img       /= np.std(img)                                    # check data_utils.py on tflearn's github
     
-        BLOCK     = 16                                              # side of square block for painting: BLOCKxBLOCK
+        BLOCK     = 8                                              # side of square block for painting: BLOCKxBLOCK
         if(BLOCK > minimum):                                        # checks if it isn't too big
             BLOCK = IMAGE
 
@@ -231,11 +231,11 @@ else:
         print("\t   Time:  %s seconds" % cls_time)
         print("Classification done!\n")
 
-        # assuming modelpath: "models\name.tflearn" -> name
+        # assuming modelpath: "models\epochs\name.tflearn" -> name
         try:
-            modelname = modelpath.split("\\")[1].split(".")[0]
+            modelname = modelpath.split("\\")[2].split(".")[0]
         except:
-            modelname = modelpath.split("/")[1].split(".")[0]
+            modelname = modelpath.split("/")[2].split(".")[0]
 
         # save output image options
         if(saveOutputImage):

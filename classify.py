@@ -95,12 +95,9 @@ else:
 
     # Load the test image 
     img   = scipy.ndimage.imread(filename, mode='RGB')     # mode='L', flatten=True -> grayscale
-    img   = scipy.misc.imresize(img, (wDIM,hDIM), interp="bicubic").astype(np.float32, casting='unsafe')
+    img   = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
     img  -= scipy.ndimage.measurements.mean(img)           # confirmed. check data_utils.py on github
     img  /= np.std(img)                                    # confirmed. check data_utils.py on github
-        
-    #img = featurewise_zero_center(img, mean=None)      # from data_utils.py
-    #img = featurewise_std_normalization(img, std=None)  # from data_utils.py
 
     print("Classification started...")
     print("\tImage: ", filename)

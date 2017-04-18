@@ -40,7 +40,7 @@ else:
         # initialize subprocess by calling the classification script
         subprocess.Popen(['python','classify_sv.py',arch,model])
 
-    time.sleep(8) # to ensure that it loads the trained network (is it enough?)
+    time.sleep(10) # to ensure that it loads the trained network (is it enough?)
 
     for root, dirs, files in os.walk(mydir):
         for file in files:

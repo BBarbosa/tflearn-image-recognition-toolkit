@@ -88,43 +88,26 @@ else:
     print("\tModel: ",modelpath)
     print("Trained model loaded!\n")
 
-    # display convolutions in a figure
-    if(showConvolution):
-        layer = "Conv2D"
-        display_convolutions(model,layer,padding=4,filename='',nrows=4)
-
     # Load the image file (need pre-processment)
     background = Image.open(filename)
     wDIM,hDIM  = background.size     
     img        = scipy.ndimage.imread(filename, mode='RGB')     # mode='L', flatten=True -> grayscale
-    img        = scipy.misc.imresize(img, (wDIM,hDIM), interp="bicubic").astype(np.float32, casting='unsafe')
+    img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
     img       -= scipy.ndimage.measurements.mean(img)           # confirmed. check data_utils.py on github
     img       /= np.std(img)                                    # confirmed. check data_utils.py on github
     
-    # select the minimum side
-    if(wDIM < hDIM):
-        minimun = wDIM
-    else:
-        minimun = hDIM
-
-    # ensures that test image is a square (checked)
-    img = img[0:minimun,0:minimun]
-    # do the same for the background image
-    background = background.crop((0,0,minimun,minimun))
-    
     BLOCK     = 128                                               # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE
     padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window    
-    nhDIM     = minimun - 2*padding
-    nwDIM     = minimun - 2*padding
+    nhDIM     = hDIM - 2*padding
+    nwDIM     = wDIM - 2*padding
     hshifts   = nhDIM // BLOCK                                  # number of sliding window shifts on height
     wshifts   = nwDIM // BLOCK                                  # number of sliding window shifts on width
-    segmented = Image.new('RGB', (minimun,minimun), "black")    # create mask for segmentation
+    segmented = Image.new('RGB', (wDIM,hDIM), "black")          # create mask for segmentation
         
     counts = [0] * classes                                      # will count the occurences of each class
 
     # to check dims
     if(False):
-        print("   Side:",minimun)
         print("Padding:",padding)
         print("  nhDIM:",nhDIM)
         print("  nwDIM:",nwDIM)
@@ -137,7 +120,6 @@ else:
     print("\t  Image: ", filename)
     print("\t   Size: ", wDIM, "x", hDIM)
     print("\t  Block: ", BLOCK)
-    print("\tResized: ", minimun, "x", minimun)
     
     # show progress
     if(showProgress):
@@ -184,15 +166,15 @@ else:
             plt.pause(0.0001)
     
     # stop measuring time
-    seg_time = time.time() - start_time
-    print("\t   Time:  %s seconds" % seg_time)
+    cls_time = time.time() - start_time
+    print("\t   Time:  %s seconds" % cls_time)
     print("Classification done!\n")
 
-    # assuming modelpath: "models\name.tflearn" -> name
+    # assuming modelpath: "models\epochs\name.tflearn" -> name
     try:
-        modelname = modelpath.split("\\")[1].split(".")[0]
+        modelname = modelpath.split("\\")[2].split(".")[0]
     except:
-         modelname = modelpath.split("/")[1].split(".")[0]
+         modelname = modelpath.split("/")[2].split(".")[0]
 
     # save output image options
     if(saveOutputImage):
@@ -204,9 +186,9 @@ else:
         if (classid != -1):
             # assuming: "dataset\\fabric\\test_r\\c1\\A8_1_test.jpg" -> A8
             test_id = filename.split('\\')[4].split('_')[0] 
-            output  = "%s_%s_%d_C%d_%s.png" % (modelname,arch,minimun,classid,test_id) # allows many test images per class 
+            output  = "%s_%s_C%d_%s.png" % (modelname,arch,classid,test_id) # allows many test images per class 
         else:
-            output  = "%s_%s_%d_C%d.png" % (modelname,arch,minimun,classid) # works for 1 test image per class too
+            output  = "%s_%s_C%d.png" % (modelname,arch,classid) # works for 1 test image per class too
     
         new_img.save(output,"PNG")
         
@@ -228,7 +210,7 @@ else:
         ferror = open(error_file, "a+")
                  
         array = ','.join(str(x) for x in counts)   # convert array of count into one single string
-        ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.2f | File: %s | Time: %f\n" % (total,classid,array,acc,filename,seg_time))
+        ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.2f | File: %s | Time: %f\n" % (total,classid,array,acc,filename,cls_time))
         ferror.close()
 
     if(showProgress):
