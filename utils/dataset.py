@@ -82,11 +82,11 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=Fal
     print("Loading dataset (from directory)...")
     if(width and height):
         X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=False, 
-                                           dataset_file=train_path, filetypes=None, shuffle_data=shuffle, 
+                                           dataset_file=train_path, filetypes=None, shuffle_data=False, 
                                            categorical_Y=True)
     else:
         X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=False, dataset_file=train_path, 
-                                           filetypes=None, shuffle_data=shuffle, categorical_Y=True)
+                                           filetypes=None, shuffle_data=False, categorical_Y=True)
     
     width,height,ch = X[0].shape            # get images dimensions
     nimages,classes = Y.shape               # get number of images and classes    
@@ -143,6 +143,10 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=Fal
     Ytr = np.array(Ytr)     # convert train labels list to array
     Xte = np.array(Xte)     # convert test images list to array
     Yte = np.array(Yte)     # convert test labels list to array
+
+    if(shuffle):
+        Xtr,Ytr = shuffle(Xtr,Ytr)
+        Xte,Yte = shuffle(Xte,Yte)
 
     Xtr = np.reshape(Xtr,(-1,height,width,ch))          # reshape array to fit on network format
 

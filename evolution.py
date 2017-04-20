@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import sys, os, platform, time
+import sys,os,platform,time,re,glob
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tflearn
@@ -24,9 +24,60 @@ import matplotlib.patches as mpatches
 # init colored print
 init()
 
-# initial check. exits if there isn't enough arguments --------------------------------------------------
-if (len(sys.argv) < 5):
-    print(colored("Call: $ python evolution.py {dataset} {architecture} {models_dir} {test_dir}","red"))
+numbers = re.compile(r'(\d+)')      # regex for get numbers
+
+def numericalSort(value):
+    """
+    Splits out any digits in a filename, turns it into an actual 
+    number, and returns the result for sorting. Code from
+    http://stackoverflow.com/questions/12093940/reading-files-in-a-particular-order-in-python
+    """
+    parts = numbers.split(value)
+    parts[1::2] = map(int, parts[1::2])
+    return parts
+
+def plot_accuracies(x,y):
+    """
+    Function that creates a plot according to X and Y. Lengths must match.
+
+    Params:
+        x - array for x-axis [0,1,2]
+        y - assuming that it is a matrix so it can automatically generate legend [[3,4,5], [6,7,8], [9,0,1]]
+    """
+    # fig = plt.figure()
+    plt.title("Impact of epochs number",fontweight='bold')
+
+    legend = np.arange(0,len(y[0])).astype('str')      # creates array ['0','1','2',...,'n']
+    plt.plot(x,y)
+    plt.legend(legend) 
+
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy (%)')
+    plt.xticks(x)
+
+    plt.grid(True)
+    plt.show() 
+
+def parse_error_files(files_dir):
+    """
+    Function to parse srtructured error files.
+
+    Params:
+        files_dir - directory where error files are stored
+    """
+    
+    for infile in sorted(glob.glob(files_dir + '*.txt'), key=numericalSort):
+        print("File: " + infile)
+
+
+# -------------------------------------------------------------------------------------------------------
+if(len(sys.argv) == 2):
+    parse_error_files(sys.argv[1])
+    #plot_accuracies([1,2],[[1,2,3],[4,5,6]])
+    sys.exit(1)
+elif (len(sys.argv) < 5):
+    print(colored("Call: $ python evolution.py {dataset} {architecture} {models_dir} {test_dir} \t OR","red"))
+    print(colored("Call: $ python evolution.py {error_dir} ","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 # -------------------------------------------------------------------------------------------------------
 
@@ -50,11 +101,18 @@ arch      = sys.argv[2]       # name of architecture
 modelsdir = sys.argv[3]       # path for trained model
 testdir   = sys.argv[4]       # path for test directory
 
+# bunch of control flags
+use_train = True
+use_test  = True
+per_class = True
+
 # loads train and validation sets
-CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffle=False,validation=0.1)
+if(use_train):
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffle=False,validation=0.1)
 
 # load test images 
-Xt,Yt = dataset.load_test_images(testdir)
+if(use_test):
+    Xt,Yt = dataset.load_test_images(testdir)
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -81,75 +139,29 @@ model = tflearn.DNN(network, checkpoint_path=None, tensorboard_dir='logs/',
 
 epoch = 1
 array = []
+accuracies = []
 
-train_acc = np.array(array, dtype = np.float32)
-val_acc   = np.array(array, dtype = np.float32)
-test_acc  = np.array(array, dtype = np.float32)
-max_acc   = np.array(array, dtype = np.float32)
-min_acc   = np.array(array, dtype = np.float32)
+#test_acc  = np.array(array, dtype = np.float32)
 epochs    = np.array(array, dtype = np.int8)
 
 # picks every saved model
-for root, dirs, files in os.walk(modelsdir):
-    for file in files:
-        if file.endswith((".data-00000-of-00001")):
-            modelpath = os.path.join(root, file)
-            modelpath = modelpath.split(".")[0]
+for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numericalSort):
+    modelpath = infile.split(".")[0]
+    
+    print("----------------------------------")
+    print("Loading trained model...")  
+    model.load(modelpath)
+    print("\tModel: ",modelpath)
+    print("Trained model loaded!\n")
+    
+    print("EPOCH: ",epoch)
+    stime = time.time()  
+    accuracy,_,_,_ = classifier.classify_sliding_window(model,Xt,Yt,epoch,CLASSES)
+    ftime = time.time() - stime
+    
+    print("Time: %.3f\n" % ftime)
+    epochs     = np.append(epochs,epoch)                                                # epochs: [1,2,3,...,n]
+    accuracies = np.vstack((accuracies,accuracy)) if len(accuracies) > 0 else accuracy  # acc: [[98,65,64,23,...],[43,54,65,87,...],...]
+    epoch += 1
 
-            print("----------------------------------")
-            print("Loading trained model...")  
-            model.load(modelpath)
-            print("\tModel: ",modelpath)
-            print("Trained model loaded!\n")
-
-            print("EPOCH: ",epoch)
-
-            stime = time.time()  
-            
-            train = model.evaluate(X,Y)[0]
-            val   = model.evaluate(Xv,Yv)[0]
-            test,maximum,minimum = classifier.classify_sliding_window(model,Xt,Yt,epoch)
-            
-            ftime = time.time() - stime
-                
-            print("  Training set: ", train)
-            print("Validation set: ", val)
-            print("      Test set: ", test)
-            print("           Max: ", maximum)
-            print("           Min: ", minimum)
-            print("          Time: %.3f\n" % ftime)
-
-            train_acc = np.append(train_acc,train*100)  
-            val_acc   = np.append(val_acc,val*100)
-            test_acc  = np.append(test_acc,test)        # already multiplied by factor 100
-            max_acc   = np.append(max_acc,maximum)      # already multiplied by factor 100
-            min_acc   = np.append(min_acc,minimum)      # already multiplied by factor 100
-
-            epochs    = np.append(epochs,epoch)
-
-            epoch += 1
-
-# plot properties 
-# fig = plt.figure()
-plt.title("Impact of epochs number",fontweight='bold')
-
-ptrain = plt.plot(epochs,train_acc,color='red')
-pval   = plt.plot(epochs,val_acc,color='blue')
-ptest  = plt.plot(epochs,test_acc,color='green')
-pmax   = plt.plot(epochs,max_acc,'go')          # green dots for maximums
-pmin   = plt.plot(epochs,min_acc,'gs')          # green squares for minimums 
-
-red_patch   = mpatches.Patch(color='red', label='Train')
-blue_patch  = mpatches.Patch(color='blue', label='Validation')
-green_patch = mpatches.Patch(color='green', label='Test')
-
-legend = plt.legend(handles=[red_patch,blue_patch,green_patch],loc=7)
-# location docs: http://matplotlib.org/1.3.1/users/legend_guide.html 
-
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy (%)')
-plt.xlim(1,epoch-1)
-plt.xticks(epochs)
-
-plt.grid(True)
-plt.show()  
+plot_accuracies(epochs,accuracies)

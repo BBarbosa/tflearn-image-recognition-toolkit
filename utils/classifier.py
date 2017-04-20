@@ -28,7 +28,7 @@ HEIGHT = 128
 WIDTH  = 128
 
 # control flags for extra features
-saveOutputImage = True
+saveOutputImage = False
 
 # return a color according to the class
 def getColor(x):
@@ -56,18 +56,26 @@ def clear_screen():
         os.system('clear')
     print("Operating System: %s\n" % OS)
 
-def classify_single_image(model,image,label):
+# function that classifies a single image and returns labelID and confidence
+def classify_single_image(model,image,label=None):
     probs = model.predict(image)
     index = np.argmax(probs)
-    return 0
+    prob  = probs[index] 
+    
+    if(label):
+        print("    Label: ",label)
+        print("Predicted: ",index)
 
-def classify_sliding_window(model,image_list,label_list,runid):
+    return index,prob
+
+# function that classifies a image by a sliding window (in extreme, 1 window only)
+def classify_sliding_window(model,image_list,label_list,runid,nclasses):
     if(len(image_list) != len(label_list)):
         sys.exit()
         sys.exit(colored("ERROR: Image and labels list must have the same lenght!","red"))
     
     accuracies = []
-    nclasses   = len(list(set(label_list))) # counts the number of distinct classes
+    cmatrix    = []
 
     # Load the image file (need pre-processment)
     for image,classid in zip(image_list,label_list):
@@ -154,4 +162,4 @@ def classify_sliding_window(model,image_list,label_list,runid):
 
     avg_acc = sum(accuracies) / len(image_list)
 
-    return avg_acc,max(accuracies),min(accuracies)  
+    return accuracies,avg_acc,max(accuracies),min(accuracies)
