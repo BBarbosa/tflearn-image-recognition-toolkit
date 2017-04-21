@@ -148,7 +148,8 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=Fal
         Xtr,Ytr = shuffle(Xtr,Ytr)
         Xte,Yte = shuffle(Xte,Yte)
 
-    Xtr = np.reshape(Xtr,(-1,height,width,ch))          # reshape array to fit on network format
+    Xtr = np.reshape(Xtr,(-1,height,width,ch))      # reshape array to fit on network format
+    Xte = np.reshape(Xte,(-1,height,width,ch))      # reshape array to fit on network format
 
     print("\t         Path: ",train_path)
     print("\tShape (train): ",Xtr.shape,Ytr.shape)

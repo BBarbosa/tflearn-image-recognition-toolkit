@@ -498,69 +498,36 @@ def build_dlib(network,classes):
 
 # network builder function
 def build_network(name,network,classes):
+    """
+    Function to create a network.
+    """
     print("Loading network...")
     
-    # vgg16 ------------------------------------------
-    if(name == "vgg16"):
-        network = build_vgg16(network,classes)
-    elif(name == "myvgg"):
-        network = build_myvgg16(network,classes)
-    # mnist ------------------------------------------
-    elif(name == "mnist"):
-        network = build_mnist(network,classes)
-    # mynet ------------------------------------------
-    elif(name == "mynet"):
-        network = build_mynet(network,classes)
-    elif(name == "mynetv2"):
-        network = build_mynet_v2(network,classes)
-    elif(name == "mynetv3"):
-        network = build_mynet_v3(network,classes)
-    # cifar10 ----------------------------------------
-    elif(name == "cifar10"):        # padding = same
-        network = build_cifar10(network,classes)
-    elif(name == "cifar10_valid"):  # padding = valid
-        network = build_cifar10_valid(network,classes)
-    elif(name == "cifar10x2"):
-        network = build_cifar10_x2(network,classes)
-    elif(name == "cifar10x0.5"):
-        network = build_cifar10_x05(network,classes)
-    elif(name == "mycifar"):
-        network = build_mycifar(network,classes)
-    elif(name == "mycifarv2"):
-        network = build_mycifar_v2(network,classes)
-    elif(name == "mycifarv3"):
-        network = build_mycifar_v3(network,classes)
-    elif(name == "mycifarv4"):
-        network = build_mycifar_v4(network,classes)
-    elif(name == "mycifarv5"):
-        network = build_mycifar_v5(network,classes)
-    elif(name == "mycifarv6"):
-        network = build_mycifar_v6(network,classes)      
-    # resnet ---------------------------------------- 
-    elif(name == "resnet"):
-        network = build_resnet(network,classes)
-    # alexnet ---------------------------------------- 
-    elif(name == "alexnet"):
-        network = build_alex(network,classes)
-    elif(name == "myalex"):
-        network = build_myalex(network,classes)         
-    # network in network ----------------------------- 
-    elif(name == "nin"):
-        network = build_nin(network,classes)
-    # highway ---------------------------------------- 
-    elif(name == "highway"):
-        network = build_highway(network,classes)
-    # rnn -------------------------------------------- 
-    elif(name == "rnn"):
-        network = build_rnn(network,classes)
-    # all cnn ---------------------------------------- 
-    elif(name == "allcnn"):
-        network = build_all_cnn(network,classes) 
-    # dlib ------------------------------------------- 
-    elif(name == "dlib"):
-        network = build_dlib(network,classes)      
-    else:
-        sys.exit("ERROR: Unknown architecture!")
+    if(name == "vgg16"):           network = build_vgg16(network,classes)
+    elif(name == "myvgg"):         network = build_myvgg16(network,classes)
+    elif(name == "mnist"):         network = build_mnist(network,classes)
+    elif(name == "mynet"):         network = build_mynet(network,classes)
+    elif(name == "mynetv2"):       network = build_mynet_v2(network,classes)
+    elif(name == "mynetv3"):       network = build_mynet_v3(network,classes)
+    elif(name == "cifar10"):       network = build_cifar10(network,classes)
+    elif(name == "cifar10_valid"): network = build_cifar10_valid(network,classes)
+    elif(name == "cifar10x2"):     network = build_cifar10_x2(network,classes)
+    elif(name == "cifar10x0.5"):   network = build_cifar10_x05(network,classes)
+    elif(name == "mycifar"):       network = build_mycifar(network,classes)
+    elif(name == "mycifarv2"):     network = build_mycifar_v2(network,classes)
+    elif(name == "mycifarv3"):     network = build_mycifar_v3(network,classes)
+    elif(name == "mycifarv4"):     network = build_mycifar_v4(network,classes)
+    elif(name == "mycifarv5"):     network = build_mycifar_v5(network,classes)
+    elif(name == "mycifarv6"):     network = build_mycifar_v6(network,classes)       
+    elif(name == "resnet"):        network = build_resnet(network,classes) 
+    elif(name == "alexnet"):       network = build_alex(network,classes)
+    elif(name == "myalex"):        network = build_myalex(network,classes)          
+    elif(name == "nin"):           network = build_nin(network,classes) 
+    elif(name == "highway"):       network = build_highway(network,classes) 
+    elif(name == "rnn"):           network = build_rnn(network,classes)
+    elif(name == "allcnn"):        network = build_all_cnn(network,classes)  
+    elif(name == "dlib"):          network = build_dlib(network,classes)      
+    else: sys.exit("ERROR: Unknown architecture!")
 
     print("\tArchitecture: ",name)
     print("Network loaded!\n")

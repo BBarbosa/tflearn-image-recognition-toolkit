@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import os,sys,time,platform,six
+import os,sys,time,platform,six,socket
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tflearn
@@ -58,24 +58,99 @@ def clear_screen():
 
 # function that classifies a single image and returns labelID and confidence
 def classify_single_image(model,image,label=None):
-    probs = model.predict(image)
-    index = np.argmax(probs)
-    prob  = probs[index] 
-    
-    if(label):
-        print("    Label: ",label)
-        print("Predicted: ",index)
+    """
+    Function that classifies one single image. If is passed a label to confirm,
+    it shows the prediction and its confidence. Assuming that image have the 
+    same dimensions as training images.
 
+    Params:
+        `model` - trained model
+        `image` - image to be classified
+        `label` (optional) - label of the corresponding image
+
+    Return: Image's labelID and confidence
+    """
+
+    image = np.reshape(image,(1,HEIGHT,WIDTH,3))
+    ctime = time.time()
+    probs = model.predict(image)
+    ctime = time.time() - ctime
+    index = np.argmax(probs)
+    prob  = probs[0][index] 
+    
+    if(isinstance(label,int)):
+        print("    Label:",label)
+    
+    print("Predicted: %d (%.2f)\n" % (index,prob))
+    print("Time: %.3f seconds" % ctime)
+    
     return index,prob
+
+# function that classifies a set of images and returns their labelIDs and confidence
+def classify_set_of_images(model,images_list,labels_list=None):
+    """
+    Function that classifies a set of images. If is passed a label list to confirm,
+    it shows the prediction and its confidence. Assuming that images have the 
+    same dimensions as training images.
+
+    Params:
+        `model` - trained model
+        `images_list` - set of images to be classified
+        `labels_list` (optional) - set of labels of the corresponding images
+
+    Return: Images' labelID and confidence
+    """
+
+    length      = len(images_list)
+    indexes     = [-1] * length
+    confidences = [-1] * length
+
+    if(labels_list):
+        if(len(labels_list) != length):
+            sys.exit("ERROR! Images and labels lists must have the same lenght!")
+
+    for image in images_list:
+        image = np.reshape(image,(1,HEIGHT,WIDTH,3))
+
+    ctime = time.time()
+    probs = model.predict(images_list)
+    ctime = time.time() - ctime
+    
+    for i,vals in enumerate(probs):
+        indexes[i]     = np.argmax(vals)
+        confidences[i] = vals[indexes[i]] 
+    
+    if(labels_list):
+        print("Label | Predict | Confidence")
+        print("----------------------------")
+        for i in range(0,length):
+            print("  %2d  |   %2d    |    %.2f" % (labels_list[i],indexes[i],confidences[i]))
+    
+    print("\nTime: %.3f seconds" % ctime)
+
+    return indexes,confidences
 
 # function that classifies a image by a sliding window (in extreme, 1 window only)
 def classify_sliding_window(model,image_list,label_list,runid,nclasses):
+    """
+    Function that classifies a set of images through a sliding window. In an extreme
+    situation, it classifies just only one window.
+
+    Params:
+        `model` - trained model
+        `images_list` - set of images to be classified
+        `labels_list` - set of labels of the corresponding images
+        `runid` - ID for this classification
+        `nclasses` - number of classes
+
+    Return: Images' labelID and confidence
+    """
+    
     if(len(image_list) != len(label_list)):
         sys.exit()
         sys.exit(colored("ERROR: Image and labels list must have the same lenght!","red"))
     
     accuracies = []
-    cmatrix    = []
 
     # Load the image file (need pre-processment)
     for image,classid in zip(image_list,label_list):
@@ -153,13 +228,51 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
 
             error_file = "epoch_%d_error.txt" % runid
             ferror = open(error_file, "a+")
-                 
+
             array = ','.join(str(x) for x in counts)   # convert array of count into one single string
-            ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.2f | Time: %f\n" % (total,classid,array,acc,cls_time))
+            ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.3f | Time: %.3f\n" % (total,classid,array,acc,cls_time))
             ferror.close()
 
             accuracies.append(acc)
-
+    
+    # round accuracy array to %.2f
+    accuracies = np.around(accuracies,2)
     avg_acc = sum(accuracies) / len(image_list)
 
     return accuracies,avg_acc,max(accuracies),min(accuracies)
+
+def classify_local_server(model,ip,port):
+    """
+
+    """
+    serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serversocket.bind((ip, port))
+    serversocket.listen(7) 
+    print("Starting server '%s' on port %d...\n" % (ip,port))
+
+    while True:
+        connection, address = serversocket.accept()     # wait until it receives a message
+        buf = connection.recv(512)                      # is it enough?
+        buf = str(buf.decode('ascii'))                  # decode from byte to string
+
+        buf = buf.split(" ")        # expects something like: "path_to_image class"
+        filename = buf[0]           # get image path
+        classid  = int(buf[1])      # get image class
+
+        if(filename == "stop"):
+            # ends the program
+            break
+        
+        print("Filename: %s" % filename)    # just to confirm
+        print("   Class: %d\n" % classid)   # just to confirm
+
+        try:
+            # tries to load image
+            background = Image.open(filename)
+            print(colored("SUCCESS: Loaded %s successfully!" % filename,"green"))
+        except:
+            # if it fails go to next iteration
+            print(colored("ERROR: Couldn't open %s!" % filename,"red"))
+            continue
+
+    return None

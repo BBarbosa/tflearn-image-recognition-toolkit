@@ -36,43 +36,50 @@ def numericalSort(value):
     parts[1::2] = map(int, parts[1::2])
     return parts
 
-def plot_accuracies(x,y):
+
+def parse_csv_files(files_dir):
     """
-    Function that creates a plot according to X and Y. Lengths must match.
-
-    Params:
-        x - array for x-axis [0,1,2]
-        y - assuming that it is a matrix so it can automatically generate legend [[3,4,5], [6,7,8], [9,0,1]]
-    """
-    # fig = plt.figure()
-    plt.title("Impact of epochs number",fontweight='bold')
-
-    legend = np.arange(0,len(y[0])).astype('str')      # creates array ['0','1','2',...,'n']
-    plt.plot(x,y)
-    plt.legend(legend) 
-
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy (%)')
-    plt.xticks(x)
-
-    plt.grid(True)
-    plt.show() 
-
-def parse_error_files(files_dir):
-    """
-    Function to parse srtructured error files.
+    Function to parse csv files.
 
     Params:
         files_dir - directory where error files are stored
     """
     
-    for infile in sorted(glob.glob(files_dir + '*.txt'), key=numericalSort):
-        print("File: " + infile)
+    means = []
 
+    for infile in sorted(glob.glob(files_dir + '*acc.txt'), key=numericalSort):
+        print("File: " + infile)
+        
+        data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
+                             skip_header=0,autostrip=True)
+        
+        mean = [0] * len(data[0])
+        x = np.arange(1,len(data)+1)
+
+        # calculate mean of one X element
+        for i,label in enumerate(data.dtype.names):
+            mean[i] = np.mean(data[label])
+        
+        mean  = np.around(mean,2)
+        means = np.vstack((means,mean)) if len(means)>0 else mean
+    
+    x = np.arange(1,len(means)+1)
+    means = np.asarray(means)
+
+    for i,label in enumerate(data.dtype.names):
+        plt.plot(x,means[:,i],label=label)
+    
+    plt.title("Impact of epochs number",fontweight='bold')
+    plt.legend()
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy (%)')
+    plt.grid(True)
+    plt.xticks(x)
+    plt.show()
 
 # -------------------------------------------------------------------------------------------------------
 if(len(sys.argv) == 2):
-    parse_error_files(sys.argv[1])
+    parse_csv_files(sys.argv[1])
     #plot_accuracies([1,2],[[1,2,3],[4,5,6]])
     sys.exit(1)
 elif (len(sys.argv) < 5):
@@ -141,8 +148,15 @@ epoch = 1
 array = []
 accuracies = []
 
-#test_acc  = np.array(array, dtype = np.float32)
-epochs    = np.array(array, dtype = np.int8)
+epochs = np.array(array, dtype = np.int8)
+crange = np.arange(0,CLASSES)
+header = ','.join("c%d" % num for num in crange)
+
+# creates a .csv file where each line has the accuracy of every class per epoch
+csv_file = "epochs_acc.txt"  
+fcsv = open(csv_file,"a+")
+fcsv.write(header + "\n")
+fcsv.close()
 
 # picks every saved model
 for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numericalSort):
@@ -155,13 +169,19 @@ for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numeric
     print("Trained model loaded!\n")
     
     print("EPOCH: ",epoch)
+    
     stime = time.time()  
     accuracy,_,_,_ = classifier.classify_sliding_window(model,Xt,Yt,epoch,CLASSES)
     ftime = time.time() - stime
-    
     print("Time: %.3f\n" % ftime)
+
+    fcsv    = open(csv_file,"a+")
+    acc_str = ','.join(str(acc) for acc in accuracy)           
+    fcsv.write("%s\n" % acc_str)              
+    fcsv.close()                            
+
     epochs     = np.append(epochs,epoch)                                                # epochs: [1,2,3,...,n]
     accuracies = np.vstack((accuracies,accuracy)) if len(accuracies) > 0 else accuracy  # acc: [[98,65,64,23,...],[43,54,65,87,...],...]
     epoch += 1
 
-plot_accuracies(epochs,accuracies)
+#plot_accuracies(epochs,accuracies)

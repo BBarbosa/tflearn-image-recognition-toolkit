@@ -1,4 +1,7 @@
+#--------------------------------------------------------------------------
 # NOTE: Make sure that there isn't any other instace of TensorFlow running
+#       before calling this script
+#--------------------------------------------------------------------------
 
 import os
 
@@ -8,7 +11,7 @@ datasets = ["dataset/ori/side128"]
 
 architectures = ["cifar10"]
 
-nruns = 2
+nruns = 5
 
 for command in commands:
     for arch in architectures:
