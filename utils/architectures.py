@@ -8,7 +8,7 @@ from tflearn.layers.conv import conv_2d, max_pool_2d,highway_conv_2d,avg_pool_2d
 from tflearn.layers.estimator import regression
 from tflearn.layers.normalization import local_response_normalization,batch_normalization
 
-# vgg16 (heavy) -------------------------------------------------------------------------
+# vgg16 (heavy) 
 def build_vgg16(network,classes):
     network = conv_2d(network, 64, 3, activation='relu')
     network = conv_2d(network, 64, 3, activation='relu')
@@ -65,7 +65,7 @@ def build_myvgg16(network,classes):
                         learning_rate=0.001)
     return network
 
-# mnist -------------------------------------------------------------------------
+# mnist 
 def build_mnist(network,classes):
     network = conv_2d(network, 32, 3, activation='relu', regularizer="L2")
     network = max_pool_2d(network, 2)
@@ -83,7 +83,7 @@ def build_mnist(network,classes):
                         loss='categorical_crossentropy', name='target')
     return network
 
-# cifar10 -------------------------------------------------------------------------
+# cifar10 
 def build_cifar10(network,classes):
     network = conv_2d(network, 32, 3, activation='relu') 
     network = max_pool_2d(network, 2)

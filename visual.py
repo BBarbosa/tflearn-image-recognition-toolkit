@@ -112,77 +112,66 @@ def plot_conv_layer(layer, image):
 if (len(sys.argv) < 4):
     print(colored("Call: $ python visual.py {architecture} {model} {layer} [image]","yellow"))
     sys.exit(colored("ERROR: Not enough arguments!","yellow"))
+
+# specify OS
+OS = platform.system() 
+
+# clear screen and show OS
+if(OS == 'Windows'):
+    os.system('cls')
 else:
-    # specify OS
-    OS = platform.system() 
+    os.system('clear')
+print("Operating System: %s\n" % OS)
+
+# images properties (inherit from trainning?)   
+HEIGHT  = 128
+WIDTH   = 128
+
+CLASSES = 7
+# get command line arguments
+arch      = sys.argv[1]       # name of architecture
+modelpath = sys.argv[2]       # path to saved model
+layer     = sys.argv[3]       # layer name, for example, Conv2D or Conv2D_1
+
+# network definition
+network = input_data(shape=[None, WIDTH, HEIGHT, 3],     # shape=[None,IMAGE, IMAGE] for RNN
+                    data_preprocessing=None,       
+                    data_augmentation=None) 
+network = architectures.build_network(arch,network,CLASSES)
+
+# model definition
+model = tflearn.DNN(network, checkpoint_path='models',
+                    max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
+print("Loading trained model...")  
+model.load(modelpath)
+print("\tModel: ",modelpath)
+print("Trained model loaded!\n")
+
+# get layer by its name
+if isinstance(layer, six.string_types):
+    vars = tflearn.get_layer_variables_by_name(layer)
+    variable = vars[0]
+else:
+    variable = layer.W
+
+# load weights (learnt filters) and plots them
+weights = model.get_weights(variable)
+print("Weights shape: ", weights.shape)
+plot_conv_weights(weights)
+
+# tries to load a image
+load = True
+try:
+    img = scipy.ndimage.imread(sys.argv[4])
+except:
+    load = False
+    sys.exit(colored("ERROR: Image not mentioned!","yellow"))
+
+# if loaded image correctly
+if(load):
+    img = scipy.misc.imresize(img, (HEIGHT,WIDTH), interp="bicubic").astype(np.float32)
+    img = np.array(img)
+    img = np.reshape(img,(-1,HEIGHT,WIDTH,3))
+    print("  Image shape: ",img.shape, type(img))
+    plot_conv_layer(vars,img)
     
-    # clear screen and show OS
-    if(OS == 'Windows'):
-        os.system('cls')
-    else:
-        os.system('clear')
-    print("Operating System --> %s\n" % OS)
-
-    # images properties (inherit from trainning?)   
-    HEIGHT  = 128
-    WIDTH   = 128
-    CLASSES = 7
-
-    # get command line arguments
-    arch      = sys.argv[1]       # name of architecture
-    modelpath = sys.argv[2]       # path to saved model
-    layer     = sys.argv[3]       # layer name, for example, Conv2D or Conv2D_1
-
-    # network definition
-    network = input_data(shape=[None, WIDTH, HEIGHT, 3],     # shape=[None,IMAGE, IMAGE] for RNN
-                        data_preprocessing=None,       
-                        data_augmentation=None) 
-
-    network = architectures.build_network(arch,network,CLASSES)
-
-    # fix for Windows
-    if(OS == 'Windows'):
-        col = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        for x in col:
-            tf.add_to_collection(tf.GraphKeys.VARIABLES, x)
-
-    # model definition
-    model = tflearn.DNN(network, checkpoint_path='models',
-                        max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
-
-
-    print("Loading trained model...")  
-    model.load(modelpath)
-    print("\tModel: ",modelpath)
-    print("Trained model loaded!\n")
-    
-    # get layer by its name
-    if isinstance(layer, six.string_types):
-        vars = tflearn.get_layer_variables_by_name(layer)
-        variable = vars[0]
-    else:
-        variable = layer.W
-    
-    # load weights (learnt filters) and plots them
-    weights = model.get_weights(variable)
-    print("Weights shape: ", weights.shape)
-    plot_conv_weights(weights)
-
-    # tries to load a image
-    load = True
-    try:
-        img = scipy.ndimage.imread(sys.argv[4])
-    except:
-        load = False
-        sys.exit(colored("ERROR: Image not mentioned!","yellow"))
-    
-    # if loaded image correctly
-    if(load):
-        img = scipy.misc.imresize(img, (HEIGHT,WIDTH), interp="bicubic").astype(np.float32)
-        img = np.array(img)
-        img = np.reshape(img,(-1,HEIGHT,WIDTH,3))
-        print("  Image shape: ",img.shape, type(img))
-
-        plot_conv_layer(vars,img)
-        
-

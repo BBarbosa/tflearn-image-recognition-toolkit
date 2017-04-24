@@ -72,7 +72,7 @@ def load_dataset_ipl(train_path,height,width,test_path=None,mode='folder'):
     return classes,X,Y,Xt,Yt 
 
 # load images directly from images folder (ex: cropped/5/)
-def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=False,validation=0):
+def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,validation=0):
     """ 
     Given a folder containing images separated by folders (classes) returns training and testing
     data, if specified.
@@ -121,15 +121,9 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=Fal
 
             Xtr += X[it:split]
             Ytr = np.concatenate([Ytr, Y[it:split]]) if len(Ytr)>0 else Y[it:split] 
-        
-            #print(Ytr[i*per_class:i*per_class+split])
-            #inp = input("Press any key...")
             
             Xte += X[split:split+to_test]
             Yte = np.concatenate([Yte, Y[split:split+to_test]]) if len(Yte)>0 else Y[split:split+to_test]
-        
-            #print(Yte[i*45:i*45+to_test])
-            #inp = input("Press any key...")
 
     #----------------------------------------------------------------------------------------------
     else:
@@ -144,9 +138,9 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffle=Fal
     Xte = np.array(Xte)     # convert test images list to array
     Yte = np.array(Yte)     # convert test labels list to array
 
-    if(shuffle):
-        Xtr,Ytr = shuffle(Xtr,Ytr)
-        Xte,Yte = shuffle(Xte,Yte)
+    if(shuffled):
+        Xtr,Ytr = shuffle(Xtr,Ytr)      # shuflles training data
+        Xte,Yte = shuffle(Xte,Yte)      # shuflles validation data
 
     Xtr = np.reshape(Xtr,(-1,height,width,ch))      # reshape array to fit on network format
     Xte = np.reshape(Xte,(-1,height,width,ch))      # reshape array to fit on network format

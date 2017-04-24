@@ -5,20 +5,54 @@
 
 import os
 
-commands = ["python training_20e.py", "python training_200e.py", "python training_2000e.py"]
+"""
+Training schedule
+"""
 
-datasets = ["dataset/ori/side128"]
+# control flags
+train = False    
+test  = False   
+
+commands = ["python training.py"]
+
+datasets = ["dataset/ori/side64"]
 
 architectures = ["cifar10"]
 
-nruns = 5
+batches = [32]
+
+nruns = 10
 
 for command in commands:
-    for arch in architectures:
-        for data in datasets:
-            for run in range(0,nruns):
-                # NOTE: adapt runid according with the user's preferences
-                runid = command.split(" ")[1].split(".")[0] + "_" + arch + "_r" + str(run)
-                new_command = "%s %s %s %s" % (command,data,arch,runid)
-                print("Command: ", new_command)
-                #os.system(new_command)
+    for data in datasets:
+        for arch in architectures:
+            for bs in batches:
+                for run in range(0,nruns):
+                    # NOTE: adapt runid according with the user's preferences
+                    runid = data.split("/")[2] + "_" + arch + "_r" + str(run)
+                    new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
+                    print(new_command)
+                    if(train): os.system(new_command)
+
+print("")
+
+"""
+Testing schedule
+NOTE: datasets and architectures must match those used on the training
+      solve test set conflict
+"""
+
+commands = ["python autotest.py"]
+
+models = ["models/side32/"]
+
+testdirs = ["%s/../test" % ddir for ddir in datasets]
+
+for command in commands:
+    for data,tdir in zip(datasets,testdirs):
+        for arch in architectures:
+            for model in models:
+                runid = None        # edit  
+                new_command = "%s %s %s %s %s %s" % (command,data,arch,model,tdir,runid)
+                print(new_command)
+                if(test): os.system(new_command)

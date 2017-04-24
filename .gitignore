@@ -35,5 +35,5 @@
 !error/**
 
 !visual.py
-!evolution.py
-!classifier.py
+!autotest.py
+!plots.py

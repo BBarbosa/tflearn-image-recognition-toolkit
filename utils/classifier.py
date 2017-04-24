@@ -23,9 +23,11 @@ from termcolor import colored
 # init colored print
 init()
 
-IMAGE  = 128
-HEIGHT = 128
-WIDTH  = 128
+IMAGE  = 32
+HEIGHT = 32
+WIDTH  = 32
+
+minimum = min(IMAGE, HEIGHT, WIDTH)
 
 # control flags for extra features
 saveOutputImage = False
@@ -138,8 +140,8 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
 
     Params:
         `model` - trained model
-        `images_list` - set of images to be classified
-        `labels_list` - set of labels of the corresponding images
+        `images_list` - list of images to be classified (already loaded)
+        `labels_list` - list of labels of the corresponding images
         `runid` - ID for this classification
         `nclasses` - number of classes
 
@@ -152,22 +154,25 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
     
     accuracies = []
 
-    # Load the image file (need pre-processment)
+    # start sliding window for every image
     for image,classid in zip(image_list,label_list):
         hDIM,wDIM  = image.size     
         img        = np.asarray(image)
         img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
-        img       -= scipy.ndimage.measurements.mean(img)           # confirmed. check data_utils.py on github
-        img       /= np.std(img)                                    # confirmed. check data_utils.py on github
+        img       -= scipy.ndimage.measurements.mean(img)       # confirmed. check data_utils.py on github
+        img       /= np.std(img)                                # confirmed. check data_utils.py on github
 
-        BLOCK     = 8                                               # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE  
-        padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window
+        BLOCK     = 8
+        if(BLOCK > minimum):                                    # checks if it isn't too big
+            BLOCK = IMAGE                                       # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
+        
+        padding   = (IMAGE - BLOCK) // 2                        # padding for centering sliding window
         nhDIM     = hDIM - 2*padding                                                
         nwDIM     = wDIM - 2*padding                                
-        hshifts   = nhDIM // BLOCK                                  # number of sliding window shifts on height
-        wshifts   = nwDIM // BLOCK                                  # number of sliding window shifts on width
-        total = hshifts*wshifts                                     # total number of windows
-        counts = [0] * nclasses                                     # will count the occurences of each class. resets at every image
+        hshifts   = nhDIM // BLOCK                               # number of sliding window shifts on height
+        wshifts   = nwDIM // BLOCK                               # number of sliding window shifts on width
+        total = hshifts*wshifts                                  # total number of windows
+        counts = [0] * nclasses                                  # will count the occurences of each class. resets at every image
 
         if(saveOutputImage):
             background = image
@@ -226,7 +231,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
             print("\t    Acc: ", acc, "%")
             print("Error checked!\n")
 
-            error_file = "epoch_%d_error.txt" % runid
+            error_file = "%s_error.txt" % runid
             ferror = open(error_file, "a+")
 
             array = ','.join(str(x) for x in counts)   # convert array of count into one single string
@@ -241,9 +246,21 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
 
     return accuracies,avg_acc,max(accuracies),min(accuracies)
 
-def classify_local_server(model,ip,port):
+# function that classifies a image by a sliding window using a local server 
+def classify_local_server(model,ip,port,runid,nclasses):
     """
+    Function that creates a local server and loads a model. It waits until
+    another program makes a connection. It expects to receive a message 
+    that contains the PATH to the image to classify and it label ID.
 
+    Params:
+        `model` - trained model
+        `ip` - local server's IP
+        `port` - local server's PORT
+        `runid` - ID for this classification
+        `nclasses` - number of classes
+
+    Return: (not defined yet)
     """
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.bind((ip, port))
@@ -274,5 +291,7 @@ def classify_local_server(model,ip,port):
             # if it fails go to next iteration
             print(colored("ERROR: Couldn't open %s!" % filename,"red"))
             continue
-
+        
+        classify_sliding_window(model,background,classid,runid,nclasses)
+        
     return None
