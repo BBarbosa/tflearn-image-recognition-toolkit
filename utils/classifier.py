@@ -31,6 +31,7 @@ minimum = min(IMAGE, HEIGHT, WIDTH)
 
 # control flags for extra features
 saveOutputImage = False
+showProgress    = False
 
 # return a color according to the class
 def getColor(x):
@@ -141,7 +142,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
     Params:
         `model` - trained model
         `images_list` - list of images to be classified (already loaded)
-        `labels_list` - list of labels of the corresponding images
+        `labels_list` - list of labels of the corresponding images (use [-1] for collages)
         `runid` - ID for this classification
         `nclasses` - number of classes
 
@@ -152,7 +153,9 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
         sys.exit()
         sys.exit(colored("ERROR: Image and labels list must have the same lenght!","red"))
     
-    accuracies = []
+    accuracies  = []
+    confidences = []
+    edistances  = []
 
     # start sliding window for every image
     for image,classid in zip(image_list,label_list):
@@ -163,16 +166,20 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
         img       /= np.std(img)                                # confirmed. check data_utils.py on github
 
         BLOCK     = 8
-        if(BLOCK > minimum):                                    # checks if it isn't too big
-            BLOCK = IMAGE                                       # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
+        if(BLOCK > minimum):                        # checks if it isn't too big
+            BLOCK = IMAGE                           # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
         
-        padding   = (IMAGE - BLOCK) // 2                        # padding for centering sliding window
-        nhDIM     = hDIM - 2*padding                                                
-        nwDIM     = wDIM - 2*padding                                
-        hshifts   = nhDIM // BLOCK                               # number of sliding window shifts on height
-        wshifts   = nwDIM // BLOCK                               # number of sliding window shifts on width
-        total = hshifts*wshifts                                  # total number of windows
-        counts = [0] * nclasses                                  # will count the occurences of each class. resets at every image
+        padding   = (IMAGE - BLOCK) // 2            # padding for centering sliding window
+        paddingh  = (HEIGHT - BLOCK) // 2           # padding for centering sliding window (rectangles)
+        paddingw  = (WIDTH - BLOCK) // 2            # padding for centering sliding window (rectangles)
+
+        nhDIM     = hDIM - 2*paddingh                                                
+        nwDIM     = wDIM - 2*paddingw                                
+        
+        hshifts   = nhDIM // BLOCK                  # number of sliding window shifts on height
+        wshifts   = nwDIM // BLOCK                  # number of sliding window shifts on width
+        total = hshifts*wshifts                     # total number of windows
+        counts = [0] * nclasses                     # will count the occurences of each class. resets at every image
 
         if(saveOutputImage):
             background = image
@@ -183,6 +190,11 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
         print("\t   Size: ", wDIM, "x", hDIM)
         print("\t  Block: ", BLOCK)
 
+        label = np.zeros(nclasses)  # creates an empty array with lenght of number of classes
+        label[classid] = 1          # create a class label by setting the value 1 on the corresponding index 
+
+        val = 0     # will store the highest probability 
+        ed = 0      # will store the sum of the euclidian distances
         # start measuring time
         start_time = time.time()
         for i in range(0,hshifts):
@@ -193,21 +205,34 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
                 img2 = np.reshape(img2,(1,HEIGHT,WIDTH,3))
                 #img2 = np.reshape(img2,(1,IMAGE,IMAGE))    # for RNN 
 
-                probs = model.predict(img2)
+                probs = model.predict(img2)              # predicts image's classid
+
+                prediction = np.asarray(probs[0])        # converts probabilities list to numpy array
+                ed += np.linalg.norm(label-prediction)   # calculates euclidian distance
+
                 index = np.argmax(probs)
                 counts[index] = counts[index] + 1
-                val = probs[0][index]
-                color = getColor(index)
+                val += probs[0][index]
 
                 # segment block
                 if(saveOutputImage):
-                    for k in range(h+padding,h+BLOCK+padding):
-                            for z in range(w+padding,w+BLOCK+padding):
+                    color = getColor(index)
+                    
+                    ki = h + paddingh               # to calculate only once
+                    kf = h + paddingh + BLOCK       # to calculate only once
+                    for k in range(ki,kf):
+                        zi = w + paddingw           # to calculate only once per loop iteration
+                        zf = w + paddingw + BLOCK   # to calculate only once per loop iterarion
+                        for z in range(zi,zf):
+                            try:
                                 segmented.putpixel((z,k),color)
+                            except:
+                                print("segmentation")
+                                pass
             
         # stop measuring time
         cls_time = time.time() - start_time
-        print("\t   Time:  %s seconds" % cls_time)
+        print("\t   Time:  %.3f seconds" % cls_time)
         print("Classification done!\n")
         
         # save output image options
@@ -221,7 +246,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
 
         # Error check if not a collage
         if (classid != -1):
-            acc   = counts[classid] / total * 100   # accuracy
+            acc   = counts[classid] / total * 100   # accuracy per correct prediction (higher probability)
             most  = np.argmax(counts)               # most probable class
             print("Error check...")
             print("\t  Class: ", classid)
@@ -238,13 +263,27 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
             ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.3f | Time: %.3f\n" % (total,classid,array,acc,cls_time))
             ferror.close()
 
+            # accuracy by counting correct predictions (highest probability)
             accuracies.append(acc)
+            
+            # accuracy value by the sum of the highest probabilities (not 100% sure when predicts wrong) 
+            val = val / total
+            confidences.append(val)
+
+            # euclidian distances 
+            ed = ed / total
+            edistances.append(ed)
+
     
     # round accuracy array to %.2f
     accuracies = np.around(accuracies,2)
-    avg_acc = sum(accuracies) / len(image_list)
+    confidences = np.around(confidences,2)
+    edistances = np.around(edistances,2)
 
-    return accuracies,avg_acc,max(accuracies),min(accuracies)
+    out_var = edistances
+    avg_acc = sum(out_var) / len(image_list)
+
+    return out_var,avg_acc,max(out_var),min(out_var)
 
 # function that classifies a image by a sliding window using a local server 
 def classify_local_server(model,ip,port,runid,nclasses):

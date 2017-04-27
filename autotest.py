@@ -75,6 +75,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
                              skip_header=0,autostrip=True)
     
     x      = np.arange(1,len(data)+1)               # [1,2,3,4,...,n]
+    x      = x*1
     xticks = [8,16,32,48,64,80,96,128,256,512]      # a-axis values
     
     for i,label in enumerate(data.dtype.names):
@@ -135,10 +136,10 @@ def parse_csv_files(files_dir):
 if(len(sys.argv) == 2):
     #parse_csv_files(sys.argv[1])
     #plot_accuracies([1,2],[[1,2,3],[4,5,6]])
-    plot_csv_file(sys.argv[1],title="Side 64 (10 runs)",xlabel="Run",ylabel="Accuracy (%)")
+    plot_csv_file(sys.argv[1],title="10 Epochs",xlabel="Epochs",ylabel="Euclidian distance")
     sys.exit(1)
 elif (len(sys.argv) < 5):
-    print(colored("Call: $ python autotest.py {dataset} {architecture} {models_dir} {test_dir} {runid}\t OR","red"))
+    print(colored("Call: $ python autotest.py {dataset} {architecture} {models_dir} {test_dir} {runid}","red"))
     print(colored("Call: $ python autotest.py {error_dir} ","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 # -------------------------------------------------------------------------------------------------------
@@ -192,6 +193,9 @@ img_aug.add_random_flip_leftright()
 img_aug.add_random_flip_updown()
 img_aug.add_random_rotation(max_angle=45.)
 
+# computational resources definition
+tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
+
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
                      data_preprocessing=img_prep,       
@@ -206,6 +210,8 @@ model = tflearn.DNN(network, checkpoint_path=None, tensorboard_dir='logs/',
 
 iteration = 1
 accuracies = []
+maxis = []
+minis = []
 
 runs = np.array([], dtype = np.int8)
 crange = np.arange(0,CLASSES)
@@ -216,6 +222,9 @@ csv_file = "%s_acc.txt" % runid
 fcsv = open(csv_file,"w+")
 fcsv.write(header + "\n")
 fcsv.close()
+
+# start measuring time
+stime = time.time()
 
 # picks every saved model
 for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numericalSort):
@@ -229,7 +238,10 @@ for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numeric
     
     print("Run: ",iteration)
     
-    accuracy,_,_,_ = classifier.classify_sliding_window(model,Xt,Yt,("%s_r%d" % (runid,iteration)),CLASSES)
+    accuracy,_,ma,mi = classifier.classify_sliding_window(model,Xt,Yt,("%s_r%d" % (runid,iteration)),CLASSES)
+
+    maxis.append(ma)
+    minis.append(mi)
 
     fcsv    = open(csv_file,"a+")
     acc_str = ','.join(str(acc) for acc in accuracy)           
@@ -239,3 +251,9 @@ for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numeric
     runs       = np.append(runs,iteration)                                                # run: [1,2,3,...,n]
     accuracies = np.vstack((accuracies,accuracy)) if len(accuracies) > 0 else accuracy    # acc: [[98,65,64,23,...],[43,54,65,87,...],...]
     iteration += 1
+
+ftime = time.time() - stime
+
+print("********************")
+print("Autotest time: %.3f" % ftime)
+print("********************")
