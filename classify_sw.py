@@ -96,7 +96,7 @@ else:
     img       -= scipy.ndimage.measurements.mean(img)           # confirmed. check data_utils.py on github
     img       /= np.std(img)                                    # confirmed. check data_utils.py on github
     
-    BLOCK     = 128                                               # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE
+    BLOCK     = 128                                             # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE
     padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window    
     nhDIM     = hDIM - 2*padding
     nwDIM     = wDIM - 2*padding

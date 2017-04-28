@@ -76,7 +76,9 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     
     x      = np.arange(1,len(data)+1)               # [1,2,3,4,...,n]
     x      = x*1
+    
     xticks = [8,16,32,48,64,80,96,128,256,512]      # a-axis values
+    xticks = x+10
     
     for i,label in enumerate(data.dtype.names):
         plt.plot(x,data[label],label=label)
@@ -86,7 +88,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(True)
-    plt.xticks(x)
+    plt.xticks(x,xticks)
     plt.ylim(None)
     plt.xlim(None)
     plt.show()
@@ -136,7 +138,7 @@ def parse_csv_files(files_dir):
 if(len(sys.argv) == 2):
     #parse_csv_files(sys.argv[1])
     #plot_accuracies([1,2],[[1,2,3],[4,5,6]])
-    plot_csv_file(sys.argv[1],title="10 Epochs",xlabel="Epochs",ylabel="Euclidian distance")
+    plot_csv_file(sys.argv[1],title="10-20 Epochs",xlabel="Epochs",ylabel="Euclidian distance")
     sys.exit(1)
 elif (len(sys.argv) < 5):
     print(colored("Call: $ python autotest.py {dataset} {architecture} {models_dir} {test_dir} {runid}","red"))
@@ -230,7 +232,7 @@ stime = time.time()
 for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numericalSort):
     modelpath = infile.split(".")[0] 
 
-    print("***************************************************************************")
+    print("************************************************************")
     print("Loading trained model...")
     print("\tModel: ",modelpath)  
     model.load(modelpath)

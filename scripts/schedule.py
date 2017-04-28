@@ -9,7 +9,7 @@ import os
 Training schedule
 """
 
-# control flags
+# control flags 
 train = False    
 test  = False   
 

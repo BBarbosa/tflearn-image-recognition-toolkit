@@ -11,13 +11,15 @@
 # ignore everything
 *
 
-# except
+# except the following
+
 !README.md
 !.gitignore
 !classify.py
 !classify_sw.py
 !classify_sv.py
 !training.py
+!retraining.py
 
 !utils/
 !utils/**

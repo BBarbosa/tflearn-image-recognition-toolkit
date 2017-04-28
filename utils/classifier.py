@@ -165,7 +165,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
         img       -= scipy.ndimage.measurements.mean(img)       # confirmed. check data_utils.py on github
         img       /= np.std(img)                                # confirmed. check data_utils.py on github
 
-        BLOCK     = 8
+        BLOCK = 8
         if(BLOCK > minimum):                        # checks if it isn't too big
             BLOCK = IMAGE                           # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
         
@@ -266,11 +266,12 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
             # accuracy by counting correct predictions (highest probability)
             accuracies.append(acc)
             
-            # accuracy value by the sum of the highest probabilities (not 100% sure when predicts wrong) 
+            # accuracy value by the sum of the highest probabilities 
+            # (not 100% sure when predicts wrong) 
             val = val / total
             confidences.append(val)
 
-            # euclidian distances 
+            # euclidian distances (should it divide by the number of images?)
             ed = ed / total
             edistances.append(ed)
 

@@ -17,8 +17,8 @@ from termcolor import colored
 # init colored print
 init()
 
-if (len(sys.argv) < 4):
-    print(colored("Call: $ python training.py {dataset} {architecture} {batch_size} {runid}","red"))
+if (len(sys.argv) < 5):
+    print(colored("Call: $ python retraining.py {dataset} {architecture} {batch_size} {runid} {model}","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 
 # specify OS
@@ -36,10 +36,11 @@ HEIGHT = None
 WIDTH  = None
 
 # get command line arguments
-data = sys.argv[1]       # path to hdf5/file.pkl OR path/to/cropped/images
-arch = sys.argv[2]       # name of architecture
-bs   = int(sys.argv[3])  # bacth size
-out  = sys.argv[4]       # name for output model
+data = sys.argv[1]          # path to hdf5/file.pkl OR path/to/cropped/images
+arch = sys.argv[2]          # name of architecture
+bs   = int(sys.argv[3])     # bacth size
+out  = sys.argv[4]          # name for output model
+modelpath = sys.argv[5]     # path to the already trained model
 
 vs = 0.1           # percentage of dataset for validation (manually)
 
@@ -82,10 +83,15 @@ snap  = 10*dsize // bs          # snapshot for each X times it passes through al
 print("Batch size:",bs)
 print("  Val. set:",vs,"%")
 print(" Data size:",dsize)
-print("  Snapshot:",snap)
+print("  Snapshot:",snap,"\n")
+
+print("Loading trained model...")  
+model.load(modelpath)
+print("\tModel: ",modelpath)
+print("Trained model loaded!\n")
 
 # training operation 
-model.fit(X, Y, n_epoch=1, shuffle=True, show_metric=True, 
+model.fit(X, Y, n_epoch=10, shuffle=True, show_metric=True, 
           batch_size=bs, snapshot_step=None, snapshot_epoch=True, 
           run_id=out, validation_set=(Xt,Yt), callbacks=None)
 

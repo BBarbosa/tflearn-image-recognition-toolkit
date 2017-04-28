@@ -71,7 +71,7 @@ else:
     showProgress    = False and saveOutputImage # required saveOutputImage flag to show the progress
 
     # computational resources definition
-    tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
+    tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.33)
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN

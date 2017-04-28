@@ -173,6 +173,7 @@ def load_test_images(testdir=None):
 
             classid += 1
         
+        print("\t         Path: ",testdir)
         print("\t       Images: ",len(image_list))
         print("\t       Labels: ",len(label_list))
         print("Test images loaded...\n")
