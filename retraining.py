@@ -91,8 +91,8 @@ print("\tModel: ",modelpath)
 print("Trained model loaded!\n")
 
 # training operation 
-model.fit(X, Y, n_epoch=10, shuffle=True, show_metric=True, 
-          batch_size=bs, snapshot_step=None, snapshot_epoch=True, 
+model.fit(X, Y, n_epoch=100, shuffle=True, show_metric=True, 
+          batch_size=bs, snapshot_step=snap, snapshot_epoch=False, 
           run_id=out, validation_set=(Xt,Yt), callbacks=None)
 
 # save model

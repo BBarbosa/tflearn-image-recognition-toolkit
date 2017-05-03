@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import os,sys,time,platform,six
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 import tflearn
 import winsound as ws  # for windows only
@@ -40,8 +41,8 @@ def getColor(x):
 
 
 # script arguments' check
-if(len(sys.argv) < 3):
-    print(colored("Call: $ python classify_sv.py {architecture} {model}","red"))
+if(len(sys.argv) < 5):
+    print(colored("Call: $ python classify_sv.py {ip} {port} {architecture} {model}","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 else:
     # specify OS
@@ -63,15 +64,23 @@ else:
     minimum = min(IMAGE, HEIGHT, WIDTH)
 
     # get command line arguments
-    arch      = sys.argv[1]       # name of architecture
-    modelpath = sys.argv[2]       # path to saved model
+    ip        = sys.argv[1]       # server IP
+    port      = int(sys.argv[2])  # port
+    arch      = sys.argv[3]       # name of architecture
+    modelpath = sys.argv[4]       # path to saved model
 
     # a bunch of flags
     saveOutputImage = True
     showProgress    = False and saveOutputImage # required saveOutputImage flag to show the progress
 
     # computational resources definition
-    tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.33)
+    config = tf.ConfigProto()
+    config.allow_soft_placement = True
+    config.gpu_options.allow_growth = True
+    config.gpu_options.visible_device_list=""
+    tf.add_to_collection('graph_config', config)
+
+    tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.2)
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
@@ -90,8 +99,6 @@ else:
     print("Trained model loaded!\n")
     
     #------------------------------ creates a local server ------------------------------
-    ip   = 'localhost'
-    port = 8090
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.bind((ip, port))
     serversocket.listen(7) # become a server socket, maximum 1 connections
@@ -186,8 +193,10 @@ else:
                 except:
                     print("reshape")
                     pass
-                    
-                probs = model.predict(img2)
+
+                with tf.device('/cpu:0'):    
+                    probs = model.predict(img2)
+                
                 index = np.argmax(probs)
                 counts[index] = counts[index] + 1
 

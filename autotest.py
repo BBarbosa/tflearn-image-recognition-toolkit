@@ -75,10 +75,10 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
                              skip_header=0,autostrip=True)
     
     x      = np.arange(1,len(data)+1)               # [1,2,3,4,...,n]
-    x      = x*1
+    x      = np.asarray([100+elem*10 for elem in x])
     
     xticks = [8,16,32,48,64,80,96,128,256,512]      # a-axis values
-    xticks = x+10
+    xticks = x
     
     for i,label in enumerate(data.dtype.names):
         plt.plot(x,data[label],label=label)
@@ -138,7 +138,7 @@ def parse_csv_files(files_dir):
 if(len(sys.argv) == 2):
     #parse_csv_files(sys.argv[1])
     #plot_accuracies([1,2],[[1,2,3],[4,5,6]])
-    plot_csv_file(sys.argv[1],title="10-20 Epochs",xlabel="Epochs",ylabel="Euclidian distance")
+    plot_csv_file(sys.argv[1],title="1K Epochs (10/10)",xlabel="Epochs",ylabel="Euclidian distance")
     sys.exit(1)
 elif (len(sys.argv) < 5):
     print(colored("Call: $ python autotest.py {dataset} {architecture} {models_dir} {test_dir} {runid}","red"))
@@ -240,7 +240,7 @@ for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numeric
     
     print("Run: ",iteration)
     
-    accuracy,_,ma,mi = classifier.classify_sliding_window(model,Xt,Yt,("%s_r%d" % (runid,iteration)),CLASSES)
+    accuracy,_,ma,mi = classifier.classify_sliding_window(model,Xt,Yt,("%s_e%d" % (runid,iteration)),CLASSES)
 
     maxis.append(ma)
     minis.append(mi)
@@ -252,7 +252,7 @@ for infile in sorted(glob.glob(modelsdir + '*.data-00000-of-00001'), key=numeric
 
     runs       = np.append(runs,iteration)                                                # run: [1,2,3,...,n]
     accuracies = np.vstack((accuracies,accuracy)) if len(accuracies) > 0 else accuracy    # acc: [[98,65,64,23,...],[43,54,65,87,...],...]
-    iteration += 1
+    iteration += 10
 
 ftime = time.time() - stime
 

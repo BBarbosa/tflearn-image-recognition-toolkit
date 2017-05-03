@@ -10,18 +10,18 @@ Training schedule
 """
 
 # control flags 
-train = False    
-test  = False   
+train = True    
+test  = True   
 
 commands = ["python training.py"]
 
-datasets = ["dataset/ori/side64"]
+datasets = ["dataset/ori/side128"]
 
 architectures = ["cifar10"]
 
 batches = [32]
 
-nruns = 10
+nruns = 1
 
 for command in commands:
     for data in datasets:
@@ -39,20 +39,22 @@ print("")
 """
 Testing schedule
 NOTE: datasets and architectures must match those used on the training
-      solve test set conflict
+      NEED to solve test set conflict
 """
 
 commands = ["python autotest.py"]
 
-models = ["models/side32/"]
+models = ["models/"]
 
 testdirs = ["%s/../test" % ddir for ddir in datasets]
+testdirs = ["dataset/ori/test"]
 
 for command in commands:
     for data,tdir in zip(datasets,testdirs):
         for arch in architectures:
             for model in models:
-                runid = None        # edit  
+                # NOTE: adapt runid according with the user's preferences
+                runid = "1ke"        
                 new_command = "%s %s %s %s %s %s" % (command,data,arch,model,tdir,runid)
                 print(new_command)
                 if(test): os.system(new_command)

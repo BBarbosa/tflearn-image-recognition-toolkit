@@ -172,9 +172,9 @@ else:
 
     # assuming modelpath: "models\epochs\name.tflearn" -> name
     try:
-        modelname = modelpath.split("\\")[2].split(".")[0]
+        modelname = modelpath.split("\\")[1].split(".")[0]
     except:
-         modelname = modelpath.split("/")[2].split(".")[0]
+         modelname = modelpath.split("/")[1].split(".")[0]
 
     # save output image options
     if(saveOutputImage):
