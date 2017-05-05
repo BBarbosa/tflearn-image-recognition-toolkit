@@ -31,7 +31,7 @@ minimum = min(IMAGE, HEIGHT, WIDTH)
 
 # control flags for extra features
 saveOutputImage = False
-showProgress    = False
+showProgress    = False and saveOutputImage
 
 # return a color according to the class
 def getColor(x):

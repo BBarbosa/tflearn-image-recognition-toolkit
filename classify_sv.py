@@ -2,7 +2,6 @@ from __future__ import division, print_function, absolute_import
 
 import os,sys,time,platform,six
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 import tflearn
 import winsound as ws  # for windows only
@@ -70,7 +69,7 @@ else:
     modelpath = sys.argv[4]       # path to saved model
 
     # a bunch of flags
-    saveOutputImage = True
+    saveOutputImage = False
     showProgress    = False and saveOutputImage # required saveOutputImage flag to show the progress
 
     # computational resources definition
@@ -78,9 +77,10 @@ else:
     config.allow_soft_placement = True
     config.gpu_options.allow_growth = True
     config.gpu_options.visible_device_list=""
-    tf.add_to_collection('graph_config', config)
+    config.log_device_placement=True
+    #tf.add_to_collection('graph_config', config)
 
-    tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.2)
+    #tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.2)
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
@@ -89,8 +89,10 @@ else:
 
     network = architectures.build_network(arch,network,classes)
 
+    sess = tf.Session(config=config)
+    sess.run(tf.initialize_all_variables()) 
     # model definition
-    model = tflearn.DNN(network, checkpoint_path='models',
+    model = tflearn.DNN(network, checkpoint_path='models', session=sess,
                         max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
 
     print("Loading trained model...")  
@@ -104,8 +106,11 @@ else:
     serversocket.listen(7) # become a server socket, maximum 1 connections
     print("Starting server '%s' on port %d...\n" % (ip,port))
 
-    while True:
+    while True: 
         connection, address = serversocket.accept()     # wait until it receives a message
+
+        sttime = time.time() # start measuring total time
+
         buf = connection.recv(512)                      # is it enough?
         buf = str(buf.decode('ascii'))                  # decode from byte to string
 
@@ -137,7 +142,7 @@ else:
         img       -= scipy.ndimage.measurements.mean(img)           # check data_utils.py on tflearn's github
         img       /= np.std(img)                                    # check data_utils.py on tflearn's github
     
-        BLOCK     = 8                                              # side of square block for painting: BLOCKxBLOCK
+        BLOCK = 8                                              # side of square block for painting: BLOCKxBLOCK
         if(BLOCK > minimum):                                        # checks if it isn't too big
             BLOCK = IMAGE
 
@@ -237,7 +242,7 @@ else:
         # stop measuring time
         cls_time = time.time() - start_time
         print("\t  Total:  %d images" % total)
-        print("\t   Time:  %s seconds" % cls_time)
+        print("\t   Time:  %.3f seconds" % cls_time)
         print("Classification done!\n")
 
         # assuming modelpath: "models\epochs\name.tflearn" -> name
@@ -290,5 +295,8 @@ else:
             freq = 2000
             dur  = 1000 
             ws.Beep(freq,dur)
+        
+        fttime = time.time() - sttime       # stops measuring total time
+        print(colored("INFO: Total time: %.3f\n" % fttime,"yellow"))
     
     connection.close()

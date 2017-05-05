@@ -5,7 +5,7 @@ from termcolor import colored
 # init colored print
 init()
 
-if (len(sys.argv) < 5):
+if (len(sys.argv) < 2):
     print(colored("Call: $ python communicator.py {ip} {port} {image_path} {class}","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 
