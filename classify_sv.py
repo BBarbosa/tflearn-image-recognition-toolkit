@@ -76,11 +76,13 @@ else:
     config = tf.ConfigProto()
     config.allow_soft_placement = True
     config.gpu_options.allow_growth = True
-    config.gpu_options.visible_device_list=""
     config.log_device_placement=True
     #tf.add_to_collection('graph_config', config)
-
     #tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.2)
+
+    # init a session with the configs defined before
+    sess = tf.Session(config=config)
+    #sess.run(tf.initialize_all_variables())
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
@@ -89,8 +91,6 @@ else:
 
     network = architectures.build_network(arch,network,classes)
 
-    sess = tf.Session(config=config)
-    sess.run(tf.initialize_all_variables()) 
     # model definition
     model = tflearn.DNN(network, checkpoint_path='models', session=sess,
                         max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'

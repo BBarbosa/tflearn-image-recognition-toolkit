@@ -218,13 +218,13 @@ try:
     img = scipy.ndimage.imread(sys.argv[4])
 except:
     load = False
-    sys.exit(colored("WATNING: Image not mentioned!","yellow"))
+    sys.exit(colored("WARNING: Image not mentioned!","yellow"))
 
 # if loaded image correctly
 if(load):
     img  = scipy.misc.imresize(img, (HEIGHT,WIDTH), interp="bicubic").astype(np.float32)
-    img -= scipy.ndimage.measurements.mean(img)       # confirmed. check data_utils.py on github
-    img /= np.std(img)                                # confirmed. check data_utils.py on github
+    #img -= scipy.ndimage.measurements.mean(img)       # confirmed. check data_utils.py on github
+    #img /= np.std(img)                                # confirmed. check data_utils.py on github
     #img = np.array(img)
     #img = np.reshape(img,(-1,HEIGHT,WIDTH,3))
     

@@ -36,9 +36,11 @@ else:
 
     comm = False
     if(command == "python utils\communicator.py"):
+        ip = 'localhost'
+        port = '8090'
         comm = True
         # initialize subprocess by calling the classification script
-        subprocess.Popen(['python','classify_sv.py',arch,model])
+        subprocess.Popen(['python','classify_sv.py',ip,port,arch,model])
 
     time.sleep(10) # to ensure that it loads the trained network (is it enough?)
 
@@ -50,12 +52,13 @@ else:
                 print("File:",test_image)
 
                 if(comm):
-                    new_command = "%s %s %d" % (command,test_image,classid)
+                    new_command = "%s %s %s %s %d" % (command,ip,port,test_image,classid)
                 else:
                     new_command = "%s %s %s %s %d" % (command,arch,model,test_image,classid)
 
                 print("\tCommand:",new_command)
                 os.system(new_command)
+                time.sleep(2)
         classid += 1
 
     if(OS == 'Windows'):

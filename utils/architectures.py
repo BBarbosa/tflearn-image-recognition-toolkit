@@ -489,6 +489,18 @@ def build_dlib(network,classes):
                         learning_rate=0.001)    # 0.0001
     return network
 
+# small net
+def build_snet(network,classes):
+    network = conv_2d(network, 8, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2)
+
+    network = fully_connected(network, 128, activation='relu') 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
 
 # network builder function
 def build_network(name,network,classes):
@@ -520,7 +532,8 @@ def build_network(name,network,classes):
     elif(name == "highway"):       network = build_highway(network,classes) 
     elif(name == "rnn"):           network = build_rnn(network,classes)
     elif(name == "allcnn"):        network = build_all_cnn(network,classes)  
-    elif(name == "dlib"):          network = build_dlib(network,classes)      
+    elif(name == "dlib"):          network = build_dlib(network,classes)   
+    elif(name == "snet"):          network = build_snet(network,classes)   
     else: sys.exit("ERROR: Unknown architecture!")
 
     print("\tArchitecture: ",name)

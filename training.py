@@ -38,7 +38,7 @@ WIDTH  = None
 # get command line arguments
 data = sys.argv[1]       # path to hdf5/file.pkl OR path/to/cropped/images
 arch = sys.argv[2]       # name of architecture
-bs   = int(sys.argv[3])  # bacth size
+bs   = int(sys.argv[3])  # batch size
 out  = sys.argv[4]       # name for output model
 
 vs = 0.1           # percentage of dataset for validation (manually)
@@ -61,7 +61,7 @@ img_aug.add_random_flip_updown()
 img_aug.add_random_rotation(max_angle=45.)
 
 # computational resources definition
-tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
+tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.4)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
@@ -86,7 +86,7 @@ print("  Snapshot:",snap)
 
 # training operation 
 model.fit(X, Y, n_epoch=100, shuffle=True, show_metric=True, 
-          batch_size=bs, snapshot_step=snap, snapshot_epoch=False, 
+          batch_size=bs, snapshot_step=False, snapshot_epoch=False, 
           run_id=out, validation_set=(Xt,Yt), callbacks=None)
 
 # save model
