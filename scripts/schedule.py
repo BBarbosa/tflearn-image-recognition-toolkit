@@ -11,7 +11,7 @@ Training schedule
 
 # control flags 
 train = True    
-test  = True   
+test  = False   
 
 commands = ["python training.py"]
 

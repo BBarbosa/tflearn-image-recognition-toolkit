@@ -6,6 +6,11 @@ import numpy as np
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_utils import build_image_dataset_from_dir          
 from PIL import Image
+from colorama import init
+from termcolor import colored
+
+# init colored print
+init()
 
 # create dataset for HDF5 format
 def create_dataset(train_path,height,width,output_path,test_path=None,mode='folder'): 
@@ -172,11 +177,11 @@ def load_test_images(testdir=None):
 
             classid += 1
         
-        print("\t         Path: ",testdir)
-        print("\t       Images: ",len(image_list))
-        print("\t       Labels: ",len(label_list))
+        print("\t  Path: ",testdir)
+        print("\tImages: ",len(image_list))
+        print("\tLabels: ",len(label_list))
         print("Test images loaded...\n")
     else:
-        print("WARNING: Path to test image is not set")
+        print(colored("WARNING: Path to test image is not set","yellow"))
     
     return image_list,label_list

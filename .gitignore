@@ -37,5 +37,5 @@
 !error/**
 
 !visual.py
-!autotest.py
+#!autotest.py
 !plot.py

@@ -7,6 +7,7 @@ import tflearn
 import winsound as ws  # for windows only
 import tensorflow as tf
 import scipy.ndimage
+import math
 
 from tflearn.layers.estimator import regression
 from tflearn.layers.core import input_data
@@ -26,6 +27,7 @@ init()
 IMAGE  = 32
 HEIGHT = 32
 WIDTH  = 32
+CHANNELS = 3
 
 minimum = min(IMAGE, HEIGHT, WIDTH)
 
@@ -90,7 +92,7 @@ def classify_single_image(model,image,label=None):
     return index,prob
 
 # function that classifies a set of images and returns their labelIDs and confidence
-def classify_set_of_images(model,images_list,labels_list=None):
+def classify_set_of_images(model,images_list,batch_size=128,labels_list=None,printout=False):
     """
     Function that classifies a set of images. If is passed a label list to confirm,
     it shows the prediction and its confidence. Assuming that images have the 
@@ -116,14 +118,17 @@ def classify_set_of_images(model,images_list,labels_list=None):
         image = np.reshape(image,(1,HEIGHT,WIDTH,3))
 
     ctime = time.time()
-    probs = model.predict(images_list)
+    for i in range():
+        sub_images_list = images_list[0:batch_size]
+        sub_labels_list = labels_list[0:batch_size]
+        probs = model.predict(sub_images_list)
     ctime = time.time() - ctime
     
     for i,vals in enumerate(probs):
         indexes[i]     = np.argmax(vals)
         confidences[i] = vals[indexes[i]] 
     
-    if(labels_list):
+    if(labels_list and printout):
         print("Label | Predict | Confidence")
         print("----------------------------")
         for i in range(0,length):
@@ -134,7 +139,7 @@ def classify_set_of_images(model,images_list,labels_list=None):
     return indexes,confidences
 
 # function that classifies a image by a sliding window (in extreme, 1 window only)
-def classify_sliding_window(model,image_list,label_list,runid,nclasses):
+def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=True):
     """
     Function that classifies a set of images through a sliding window. In an extreme
     situation, it classifies just only one window.
@@ -145,10 +150,16 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
         `labels_list` - list of labels of the corresponding images (use [-1] for collages)
         `runid` - ID for this classification
         `nclasses` - number of classes
+        `printout` - if False, it surpresses all prints
 
     Return: Images' labelID and confidence
     """
-    
+
+    # verifies if it must surpress all prints
+    actual_stdout = sys.stdout
+    if(printout == False):
+        sys.stdout = open(os.devnull,'w')
+
     if(len(image_list) != len(label_list)):
         sys.exit()
         sys.exit(colored("ERROR: Image and labels list must have the same lenght!","red"))
@@ -165,7 +176,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
         img       -= scipy.ndimage.measurements.mean(img)       # confirmed. check data_utils.py on github
         img       /= np.std(img)                                # confirmed. check data_utils.py on github
 
-        BLOCK = 8
+        BLOCK = 128
         if(BLOCK > minimum):                        # checks if it isn't too big
             BLOCK = IMAGE                           # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
         
@@ -182,7 +193,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
         counts = [0] * nclasses                     # will count the occurences of each class. resets at every image
 
         if(saveOutputImage):
-            background = image
+            background = image                                      # copy image to a background image variable
             segmented = Image.new('RGB', (wDIM,hDIM), "black")      # create mask for segmentation
 
         # sliding window (center)
@@ -192,9 +203,12 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
 
         label = np.zeros(nclasses)  # creates an empty array with lenght of number of classes
         label[classid] = 1          # create a class label by setting the value 1 on the corresponding index 
+                                    # for example, with 4 classes and for index 2 -> [0 0 1 0]
 
         val = 0     # will store the highest probability 
         ed = 0      # will store the sum of the euclidian distances
+        wp = 0      # will store the number of images well predicted (confidence > 0.75)
+
         # start measuring time
         start_time = time.time()
         for i in range(0,hshifts):
@@ -202,17 +216,25 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
             for j in range(0,wshifts):
                 w = j*BLOCK
                 img2 = img[h:h+HEIGHT,w:w+WIDTH]
-                img2 = np.reshape(img2,(1,HEIGHT,WIDTH,3))
+                img2 = np.reshape(img2,(1,HEIGHT,WIDTH,CHANNELS))
                 #img2 = np.reshape(img2,(1,IMAGE,IMAGE))    # for RNN 
 
                 probs = model.predict(img2)              # predicts image's classid
 
-                prediction = np.asarray(probs[0])        # converts probabilities list to numpy array
-                ed += np.linalg.norm(label-prediction)   # calculates euclidian distance
+                # NOTE: Euclidian distance
+                #prediction = np.asarray(probs[0])        # converts probabilities list to numpy array
+                #ed += np.linalg.norm(label-prediction)   # calculates euclidian distance
 
                 index = np.argmax(probs)
                 counts[index] = counts[index] + 1
-                val += probs[0][index]
+                
+                if(index == classid):
+                    confidence = probs[0][index]
+                    if(confidence > 0.75):
+                        wp += 1
+                
+                # NOTE: Sums predictions' confidences. What happens when it is baddly predicted?
+                #val += probs[0][index] 
 
                 # segment block
                 if(saveOutputImage):
@@ -241,13 +263,15 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
             segmented = segmented.convert("RGBA")
             new_img = Image.blend(background, segmented, 0.3)
             
-            output  = "epoch_%d_C%d.png" % (runid,classid)
+            output  = "%s_C%d.png" % (runid,classid)
             new_img.save(output,"PNG")        
 
         # Error check if not a collage
         if (classid != -1):
-            acc   = counts[classid] / total * 100   # accuracy per correct prediction (higher probability)
-            most  = np.argmax(counts)               # most probable class
+            acc  = counts[classid] / total * 100   # accuracy per correct prediction (higher probability)
+            acc  = wp / total * 100                # accuracy per correct prediction (confidence > 0.75) 
+            most = np.argmax(counts)               # most probable class
+            
             print("Error check...")
             print("\t  Class: ", classid)
             print("\t  Total: ", total)
@@ -263,26 +287,30 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses):
             ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.3f | Time: %.3f\n" % (total,classid,array,acc,cls_time))
             ferror.close()
 
-            # accuracy by counting correct predictions (highest probability)
+            # accuracy by counting correct predictions (highest probability or confidence > 0.75)
             accuracies.append(acc)
             
-            # accuracy value by the sum of the highest probabilities 
-            # (not 100% sure when predicts wrong) 
-            val = val / total
-            confidences.append(val)
+            # NOTE: accuracy value by the sum of the highest probabilities (and when it's wrong?)
+            #val = val / total
+            #confidences.append(val)
 
-            # euclidian distances (should it divide by the number of images?)
-            ed = ed / total
-            edistances.append(ed)
+            # NOTE: euclidian distances (should it divide by the number of images?)
+            #ed = ed / total
+            #edistances.append(ed)
 
     
     # round accuracy array to %.2f
     accuracies = np.around(accuracies,2)
-    confidences = np.around(confidences,2)
-    edistances = np.around(edistances,2)
+    #confidences = np.around(confidences,2)
+    #edistances = np.around(edistances,2)
 
-    out_var = edistances
+    out_var = accuracies
     avg_acc = sum(out_var) / len(image_list)
+    avg_acc = np.round(avg_acc,2)
+
+    # gets stdout back to normal
+    if(printout == False):
+        sys.stdout = actual_stdout
 
     return out_var,avg_acc,max(out_var),min(out_var)
 

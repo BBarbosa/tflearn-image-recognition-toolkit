@@ -36,25 +36,30 @@ HEIGHT = None
 WIDTH  = None
 
 # get command line arguments
-data   = sys.argv[1]       # path to hdf5/file.pkl OR path/to/cropped/images
-arch   = sys.argv[2]       # name of architecture
-bs     = int(sys.argv[3])  # batch size
-run_id = sys.argv[4]       # name for output model
+traindir = sys.argv[1]       # path to hdf5/file.pkl OR path/to/cropped/images
+arch = sys.argv[2]           # name of architecture
+bs = int(sys.argv[3])        # batch size
+run_id = sys.argv[4]         # name for output model
+
 try: 
     testdir = sys.argv[5]    # test images directory
 except:
-    pass
+    testdir = None
 
 vs = 0.1           # percentage of dataset for validation (manually)
 
 # load dataset and get image dimensions
 if(vs and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xt,Yt = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True,validation=vs)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,validation=vs)
+    classifier.HEIGHT = HEIGHT
+    classifier.WIDTH = WIDTH
+    classifier.IMAGE = HEIGHT
+    classifier.CHANNELS = CHANNELS
 else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_= dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
 
-# load test images 
-Xte,Yte = dataset.load_test_images()
+# load test images
+Xt,Yt = dataset.load_test_images(testdir)
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -84,30 +89,49 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_d
 
 # some training parameters
 EPOCHS = 100                    # total number of epochs 
-SNAP = 5                       # snaphshot at each SNAP epochs
+SNAP = 5                        # snapshot at each SNAP epochs
 iterations = EPOCHS // SNAP     # number of iterations 
 
 print("Batch size:", bs)
-print("Validation:", vs, "%")
-print(" Data size:", X.shape[0])
+print("Validation:", vs)
 print("    Epochs:", EPOCHS)
-print("  Snapshot:", SNAP)
+print("  Snapshot:", SNAP, "\n")
+
+# creates a new accuracies' .csv
+csv_file = "%s_accuracies.txt" % run_id
+fcsv = open(csv_file,"w+")
+fcsv.write("train,validation,test\n") # header NOTE: Review when there isn't test dataset
+fcsv.close()
 
 # training operation 
 for i in range(iterations):
     # show training progress
     train_acc = np.round(model.evaluate(X,Y)[0],2) * 100
-    val_acc  = np.round(model.evaluate(Xt,Yt)[0],2) * 100
+    val_acc = np.round(model.evaluate(Xv,Yv)[0],2) * 100
+    
+    test_acc = 0
+    if(testdir): 
+        _,test_acc,_,_ = classifier.classify_sliding_window(model,Xt,Yt,run_id,CLASSES,printout=False)
+    
+    fcsv = open(csv_file,"a+")
+    fcsv.write("%f,%f,%f\n" % (train_acc,val_acc,test_acc))
+    fcsv.close()
 
     print("     Train:", train_acc, "%")
-    print("Validation:", test_acc, "%")
-    print("      Test:", test_acc, "%")
+    print("Validation:", val_acc, "%")
+    if(testdir): print("      Test:", test_acc, "%\n") 
+
+    # stop criteria (does it make sense?)
+    if(True and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
+        break
 
     # makes sucessive trainings 
     model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, 
               batch_size=bs, snapshot_step=False, snapshot_epoch=False, 
-              run_id=run_id, validation_set=(Xt,Yt), callbacks=None)
-    
+              run_id=run_id, validation_set=(Xv,Yv), callbacks=None)
+
+fcsv.close()
+
 # save model
 modelname = "models/%s.tflearn" % run_id
 model.save(modelname)
@@ -115,4 +139,4 @@ model.save(modelname)
 if(OS == 'Windows'):
     freq = 1000
     dur  = 1500 
-    ws.Beep(freq,dur)
+    ws.Beep(freq,dur)   
