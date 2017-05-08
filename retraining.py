@@ -8,7 +8,6 @@ from tflearn.layers.core import input_data, dropout, fully_connected,flatten
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import tflearn.helpers.summarizer as s
 import winsound as ws
 from utils import architectures, dataset
 from colorama import init
@@ -62,7 +61,7 @@ img_aug.add_random_flip_updown()
 img_aug.add_random_rotation(max_angle=45.)
 
 # computational resources definition
-tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
+tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9,allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
@@ -91,6 +90,9 @@ print("\tModel: ",modelpath)
 print("Trained model loaded!\n")
 
 # training operation 
+"""
+CHANGE HERE
+"""
 model.fit(X, Y, n_epoch=100, shuffle=True, show_metric=True, 
           batch_size=bs, snapshot_step=snap, snapshot_epoch=False, 
           run_id=out, validation_set=(Xt,Yt), callbacks=None)

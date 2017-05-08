@@ -82,7 +82,7 @@ else:
 
     # init a session with the configs defined before
     sess = tf.Session(config=config)
-    #sess.run(tf.initialize_all_variables())
+    #sess.run(tf.global_variables_initializer())
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN

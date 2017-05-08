@@ -4,8 +4,7 @@ import tflearn
 import sys,math,time,os
 import numpy as np
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
-from tflearn.data_utils import build_image_dataset_from_dir                 # for windows
-#from tflearn.data_utils import build_hdf5_image_dataset,image_preloader     # for linux
+from tflearn.data_utils import build_image_dataset_from_dir          
 from PIL import Image
 
 # create dataset for HDF5 format

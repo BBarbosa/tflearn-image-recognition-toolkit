@@ -113,7 +113,8 @@ def plot_conv_layer(layer, image):
 # shows the result of applying N learnt filters to an image
 def convolve_filters(image,weights,max_filters=None):
     """
-    Function that
+    Function that convolves N filters (a set of weights correspond to
+    a bunch of filters) in one image
     """
     # argument: weights = conv1.W
     # Number of filters used in the conv. layer.
