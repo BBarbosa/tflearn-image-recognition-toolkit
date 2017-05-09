@@ -275,10 +275,11 @@ def build_mycifar_v6(network,classes):
 
 # mynet
 def build_mynet(network,classes):
-    network = conv_2d(network, 32, 11, activation='relu', strides=8) 
+    network = conv_2d(network, 32, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
     
     network = fully_connected(network, 512, activation='relu') 
-    network = dropout(network, 0.5) 
+    network = dropout(network, 0.75) 
     network = fully_connected(network, classes, activation='softmax')
 
     network = regression(network, optimizer='adam', # 'adam',
@@ -286,7 +287,175 @@ def build_mynet(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# mynet_v2
+# mynet_v11
+def build_mynet_v11(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 412, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v12
+def build_mynet_v12(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 312, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v13
+def build_mynet_v13(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v14
+def build_mynet_v14(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 112, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v15 -----------------------
+def build_mynet_v15(network,classes):
+    network = conv_2d(network, 24, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v16
+def build_mynet_v16(network,classes):
+    network = conv_2d(network, 16, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v17
+def build_mynet_v17(network,classes):
+    network = conv_2d(network, 8, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v18
+def build_mynet_v18(network,classes):
+    network = conv_2d(network, 4, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v19 -----------------------------------------------
+def build_mynet_v19(network,classes):
+    network = conv_2d(network, 8, 3, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v111
+def build_mynet_v111(network,classes):
+    network = conv_2d(network, 8, 7, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v112
+def build_mynet_v112(network,classes):
+    network = conv_2d(network, 8, 9, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v113
+def build_mynet_v113(network,classes):
+    network = conv_2d(network, 8, 11, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 212, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+# mynet_v2 ------------------------------
 def build_mynet_v2(network,classes):
     network = conv_2d(network, 32, 3, activation='relu', strides=4) 
     #network = max_pool_2d(network, 2)
@@ -512,7 +681,23 @@ def build_network(name,network,classes):
     if(name == "vgg16"):           network = build_vgg16(network,classes)
     elif(name == "myvgg"):         network = build_myvgg16(network,classes)
     elif(name == "mnist"):         network = build_mnist(network,classes)
+    
     elif(name == "mynet"):         network = build_mynet(network,classes)
+    elif(name == "mynet_v11"):     network = build_mynet_v11(network,classes)
+    elif(name == "mynet_v12"):     network = build_mynet_v12(network,classes)
+    elif(name == "mynet_v13"):     network = build_mynet_v13(network,classes)
+    elif(name == "mynet_v14"):     network = build_mynet_v14(network,classes)
+
+    elif(name == "mynet_v15"):     network = build_mynet_v15(network,classes)
+    elif(name == "mynet_v16"):     network = build_mynet_v16(network,classes)
+    elif(name == "mynet_v17"):     network = build_mynet_v17(network,classes)
+    elif(name == "mynet_v18"):     network = build_mynet_v18(network,classes)
+
+    elif(name == "mynet_v19"):     network = build_mynet_v19(network,classes)
+    elif(name == "mynet_v111"):    network = build_mynet_v111(network,classes)
+    elif(name == "mynet_v112"):    network = build_mynet_v112(network,classes)
+    elif(name == "mynet_v113"):    network = build_mynet_v113(network,classes)
+    
     elif(name == "mynetv2"):       network = build_mynet_v2(network,classes)
     elif(name == "mynetv3"):       network = build_mynet_v3(network,classes)
     elif(name == "cifar10"):       network = build_cifar10(network,classes)

@@ -17,22 +17,26 @@ commands = ["python training.py"]
 
 datasets = ["dataset/ori/side128"]
 
-architectures = ["cifar10"]
+testdirs = ["dataset/ori/test"] 
+
+architectures = ["mynet_v19","mynet_v111","mynet_v112","mynet_v113"]
 
 batches = [32]
 
-nruns = 1
+nruns = 3
 
 for command in commands:
     for data in datasets:
         for arch in architectures:
             for bs in batches:
-                for run in range(0,nruns):
-                    # NOTE: adapt runid according with the user's preferences
-                    runid = data.split("/")[2] + "_" + arch + "_r" + str(run)
-                    new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
-                    print(new_command)
-                    if(train): os.system(new_command)
+                for testdir in testdirs:
+                    for run in range(0,nruns):
+                        # NOTE: adapt runid according with the user's preferences
+                        #runid = data.split("/")[2] + "_" + arch + "_r" + str(run)
+                        runid = arch + "_r" + str(run)
+                        new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
+                        print(new_command)
+                        if(train): os.system(new_command)
 
 print("")
 

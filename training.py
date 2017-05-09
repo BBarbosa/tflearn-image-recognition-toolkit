@@ -114,7 +114,7 @@ for i in range(iterations):
         _,test_acc,_,_ = classifier.classify_sliding_window(model,Xt,Yt,run_id,CLASSES,printout=False)
     
     fcsv = open(csv_file,"a+")
-    fcsv.write("%f,%f,%f\n" % (train_acc,val_acc,test_acc))
+    fcsv.write("%.2f,%.2f,%.2f\n" % (train_acc,val_acc,test_acc))
     fcsv.close()
 
     print("     Train:", train_acc, "%")
@@ -125,7 +125,7 @@ for i in range(iterations):
     if(True and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
         break
 
-    # makes sucessive trainings 
+    # makes sucessive trainings until reaches stop criteria
     model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, 
               batch_size=bs, snapshot_step=False, snapshot_epoch=False, 
               run_id=run_id, validation_set=(Xv,Yv), callbacks=None)

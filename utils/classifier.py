@@ -156,8 +156,8 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
     """
 
     # verifies if it must surpress all prints
-    actual_stdout = sys.stdout
     if(printout == False):
+        actual_stdout = sys.stdout
         sys.stdout = open(os.devnull,'w')
 
     if(len(image_list) != len(label_list)):
@@ -287,7 +287,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
             ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.3f | Time: %.3f\n" % (total,classid,array,acc,cls_time))
             ferror.close()
 
-            # accuracy by counting correct predictions (highest probability or confidence > 0.75)
+            # accuracy by counting correct predictions (highest probability OR confidence > 0.75)
             accuracies.append(acc)
             
             # NOTE: accuracy value by the sum of the highest probabilities (and when it's wrong?)
