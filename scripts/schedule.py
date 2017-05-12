@@ -46,6 +46,9 @@ NOTE: datasets and architectures must match those used on the training
       NEED to solve test set conflict
 """
 
+if(test == False):
+    exit(1)
+
 commands = ["python autotest.py"]
 
 models = ["models/"]

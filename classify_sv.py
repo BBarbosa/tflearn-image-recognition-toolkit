@@ -73,16 +73,18 @@ else:
     showProgress    = False and saveOutputImage # required saveOutputImage flag to show the progress
 
     # computational resources definition
-    config = tf.ConfigProto()
-    config.allow_soft_placement = True
-    config.gpu_options.allow_growth = True
-    config.log_device_placement=True
+    #config = tf.ConfigProto()
+    #config.allow_soft_placement = True
+    #config.gpu_options.allow_growth = True
+    #config.log_device_placement=True
     #tf.add_to_collection('graph_config', config)
-    #tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.2)
+    
+    tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
 
     # init a session with the configs defined before
-    sess = tf.Session(config=config)
+    #sess = tf.Session(config=config)
     #sess.run(tf.global_variables_initializer())
+    #tflearn.is_training(True,session=sess)
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
@@ -92,7 +94,7 @@ else:
     network = architectures.build_network(arch,network,classes)
 
     # model definition
-    model = tflearn.DNN(network, checkpoint_path='models', session=sess,
+    model = tflearn.DNN(network, checkpoint_path='models', session=None,
                         max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
 
     print("Loading trained model...")  
@@ -100,6 +102,8 @@ else:
     print("\tModel: ",modelpath)
     print("Trained model loaded!\n")
     
+    #tflearn.is_training(True,sess)
+
     #------------------------------ creates a local server ------------------------------
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.bind((ip, port))
@@ -142,7 +146,7 @@ else:
         img       -= scipy.ndimage.measurements.mean(img)           # check data_utils.py on tflearn's github
         img       /= np.std(img)                                    # check data_utils.py on tflearn's github
     
-        BLOCK = 8                                              # side of square block for painting: BLOCKxBLOCK
+        BLOCK = 128                                              # side of square block for painting: BLOCKxBLOCK
         if(BLOCK > minimum):                                        # checks if it isn't too big
             BLOCK = IMAGE
 
@@ -199,8 +203,8 @@ else:
                     print("reshape")
                     pass
 
-                with tf.device('/cpu:0'):    
-                    probs = model.predict(img2)
+                #with tf.device('/cpu:0'):    
+                probs = model.predict(img2)
                 
                 index = np.argmax(probs)
                 counts[index] = counts[index] + 1

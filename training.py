@@ -100,7 +100,7 @@ print("  Snapshot:", SNAP, "\n")
 # creates a new accuracies' .csv
 csv_file = "%s_accuracies.txt" % run_id
 fcsv = open(csv_file,"w+")
-fcsv.write("train,validation,test\n") # header NOTE: Review when there isn't test dataset
+fcsv.write("train,validation,test,min\n") # header NOTE: Review when there isn't test dataset
 fcsv.close()
 
 # training operation 
@@ -111,15 +111,17 @@ for i in range(iterations):
     
     test_acc = 0
     if(testdir): 
-        _,test_acc,_,_ = classifier.classify_sliding_window(model,Xt,Yt,run_id,CLASSES,printout=False)
+        _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,run_id,CLASSES,printout=False)
     
     fcsv = open(csv_file,"a+")
-    fcsv.write("%.2f,%.2f,%.2f\n" % (train_acc,val_acc,test_acc))
+    fcsv.write("%.2f,%.2f,%.2f,%.2f\n" % (train_acc,val_acc,test_acc,min_acc))
     fcsv.close()
 
     print("     Train:", train_acc, "%")
     print("Validation:", val_acc, "%")
-    if(testdir): print("      Test:", test_acc, "%\n") 
+    if(testdir): 
+        print("      Test:", test_acc, "%")
+        print("       Min:", min_acc, "%\n") 
 
     # stop criteria (does it make sense?)
     if(True and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):

@@ -228,13 +228,14 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
                 index = np.argmax(probs)
                 counts[index] = counts[index] + 1
                 
+                # NOTE: well predicted counter only increases when confidence > 0.75
                 if(index == classid):
                     confidence = probs[0][index]
                     if(confidence > 0.75):
                         wp += 1
                 
-                # NOTE: Sums predictions' confidences. What happens when it is baddly predicted?
-                #val += probs[0][index] 
+                # NOTE: Sums correct predictions' confidences.
+                #val += probs[0][classid] 
 
                 # segment block
                 if(saveOutputImage):
@@ -252,6 +253,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
                                 print("segmentation")
                                 pass
             
+                        
         # stop measuring time
         cls_time = time.time() - start_time
         print("\t   Time:  %.3f seconds" % cls_time)
@@ -269,7 +271,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
         # Error check if not a collage
         if (classid != -1):
             acc  = counts[classid] / total * 100   # accuracy per correct prediction (higher probability)
-            acc  = wp / total * 100                # accuracy per correct prediction (confidence > 0.75) 
+            acc2 = wp / total * 100                # accuracy per correct prediction (confidence > 0.75) 
             most = np.argmax(counts)               # most probable class
             
             print("Error check...")
@@ -278,19 +280,20 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
             print("\t Counts: ", counts)
             print("\tPredict: ", most)
             print("\t    Acc: ", acc, "%")
+            print("\t    Acc: ", acc2,"% (confidence > .75)")
             print("Error checked!\n")
 
             error_file = "%s_error.txt" % runid
             ferror = open(error_file, "a+")
 
             array = ','.join(str(x) for x in counts)   # convert array of count into one single string
-            ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.3f | Time: %.3f\n" % (total,classid,array,acc,cls_time))
+            ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.3f | Acc2: %.3f | Time: %.3f\n" % (total,classid,array,acc,acc2,cls_time))
             ferror.close()
 
             # accuracy by counting correct predictions (highest probability OR confidence > 0.75)
-            accuracies.append(acc)
+            accuracies.append(acc2)
             
-            # NOTE: accuracy value by the sum of the highest probabilities (and when it's wrong?)
+            # NOTE: accuracy value by the sum of the highest probabilitiesS
             #val = val / total
             #confidences.append(val)
 

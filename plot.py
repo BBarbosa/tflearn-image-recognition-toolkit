@@ -36,9 +36,9 @@ def plot_accuracies(x,y,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,
     plt.ylabel(ylabel)
     plt.grid(grid)
     plt.xticks(x,xticks)
-    plt.ylim(ylim)
-    plt.xlim(xlim)
-    plt.savefig(title + '.png   ')
+    if(ylim): plt.ylim(ylim)
+    if(xlim): plt.xlim(xlim)
+    plt.savefig('%s.png' % title)
     plt.show()
 
 def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
@@ -67,6 +67,51 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     
     for i,label in enumerate(data.dtype.names):
         plt.plot(x,data[label],label=label)
+    
+    plt.title(title,fontweight='bold')
+    plt.legend()
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.grid(grid)
+    plt.xticks(x,xticks)
+    if(ylim): plt.ylim(ylim)
+    if(xlim): plt.xlim(xlim)
+    plt.savefig('%s.png' % title)
+    plt.show()
+
+def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+    """
+    Function to parse several csv files. For example, for N files it gathers all 
+    the data and plots it. 
+
+    Params:
+        files_dir - directory where error files are stored (at least 2 files)
+    """
+    
+    means = []
+
+    for infile in sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort):
+        print("File: " + infile)
+        
+        data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
+                             skip_header=0,autostrip=True)
+        
+        mean = [0] * len(data[0])          # creates an empty array to store mean of each line
+
+        # calculate mean of one X element
+        for i,label in enumerate(data.dtype.names):
+            mean[i] = np.mean(data[label])
+        
+        mean  = np.around(mean,2)
+        means = np.vstack((means,mean)) if len(means)>0 else mean
+    
+    x = np.arange(1,len(means)+1)
+    means = np.asarray(means)
+
+    for i,label in enumerate(data.dtype.names):
+        plt.plot(x,means[:,i],label=label)
+    
+    xticks = x
 
     plt.title(title,fontweight='bold')
     plt.legend()
@@ -74,18 +119,65 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     plt.ylabel(ylabel)
     plt.grid(grid)
     plt.xticks(x,xticks)
-    plt.ylim(ylim)
-    plt.xlim(xlim)
-    plt.savefig('snet.png')
+    if(ylim): plt.ylim(ylim)
+    if(xlim): plt.xlim(xlim)
+    plt.savefig('%s.png' % title)
     plt.show()
-    
-# NOTE: build a parser to make it generic
-parser = argparse.ArgumentParser()
-parser.add_argument("file",help="Path to the file")
-parser.add_argument("-t","--title",help="Plot's title")
+
+"""
+Script definition
+"""
+
+def limits(s):
+    """
+    Function to parse plot's limits as they are represented as tuples
+    in format "lower_limit,upper_limit"
+    """
+    try:
+        x,y = s.split(',')
+        try:
+            return tuple((int(x),int(y)))
+        except:
+            return None
+    except:
+        raise argparse.ArgumentTypeError("Coordinates must be x,y")
+
+
+
+# NOTE: arguments' parser
+parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
+                                 prefix_chars='-') 
+# required arguments
+parser.add_argument("function",help="plot function to be used (plot/parse)")
+parser.add_argument("file",help="path to the file/folder")
+# optional arguments
+parser.add_argument("-t","--title",help="plot's title (string)")
+parser.add_argument("-x","--xlabel",help="plot's x-axis label (string)")
+parser.add_argument("-y","--ylabel",help="plot's y-axis label (string)")
+parser.add_argument("-g","--grid",help="toggle plot's grid (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("-xl","--xlim",help="x-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
+parser.add_argument("-yl","--ylim",help="y-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
 
 args = parser.parse_args()
 
 print(args)
 
-plot_csv_file(args.file,args.title,"Epochs","%",ylim=(0,101))
+if(args.title == None):
+    # NOTE: if title isn't specified then uses filename as title
+    # args.file = 'mynet\\mynet_r0_accuracies.txt'
+    try:
+        parts = args.file.split("\\")                               # parts = [mynet','mynet_r0_acc.txt']
+    except:
+        parts = args.file
+    last_part_index = max(len(parts)-1,0)                           # lpi = 1
+    new_title = parts[last_part_index].split(".")[0].split("_")[0]  # new_title = 'mynet'
+    args.title = new_title
+
+if(args.function == "plot"):    
+    plot_csv_file(infile=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                  xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+elif (args.function == "parse"):
+    parse_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                    xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+else:
+    print("ERROR: Unknown function!")

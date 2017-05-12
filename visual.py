@@ -31,7 +31,7 @@ def plot_conv_weights(weights, input_channel=0):
     # Rounded-up, square-root of the number of filters.
     # 32 filters » minimum grid 6x6 (=36) 
     num_grids = math.ceil(math.sqrt(num_filters))
-    print("         grid: ", num_grids, "x", num_grids)
+    print("         grid: ", num_grids, "x", num_grids,"\n")
 
     # Create figure with a grid of sub-plots. 
     # grid 6x6
@@ -45,7 +45,7 @@ def plot_conv_weights(weights, input_channel=0):
             # Get the weights for the i'th filter of the input channel.
             # See new_conv_layer() for details on the format
             # of this 4-dim tensor.
-            img = weights[:, :, input_channel, i] # for the desired input channel
+            img = weights[:, :, :, i] # for the desired input channel
 
             # Plot image.
             ax.imshow(img, vmin=None, vmax=None,interpolation='nearest',cmap='gray')
@@ -97,7 +97,7 @@ def plot_conv_layer(layer, image):
             # Get the output image of using the i'th filter.
             # See new_conv_layer() for details on the format
             # of this 4-dim tensor.
-            img = values[0, :, :, i]
+            img = values[:, :, :, i]
 
             # Plot image.
             ax.imshow(img, interpolation='nearest', cmap='binary')
@@ -125,7 +125,7 @@ def convolve_filters(image,weights,max_filters=None):
     # Rounded-up, square-root of the number of filters.
     # 32 filters » minimum grid 6x6 (=36) 
     num_grids = math.ceil(math.sqrt(num_filters))
-    print("         grid: ", num_grids, "x", num_grids)
+    print("         grid: ", num_grids, "x", num_grids,"\n")
 
     # Create figure with a grid of sub-plots. 
     # grid 6x6
@@ -153,7 +153,10 @@ def convolve_filters(image,weights,max_filters=None):
     # in a single Notebook cell.
     plt.show()
 
-# script definition
+"""
+Script definition
+"""
+
 if (len(sys.argv) < 4):
     print(colored("Call: $ python visual.py {architecture} {model} {layer} [image]","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
@@ -169,10 +172,10 @@ else:
 print("Operating System: %s\n" % OS)
 
 # images properties (inherit from trainning?)   
-HEIGHT   = 28
-WIDTH    = 28
-CLASSES  = 10
-CHANNELS = 1
+HEIGHT   = 128
+WIDTH    = 128
+CLASSES  = 7
+CHANNELS = 3
 
 # get command line arguments
 arch      = sys.argv[1]       # name of architecture
