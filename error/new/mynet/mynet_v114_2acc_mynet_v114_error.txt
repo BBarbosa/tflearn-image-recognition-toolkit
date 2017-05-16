@@ -1,0 +1,4 @@
+Total:    16 | Class: 0 | [9,4,3,0,0,0,0] | Acc: 56.25 | File: dataset\ori\test\1\1_4.bmp | Time: 0.607857
+Total:    16 | Class: 1 | [0,9,0,5,0,0,2] | Acc: 56.25 | File: dataset\ori\test\2\2_4.bmp | Time: 0.027581
+Total:    16 | Class: 2 | [0,5,7,0,2,0,2] | Acc: 43.75 | File: dataset\ori\test\3\3_4.bmp | Time: 0.025568
+Total:    16 | Class: 0 | [9,4,3,0,0,0,0] | Acc: 56.25 | File: dataset\ori\test\1\1_4.bmp | Time: 0.616140

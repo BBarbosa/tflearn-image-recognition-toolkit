@@ -32,8 +32,8 @@ else:
 print("Operating System: %s\n" % OS)
 
 # change if you want a specific size
-HEIGHT = None
-WIDTH  = None
+HEIGHT = 32
+WIDTH  = 32
 
 # get command line arguments
 traindir = sys.argv[1]       # path to hdf5/file.pkl OR path/to/cropped/images
@@ -69,8 +69,8 @@ img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global va
 # Real-time data augmentation
 img_aug = ImageAugmentation()
 img_aug.add_random_flip_leftright()
-img_aug.add_random_flip_updown()
-img_aug.add_random_rotation(max_angle=45.)
+#img_aug.add_random_flip_updown()
+img_aug.add_random_rotation(max_angle=10.)
 
 # computational resources definition (made changes on TFLearn's config.py)
 tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
@@ -88,9 +88,9 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_d
                     best_checkpoint_path=None)  
 
 # some training parameters
-EPOCHS = 100                    # total number of epochs 
-SNAP = 5                        # snapshot at each SNAP epochs
-iterations = EPOCHS // SNAP     # number of iterations 
+EPOCHS = 100                     # total number of epochs 
+SNAP = 5                          # snapshot at each SNAP epochs
+iterations = EPOCHS // SNAP       # number of iterations 
 
 print("Batch size:", bs)
 print("Validation:", vs)
@@ -100,7 +100,10 @@ print("  Snapshot:", SNAP, "\n")
 # creates a new accuracies' .csv
 csv_file = "%s_accuracies.txt" % run_id
 fcsv = open(csv_file,"w+")
-fcsv.write("train,validation,test,min\n") # header NOTE: Review when there isn't test dataset
+if(testdir):
+    fcsv.write("train,validation,test,min\n")
+else:
+    fcsv.write("train,validation\n")
 fcsv.close()
 
 # training operation 
@@ -114,7 +117,10 @@ for i in range(iterations):
         _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,run_id,CLASSES,printout=False)
     
     fcsv = open(csv_file,"a+")
-    fcsv.write("%.2f,%.2f,%.2f,%.2f\n" % (train_acc,val_acc,test_acc,min_acc))
+    if(testdir):
+        fcsv.write("%.2f,%.2f,%.2f,%.2f\n" % (train_acc,val_acc,test_acc,min_acc))
+    else:
+        fcsv.write("%.2f,%.2f\n" % (train_acc,val_acc))
     fcsv.close()
 
     print("     Train:", train_acc, "%")
@@ -124,8 +130,13 @@ for i in range(iterations):
         print("       Min:", min_acc, "%\n") 
 
     # stop criteria (does it make sense?)
-    if(True and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
-        break
+    use_criteria = False
+    if(testdir):
+        if(use_criteria and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
+            break
+    else:
+        if(use_criteria and train_acc > 97.5 and val_acc > 97.5):
+            break
 
     # makes sucessive trainings until reaches stop criteria
     model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, 
@@ -137,6 +148,23 @@ fcsv.close()
 # save model
 modelname = "models/%s.tflearn" % run_id
 model.save(modelname)
+
+# load model to figure out if there is something wrong
+print("Loading trained model...")  
+model.load("models/%s.tflearn" % run_id)
+print("\tModel: ","models/%s.tflearn" % run_id)
+print("Trained model loaded!\n")    
+
+train_acc = np.round(model.evaluate(X,Y)[0],2) * 100
+val_acc = np.round(model.evaluate(Xv,Yv)[0],2) * 100
+#_,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,run_id,CLASSES,printout=False)
+
+print(colored("=============================","yellow"))
+print("     Train:", train_acc, "%")
+print("Validation:", val_acc, "%")
+#print("      Test:", test_acc, "%")
+#print("       Min:", min_acc, "%") 
+print(colored("=============================","yellow"))
 
 if(OS == 'Windows'):
     freq = 1000

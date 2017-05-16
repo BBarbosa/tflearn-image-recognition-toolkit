@@ -86,13 +86,13 @@ def classify_single_image(model,image,label=None):
     if(isinstance(label,int)):
         print("    Label:",label)
     
-    print("Predicted: %d (%.2f)\n" % (index,prob))
+    print("Predicted: %d (Prob: %.2f)\n" % (index,prob))
     print("Time: %.3f seconds" % ctime)
     
     return index,prob
 
 # function that classifies a set of images and returns their labelIDs and confidence
-def classify_set_of_images(model,images_list,batch_size=128,labels_list=None,printout=False):
+def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=None,printout=False):
     """
     Function that classifies a set of images. If is passed a label list to confirm,
     it shows the prediction and its confidence. Assuming that images have the 
@@ -102,38 +102,51 @@ def classify_set_of_images(model,images_list,batch_size=128,labels_list=None,pri
         `model` - trained model
         `images_list` - set of images to be classified
         `labels_list` (optional) - set of labels of the corresponding images
+        `runid` - classification run ID
+        `batch_size` - 
+        `printout` - 
 
     Return: Images' labelID and confidence
     """
 
-    length      = len(images_list)
-    indexes     = [-1] * length
-    confidences = [-1] * length
+    length      = len(images_list)                  # lenght of images list
+    iterations  = math.ceil(length/batch_size)      # counter of how many iterations will be done
+    pointer     = 0                                 # pointer to the current batch
+    indexes     = [-1] * length                     # array to store predictions labels
+    confidences = [-1] * length                     # array to store predictions confidences
 
     if(labels_list):
         if(len(labels_list) != length):
-            sys.exit("ERROR! Images and labels lists must have the same lenght!")
+            sys.exit(colored("ERROR! Images and labels lists must have the same lenght!","red"))
 
     for image in images_list:
         image = np.reshape(image,(1,HEIGHT,WIDTH,3))
 
     ctime = time.time()
-    for i in range():
-        sub_images_list = images_list[0:batch_size]
-        sub_labels_list = labels_list[0:batch_size]
+    for its in range(iterations):
+        sub_images_list = images_list[pointer:pointer+batch_size]
         probs = model.predict(sub_images_list)
+
+        for vals in probs:
+            index = np.argmax(vals)
+            indexes.append(index)
+            confidences.append(vals[index])
+        
+        pointer += batch_size
     ctime = time.time() - ctime
     
-    for i,vals in enumerate(probs):
-        indexes[i]     = np.argmax(vals)
-        confidences[i] = vals[indexes[i]] 
-    
     if(labels_list and printout):
-        print("Label | Predict | Confidence")
-        print("----------------------------")
+        out_file = "%s_predicts.txt" % runid
+        of = open(out_file,"w+")
+        of.write("Label | Predict | Confidence\n")
+        of.close()
+
+        of = open(out_file,"a+")
+        of.write("----------------------------\n")
         for i in range(0,length):
-            print("  %2d  |   %2d    |    %.2f" % (labels_list[i],indexes[i],confidences[i]))
-    
+            of.write("  %2d  |   %2d    |    %.2f\n" % (labels_list[i],indexes[i],confidences[i]))
+        
+        of.close()
     print("\nTime: %.3f seconds" % ctime)
 
     return indexes,confidences
@@ -177,7 +190,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
         img       /= np.std(img)                                # confirmed. check data_utils.py on github
 
         BLOCK = 128
-        if(BLOCK > minimum):                        # checks if it isn't too big
+        if(BLOCK > minimum or BLOCK < 2):           # checks if it isn't too big
             BLOCK = IMAGE                           # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
         
         padding   = (IMAGE - BLOCK) // 2            # padding for centering sliding window
@@ -293,7 +306,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
             # accuracy by counting correct predictions (highest probability OR confidence > 0.75)
             accuracies.append(acc2)
             
-            # NOTE: accuracy value by the sum of the highest probabilitiesS
+            # NOTE: accuracy value by the sum of the highest probabilities
             #val = val / total
             #confidences.append(val)
 
@@ -363,6 +376,6 @@ def classify_local_server(model,ip,port,runid,nclasses):
             print(colored("ERROR: Couldn't open %s!" % filename,"red"))
             continue
         
-        classify_sliding_window(model,background,classid,runid,nclasses)
+        classify_sliding_window(model,background,classid,runid,nclasses,printout=True)
         
     return None

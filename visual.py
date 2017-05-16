@@ -45,10 +45,13 @@ def plot_conv_weights(weights, input_channel=0):
             # Get the weights for the i'th filter of the input channel.
             # See new_conv_layer() for details on the format
             # of this 4-dim tensor.
-            img = weights[:, :, :, i] # for the desired input channel
+            if(input_channel == 3):
+                kernel = weights[:, :, :, i]
+            else:
+                kernel = weights[:, :, input_channel, i]
 
             # Plot image.
-            ax.imshow(img, vmin=None, vmax=None,interpolation='nearest',cmap='gray')
+            ax.imshow(kernel, vmin=None, vmax=None,interpolation='nearest',cmap='gray')
         
         # Remove ticks from the plot.
         ax.set_xticks([])
@@ -58,7 +61,7 @@ def plot_conv_weights(weights, input_channel=0):
     # in a single Notebook cell.
     fig.show()
 
-# plot_conv_layer(layer, image) ERROR
+# plot_conv_layer(layer, image) NOTE: ERROR. Must be fixed
 def plot_conv_layer(layer, image):
     # argument: layer_conv1 or layer_conv2.
     session = tf.Session()
@@ -111,7 +114,7 @@ def plot_conv_layer(layer, image):
     plt.show()
 
 # shows the result of applying N learnt filters to an image
-def convolve_filters(image,weights,max_filters=None):
+def convolve_filters(image,weights,max_filters=None,input_channel=0):
     """
     Function that convolves N filters (a set of weights correspond to
     a bunch of filters) in one image
@@ -139,11 +142,15 @@ def convolve_filters(image,weights,max_filters=None):
             # Get the weights for the i'th filter of the input channel.
             # See new_conv_layer() for details on the format
             # of this 4-dim tensor.
-            kernel = weights[:, :, :, i]
+            if(input_channel == 3):
+                kernel = weights[:, :, :, i]
+            else:
+                kernel = weights[:, :, input_channel, i]
+
             img = ndimage.convolve(image,kernel,mode='constant')
 
             # Plot image.
-            ax.imshow(img, vmin=None, vmax=None,interpolation='nearest')
+            ax.imshow(img, vmin=None, vmax=None,interpolation='nearest',cmap='gray')
         
         # Remove ticks from the plot.
         ax.set_xticks([])
@@ -157,8 +164,8 @@ def convolve_filters(image,weights,max_filters=None):
 Script definition
 """
 
-if (len(sys.argv) < 4):
-    print(colored("Call: $ python visual.py {architecture} {model} {layer} [image]","red"))
+if (len(sys.argv) < 5):
+    print(colored("Call: $ python visual.py {architecture} {model} {layer} {input_channel} [image]","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 
 # specify OS
@@ -172,15 +179,16 @@ else:
 print("Operating System: %s\n" % OS)
 
 # images properties (inherit from trainning?)   
-HEIGHT   = 128
-WIDTH    = 128
-CLASSES  = 7
+HEIGHT   = 32
+WIDTH    = 32
+CLASSES  = 43
 CHANNELS = 3
 
 # get command line arguments
 arch      = sys.argv[1]       # name of architecture
 modelpath = sys.argv[2]       # path to saved model
 layer     = sys.argv[3]       # layer name, for example, Conv2D or Conv2D_1
+ichannel  = int(sys.argv[4])  # input channel for displaying kernels and convolutions
 
 # network definition
 network = input_data(shape=[None, WIDTH, HEIGHT, CHANNELS],     # shape=[None,IMAGE, IMAGE] for RNN
@@ -208,7 +216,7 @@ else:
 # load weights (learnt filters) and plots them
 weights = model.get_weights(variable)
 print("Weights shape: ", weights.shape)
-plot_conv_weights(weights)
+plot_conv_weights(weights,input_channel=ichannel)
 
 # weights[:, :, input_channel, i]
 # print(" Filter shape: ", weights[:,:,:,0].shape)
@@ -219,7 +227,12 @@ plot_conv_weights(weights)
 # tries to load a image
 load = True
 try:
-    img = scipy.ndimage.imread(sys.argv[4])
+    if(ichannel == 3):
+        img = scipy.ndimage.imread(sys.argv[5],mode='RGB', flatten=False)
+    else:
+        img = scipy.ndimage.imread(sys.argv[5],mode='L', flatten=True)
+    
+    plt.imshow(img,cmap='gray')
 except:
     load = False
     sys.exit(colored("WARNING: Image not mentioned!","yellow"))
@@ -231,12 +244,12 @@ if(load):
     #img /= np.std(img)                                # confirmed. check data_utils.py on github
     #img = np.array(img)
     #img = np.reshape(img,(-1,HEIGHT,WIDTH,3))
-    
+
     """
     Pre-process image?
     """
     print("  Image shape: ",img.shape, type(img))
-    convolve_filters(img,weights)
+    convolve_filters(img,weights,input_channel=ichannel)
     
     #nimg = Image.fromarray(res,'RGB')
     #nimg.show()

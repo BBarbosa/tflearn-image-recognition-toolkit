@@ -55,10 +55,10 @@ else:
     print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)
-    IMAGE   = 128   
-    HEIGHT  = 128   
-    WIDTH   = 128
-    classes = 7
+    IMAGE   = 32   
+    HEIGHT  = 32   
+    WIDTH   = 32
+    classes = 43
 
     minimum = min(IMAGE, HEIGHT, WIDTH)
 
@@ -96,7 +96,7 @@ else:
     # model definition
     model = tflearn.DNN(network, checkpoint_path='models', session=None,
                         max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
-
+    
     print("Loading trained model...")  
     model.load(modelpath)
     print("\tModel: ",modelpath)
@@ -146,8 +146,8 @@ else:
         img       -= scipy.ndimage.measurements.mean(img)           # check data_utils.py on tflearn's github
         img       /= np.std(img)                                    # check data_utils.py on tflearn's github
     
-        BLOCK = 128                                              # side of square block for painting: BLOCKxBLOCK
-        if(BLOCK > minimum):                                        # checks if it isn't too big
+        BLOCK = 2                                                   # side of square block for painting: BLOCKxBLOCK
+        if(BLOCK > minimum or BLOCK < 2):                           # checks if it isn't too big
             BLOCK = IMAGE
 
         padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window

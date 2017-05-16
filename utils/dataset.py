@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import tflearn
 import sys,math,time,os
 import numpy as np
+import scipy.ndimage
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_utils import build_image_dataset_from_dir          
 from PIL import Image
@@ -86,11 +87,11 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     print("Loading dataset (from directory)...")
     if(width and height):
         X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=False, 
-                                           dataset_file=train_path, filetypes=None, shuffle_data=False, 
+                                           dataset_file=train_path, filetypes=[".ppm"], shuffle_data=False, 
                                            categorical_Y=True)
     else:
         X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=False, dataset_file=train_path, 
-                                           filetypes=None, shuffle_data=False, categorical_Y=True)
+                                           filetypes=[".ppm"], shuffle_data=False, categorical_Y=True)
     
     width,height,ch = X[0].shape            # get images dimensions
     nimages,classes = Y.shape               # get number of images and classes    
@@ -158,7 +159,9 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
 
     return classes,Xtr,Ytr,height,width,ch,Xte,Yte
 
-# function that loads a set of test images
+"""
+Function that loads a set of test images saved by class in distinct folders
+"""
 def load_test_images(testdir=None):
     image_list = []
     label_list = []
@@ -169,7 +172,7 @@ def load_test_images(testdir=None):
         # picks every sa
         for root, dirs, files in os.walk(testdir):
             for file in files:
-                if file.endswith((".bmp",".jpg")):
+                if file.endswith((".bmp",".jpg",".ppm")):
                     image_path = os.path.join(root, file)
                     image      = Image.open(image_path)
                     image_list.append(image)
@@ -185,3 +188,53 @@ def load_test_images(testdir=None):
         print(colored("WARNING: Path to test image is not set","yellow"))
     
     return image_list,label_list
+
+"""
+Function that loads a set of test images according to a indexing file 
+with format: "path_to_image class_id"
+"""
+def load_test_images_from_index_file(testdir=None,infile=None):
+    image_list = []
+    label_list = []
+    index = 0
+    
+    if(testdir):
+        print("Loading test images...")
+
+        try:
+            data = np.genfromtxt(infile,delimiter=" ",comments='#',names=True, 
+                                skip_header=0,autostrip=True)
+        except:
+            print(colored("WARNING: Index file to test images is not set","yellow"))
+            sys.exit(1)
+        
+        column = data.dtype.names[1] # 'ClassId'
+
+        # picks every sa
+        for root, dirs, files in os.walk(testdir):
+            for file in files:
+                if file.endswith((".bmp",".jpg",".ppm")):
+                    image_path = os.path.join(root, file)
+                    image      = Image.open(image_path).resize((32,32))
+                    
+                    image_list.append(image)
+                    label_list.append(int(data[column][index]))
+                    index += 1
+        
+        # NOTE: make it general
+        lil = len(image_list) # lenght of image's list
+        new_image_list = np.empty((lil,32,32,3),dtype=np.float32)
+        for i in range(lil):
+            new_image_list[i] = np.array(image_list[i].getdata()).reshape(32,32,3)
+
+        #image_list = np.array(image_list)
+        #image_list = np.reshape(image_list,(-1,32,32,3))
+
+        print("\t  Path: ",testdir)
+        print("\tImages: ",len(image_list))
+        print("\tLabels: ",len(label_list))
+        print("Test images loaded...\n")
+    else:
+        print(colored("WARNING: Path to test images is not set","yellow"))
+    
+    return new_image_list,label_list

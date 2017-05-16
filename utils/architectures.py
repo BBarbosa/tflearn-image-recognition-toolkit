@@ -475,7 +475,7 @@ def build_mynet_v115(network,classes):
     network = max_pool_2d(network,2) 
     
     network = fully_connected(network, 48, activation='relu') 
-    #network = dropout(network, 0.75) 
+    # same as v114 but without dropout
     network = fully_connected(network, classes, activation='softmax')
 
     network = regression(network, optimizer='adam', # 'adam',

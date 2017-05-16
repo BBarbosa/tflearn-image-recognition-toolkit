@@ -3,6 +3,7 @@ import re,sys,argparse
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
+from ast import literal_eval as make_tuple
 
 numbers = re.compile(r'(\d+)')      # regex for get numbers
 
@@ -65,7 +66,9 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     xticks = [8,16,32,48,64,80,96,128,256,512]      # a-axis values
     xticks = x
     
-    for i,label in enumerate(data.dtype.names):
+    #markers = ['ro','g^','bs','y+','c-','']
+
+    for label in data.dtype.names:
         plt.plot(x,data[label],label=label)
     
     plt.title(title,fontweight='bold')
@@ -82,7 +85,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
 def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function to parse several csv files. For example, for N files it gathers all 
-    the data and plots it. 
+    the data, calculate a mean and plots it. 
 
     Params:
         files_dir - directory where error files are stored (at least 2 files)
@@ -131,16 +134,13 @@ Script definition
 def limits(s):
     """
     Function to parse plot's limits as they are represented as tuples
-    in format "lower_limit,upper_limit"
+    in format "(lower_limit,upper_limit)"
     """
     try:
-        x,y = s.split(',')
-        try:
-            return tuple((int(x),int(y)))
-        except:
-            return None
+        return make_tuple(s)
     except:
         raise argparse.ArgumentTypeError("Coordinates must be x,y")
+        return None
 
 
 

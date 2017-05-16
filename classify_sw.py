@@ -11,7 +11,7 @@ import scipy.ndimage
 from tflearn.layers.estimator import regression
 from tflearn.layers.core import input_data
 from tflearn.data_augmentation import ImageAugmentation
-from utils import architectures
+from utils import architectures,classifier,dataset
 
 import numpy as np 
 from PIL import Image,ImageDraw
@@ -53,16 +53,17 @@ else:
     print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)
-    IMAGE   = 128   
+    IMAGE   = 32   
     HEIGHT  = IMAGE
     WIDTH   = HEIGHT
-    classes = 7
+    classes = 43
 
     # get command line arguments
     arch      = sys.argv[1]       # name of architecture
     modelpath = sys.argv[2]       # path to saved model
     filename  = sys.argv[3]       # test image name/path
-    classid   = int(sys.argv[4])  # test image class id. -1 for collages
+    #classid   = int(sys.argv[4])  # test image class id. -1 for collages
+    classid   = sys.argv[4]
 
     # a bunch of flags
     saveOutputImage = False
@@ -70,7 +71,7 @@ else:
     showConvolution = False
 
     # computational resources definition
-    tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.9)
+    tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.4,allow_growth=True)
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
@@ -82,12 +83,35 @@ else:
     # model definition
     model = tflearn.DNN(network, checkpoint_path='models',
                         max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
-
+    
     print("Loading trained model...")  
     model.load(modelpath)
     print("\tModel: ",modelpath)
     print("Trained model loaded!\n")
 
+    """
+    New experience to figure out if there is an error when loading the trained
+    network from a checkpoint file
+    """
+
+    # load test images
+    Xt,Yt = dataset.load_test_images_from_index_file(filename,classid)
+
+    classifier.CHANNELS = 3
+    classifier.WIDTH  = 32
+    classifier.HEIGHT = 32
+    classifier.IMAGE  = 32
+
+    classifier.classify_set_of_images(model,images_list=Xt,runid="runid",labels_list=Yt,printout=True)
+    """
+    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,"run_id",classes,printout=False)
+    print(colored("=============================","yellow"))
+    print("Test:", test_acc, "%")
+    print(" Min:", min_acc, "%") 
+    print(colored("=============================","yellow"))
+    """
+
+    """"
     # Load the image file (need pre-processment)
     background = Image.open(filename)
     wDIM,hDIM  = background.size     
@@ -215,6 +239,7 @@ else:
 
     if(showProgress):
         input("Press any key to continue...\n")    
+    """
 
     if(OS == 'Windows'):
         freq = 2000
