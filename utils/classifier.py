@@ -157,7 +157,8 @@ def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=No
 def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
     """
     Personal evaluation function. Uses the confidence (%) criteria confidence as 
-    a constraint to confirm if that an image is correctly classified.
+    a constraint to confirm if that an image is correctly classified. Suited to
+    be used on images with the same dimensions as the training images.
 
     Params:
         `model` - network trained model
@@ -204,22 +205,24 @@ def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
     acc = wp / length * 100
     return np.round(acc,2)
 
-# function that classifies a image by a sliding window (in extreme, 1 window only)
+# function that classifies a image thorugh a sliding window
 def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,printout=True,criteria=0.75):
     """
     Function that classifies a set of images through a sliding window. In an extreme
-    situation, it classifies just only one window.
+    situation, it classifies just only one window. Its meant to be used on images with
+    larger dimensions than those used on the training but it also works with training 
+    and validation sets.
 
     Params:
-        `model` - trained model
+        `model` - trained model variable
         `images_list` - list of images to be classified (already loaded)
-        `labels_list` - list of labels of the corresponding images (use [-1] for collages)
-        `runid` - ID for this classification
+        `labels_list` - list of labels of the corresponding images (use [-1,...] for collages)
+        `runid` - classification ID
         `nclasses` - number of classes
-        `printout` - if False, it surpresses all prints
-        `criteria` - minimum confidence to classify correctly an image 
+        `printout` - if False, it surpresses all prints by redirecting STDOUT
+        `criteria` - minimum confidence to correctly classify an image 
 
-    Return: Images' labelID and confidence
+    Return: Tuple containing an (array,mean_accuracy,max,min)
     """
 
     # verifies if it must surpress all prints
@@ -237,6 +240,7 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
 
     # start sliding window for every image
     for image,classid in zip(images_list,labels_list):
+        # special treatment for training and validation datasets
         if(isinstance(image,PIL.Image.Image)):
             hDIM,wDIM  = image.size
         else:
@@ -389,7 +393,7 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
 
     return out_var,avg_acc,max(out_var),min(out_var)
 
-# function that classifies a image by a sliding window using a local server 
+# function that classifies a image through a sliding window using a local server 
 def classify_local_server(model,ip,port,runid,nclasses):
     """
     Function that creates a local server and loads a model. It waits until
@@ -435,6 +439,6 @@ def classify_local_server(model,ip,port,runid,nclasses):
             print(colored("ERROR: Couldn't open %s!" % filename,"red"))
             continue
         
-        classify_sliding_window(model,background,classid,runid,nclasses,printout=True,criteria=0.8)
+        classify_sliding_window(model,background,classid,nclasses,runid=runid,printout=True,criteria=0.8)
         
     return None

@@ -81,8 +81,8 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_d
                     max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95,
                     best_checkpoint_path=None)  
 
-# some training parameters
-EPOCHS = 100                      # maximum number of epochs 
+# training parameters
+EPOCHS = 200                      # maximum number of epochs 
 SNAP = 5                          # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP       # number of iterations (or evaluations) 
 
@@ -100,57 +100,69 @@ else:
     fcsv.write("train,validation\n")
 fcsv.close()
 
-# training operation 
-for i in range(iterations):
-    # show training progress
-    #train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.10)
-    #val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.10)
+# training operation: can stop by reaching the max number of iterations or by Ctrl+C
+# iterator to control the maximum number of iterations 
+it = 0      
+try:
+    while(it < iterations):
+        stime = time.time()
+        #train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.10)
+        #val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.10)
 
-    stime = time.time()
-    _,train_acc,_,_ = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
-    _,val_acc,_,_ = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
+        _,train_acc,_,_ = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
+        _,val_acc,_,_ = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
 
-    test_acc = 0
-    if(testdir): 
-        _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80)
-        #test_acc = classifier.my_evaluate(model,Xt,Yt,batch_size=128,criteria=0.10)
-        #min_acc = 0
-    
-    ftime = time.time() - stime
-    print(colored("Time: %.3f\n" % ftime))
-    
-    fcsv = open(csv_file,"a+")
-    if(testdir):
-        fcsv.write("%.2f,%.2f,%.2f,%.2f\n" % (train_acc,val_acc,test_acc,min_acc))
-    else:
-        fcsv.write("%.2f,%.2f\n" % (train_acc,val_acc))
-    fcsv.close()
+        test_acc = 0
+        if(testdir): 
+            _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80)
+        
+        ftime = time.time() - stime
 
-    print("     Train:", train_acc, "%")
-    print("Validation:", val_acc, "%")
-    if(testdir): 
-        print("      Test:", test_acc, "%")
-        print("       Min:", min_acc, "%\n") 
+        # write to a .csv file the evaluation accuracy 
+        fcsv = open(csv_file,"a+")
+        if(testdir):
+            fcsv.write("%.2f,%.2f,%.2f,%.2f\n" % (train_acc,val_acc,test_acc,min_acc))
+        else:
+            fcsv.write("%.2f,%.2f\n" % (train_acc,val_acc))
+        fcsv.close()
+        
+        print(colored("\n======== Evaluation =========","yellow"))
+        print("     Train:", train_acc, "%")
+        print("Validation:", val_acc, "%")
+        if(testdir): 
+            print("      Test:", test_acc, "%")
+            print("       Min:", min_acc, "%")
+        print(colored("=============================","yellow"))
+        print(colored("Time: %.3f seconds\n" % ftime,"yellow"))
+        
+        # stop criteria by reaching a certain accuracy
+        use_criteria = True
+        if(testdir):
+            if(use_criteria and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
+                break
+        else:
+            if(use_criteria and train_acc > 97.5 and val_acc > 97.5):
+                break
+        
+        # repeats the training operation until it reaches one stop criteria
+        model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, 
+                  batch_size=bs, snapshot_step=False, snapshot_epoch=False, 
+                  run_id=run_id, validation_set=(Xv,Yv), callbacks=None)
+                  
+        it += 1
 
-    # stop criteria
-    use_criteria = True
-    if(testdir):
-        if(use_criteria and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
-            break
-    else:
-        if(use_criteria and train_acc > 97.5 and val_acc > 97.5):
-            break
-
-    # makes sucessive trainings until reaches stop criteria
-    model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, 
-              batch_size=bs, snapshot_step=False, snapshot_epoch=False, 
-              run_id=run_id, validation_set=(Xv,Yv), callbacks=None)
+# to stop the training at any moment by pressing Ctrl+C
+except KeyboardInterrupt:
+    pass 
 
 fcsv.close()
 
-# save model
+# save trained model
+print("Saving trained model...")
 modelname = "models/%s.tflearn" % run_id
+print("\tModel: ",modelname)
 model.save(modelname)
+print("Trained model saved!\n")
 
 # load model to figure out if there is something wrong
 print("Loading trained model...")  
@@ -161,24 +173,21 @@ print("Trained model loaded!\n")
 #train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.10)
 #val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.10)
 
-train_acc = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
-val_acc = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
-
+_,train_acc,_,_ = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
+_,val_acc,_,_ = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
 
 if(testdir):
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80)
-    #test_acc = classifier.my_evaluate(model,Xt,Yt,batch_size=128,criteria=0.10)
-    #min_acc = 0
-
-print(colored("=============================","yellow"))
+              
+print(colored("===== Final Evaluation ======","green"))
 print("     Train:", train_acc, "%")
 print("Validation:", val_acc, "%")
 if(testdir):
     print("      Test:", test_acc, "%")
     print("       Min:", min_acc, "%") 
-print(colored("=============================","yellow"))
+print(colored("=============================","green"))
 
-if(OS == 'Windows'):
-    freq = 1000
-    dur  = 1500 
-    ws.Beep(freq,dur)   
+# sound a beep
+freq = 1000
+dur  = 1500 
+ws.Beep(freq,dur)   
