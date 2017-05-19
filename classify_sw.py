@@ -11,6 +11,7 @@ import scipy.ndimage
 from tflearn.layers.estimator import regression
 from tflearn.layers.core import input_data
 from tflearn.data_augmentation import ImageAugmentation
+from tflearn.data_preprocessing import ImagePreprocessing
 from utils import architectures,classifier,dataset
 
 import numpy as np 
@@ -53,36 +54,47 @@ else:
     print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)
-    IMAGE   = 32   
+    IMAGE   = 128   
     HEIGHT  = IMAGE
     WIDTH   = HEIGHT
-    classes = 43
+    classes = 7
 
     # get command line arguments
     arch      = sys.argv[1]       # name of architecture
     modelpath = sys.argv[2]       # path to saved model
     filename  = sys.argv[3]       # test image name/path
     #classid   = int(sys.argv[4])  # test image class id. -1 for collages
-    classid   = sys.argv[4]
+    classid   = sys.argv[4] # NOTE: temporary
 
     # a bunch of flags
     saveOutputImage = False
     showProgress    = False
     showConvolution = False
 
+    # Real-time data preprocessing
+    img_prep = ImagePreprocessing()
+    img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
+    img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
+
+    # Real-time data augmentation
+    img_aug = ImageAugmentation()
+    img_aug.add_random_flip_leftright()
+    img_aug.add_random_flip_updown()
+    img_aug.add_random_rotation(max_angle=10.)
+
     # computational resources definition
     tflearn.init_graph(num_cores=8,gpu_memory_fraction=0.4,allow_growth=True)
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
-                        data_preprocessing=None,       
+                        data_preprocessing=img_prep,       
                         data_augmentation=None) 
 
     network = architectures.build_network(arch,network,classes)
 
     # model definition
-    model = tflearn.DNN(network, checkpoint_path='models',
-                        max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
+    model = tflearn.DNN(network) #checkpoint_path='models',
+                        #max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
     
     print("Loading trained model...")  
     model.load(modelpath)
@@ -95,21 +107,22 @@ else:
     """
 
     # load test images
-    Xt,Yt = dataset.load_test_images_from_index_file(filename,classid)
+    Xt,Yt = dataset.load_test_images(filename)
+    #Xt,Yt = dataset.load_test_images_from_index_file(filename,classid)
 
     classifier.CHANNELS = 3
-    classifier.WIDTH  = 32
-    classifier.HEIGHT = 32
-    classifier.IMAGE  = 32
+    classifier.WIDTH  = 128
+    classifier.HEIGHT = 128
+    classifier.IMAGE  = 128
 
-    classifier.classify_set_of_images(model,images_list=Xt,runid="runid",labels_list=Yt,printout=True)
-    """
+    #classifier.classify_set_of_images(model,images_list=Xt,runid="runid",labels_list=Yt,printout=True)
+    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,"run_id",classes,printout=False)
+    
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,"run_id",classes,printout=False)
     print(colored("=============================","yellow"))
     print("Test:", test_acc, "%")
     print(" Min:", min_acc, "%") 
     print(colored("=============================","yellow"))
-    """
 
     """"
     # Load the image file (need pre-processment)
@@ -117,8 +130,6 @@ else:
     wDIM,hDIM  = background.size     
     img        = scipy.ndimage.imread(filename, mode='RGB')     # mode='L', flatten=True -> grayscale
     img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
-    img       -= scipy.ndimage.measurements.mean(img)           # confirmed. check data_utils.py on github
-    img       /= np.std(img)                                    # confirmed. check data_utils.py on github
     
     BLOCK     = 128                                             # side of square block for painting: BLOCKxBLOCK. Assume BLOCK <= IMAGE
     padding   = (IMAGE - BLOCK) // 2                            # padding for centering sliding window    

@@ -12,6 +12,7 @@ import socket
 from tflearn.layers.estimator import regression
 from tflearn.layers.core import input_data
 from tflearn.data_augmentation import ImageAugmentation
+from tflearn.data_preprocessing import ImagePreprocessing
 from utils import architectures
 
 import numpy as np 
@@ -55,10 +56,10 @@ else:
     print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)
-    IMAGE   = 32   
-    HEIGHT  = 32   
-    WIDTH   = 32
-    classes = 43
+    IMAGE   = 128   
+    HEIGHT  = 128   
+    WIDTH   = 128
+    classes = 7
 
     minimum = min(IMAGE, HEIGHT, WIDTH)
 
@@ -72,24 +73,23 @@ else:
     saveOutputImage = False
     showProgress    = False and saveOutputImage # required saveOutputImage flag to show the progress
 
-    # computational resources definition
-    #config = tf.ConfigProto()
-    #config.allow_soft_placement = True
-    #config.gpu_options.allow_growth = True
-    #config.log_device_placement=True
-    #tf.add_to_collection('graph_config', config)
-    
-    tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
+    # Real-time data preprocessing
+    img_prep = ImagePreprocessing()
+    img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
+    img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
 
-    # init a session with the configs defined before
-    #sess = tf.Session(config=config)
-    #sess.run(tf.global_variables_initializer())
-    #tflearn.is_training(True,session=sess)
+    # Real-time data augmentation
+    img_aug = ImageAugmentation()
+    img_aug.add_random_flip_leftright()
+    img_aug.add_random_flip_updown()
+    img_aug.add_random_rotation(max_angle=10.)
+
+    tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
-                        data_preprocessing=None,       
-                        data_augmentation=None) 
+                        data_preprocessing=img_prep,       
+                        data_augmentation=img_aug) 
 
     network = architectures.build_network(arch,network,classes)
 
@@ -143,10 +143,8 @@ else:
         wDIM,hDIM  = background.size     
         img        = scipy.ndimage.imread(filename, mode='RGB')     # mode='L', flatten=True -> grayscale
         img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
-        img       -= scipy.ndimage.measurements.mean(img)           # check data_utils.py on tflearn's github
-        img       /= np.std(img)                                    # check data_utils.py on tflearn's github
-    
-        BLOCK = 2                                                   # side of square block for painting: BLOCKxBLOCK
+        
+        BLOCK = 128                                                  # side of square block for painting: BLOCKxBLOCK
         if(BLOCK > minimum or BLOCK < 2):                           # checks if it isn't too big
             BLOCK = IMAGE
 

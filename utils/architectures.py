@@ -510,15 +510,14 @@ def build_mynet_v117(network,classes):
     return network
 
 # mynet_v2 ------------------------------
-def build_mynet_v2(network,classes):
-    network = conv_2d(network, 32, 3, activation='relu', strides=4) 
-    #network = max_pool_2d(network, 2)
-    network = conv_2d(network, 32, 7, activation='relu', strides=4) 
-    #network = conv_2d(network, 96, 5, activation='relu') 
-    #network = max_pool_2d(network, 2)
+def build_2l_32f_5x5_fc512(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu', strides=2) 
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 32, 5, activation='relu', strides=2)  
+    network = max_pool_2d(network, 2)
     
     network = fully_connected(network, 512, activation='relu') 
-    network = dropout(network, 0.5) 
+    network = dropout(network, 0.75) 
     network = fully_connected(network, classes, activation='softmax')
 
     #sgd = tflearn.SGD(learning_rate=0.01, lr_decay=0.97, decay_step=41) # 0.005
@@ -757,7 +756,7 @@ def build_network(name,network,classes):
     elif(name == "mynet_v116"):    network = build_mynet_v116(network,classes)
     elif(name == "mynet_v117"):    network = build_mynet_v117(network,classes)
     
-    elif(name == "mynetv2"):       network = build_mynet_v2(network,classes)
+    elif(name == "2l_32f_5x5_fc512"):  network = build_2l_32f_5x5_fc512(network,classes)
     elif(name == "mynetv3"):       network = build_mynet_v3(network,classes)
     elif(name == "cifar10"):       network = build_cifar10(network,classes)
     elif(name == "cifar10_valid"): network = build_cifar10_valid(network,classes)

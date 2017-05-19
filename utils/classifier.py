@@ -8,6 +8,7 @@ import winsound as ws  # for windows only
 import tensorflow as tf
 import scipy.ndimage
 import math
+import PIL
 
 from tflearn.layers.estimator import regression
 from tflearn.layers.core import input_data
@@ -24,9 +25,9 @@ from termcolor import colored
 # init colored print
 init()
 
-IMAGE  = 32
-HEIGHT = 32
-WIDTH  = 32
+IMAGE  = 128
+HEIGHT = 128
+WIDTH  = 128
 CHANNELS = 3
 
 minimum = min(IMAGE, HEIGHT, WIDTH)
@@ -125,6 +126,7 @@ def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=No
     ctime = time.time()
     for its in range(iterations):
         sub_images_list = images_list[pointer:pointer+batch_size]
+        sub_images_list = [np.asarray(img) for img in sub_images_list] # NOTE: check if this works
         probs = model.predict(sub_images_list)
 
         for vals in probs:
@@ -151,8 +153,59 @@ def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=No
 
     return indexes,confidences
 
+# similiar function to the TFlearn's Evaluate
+def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
+    """
+    Personal evaluation function. Uses the confidence (%) criteria confidence as 
+    a constraint to confirm if that an image is correctly classified.
+
+    Params:
+        `model` - network trained model
+        `images_list` - image set
+        `labels_list` - labels set 
+        `batch_size` - number  
+        `criteria` - minimum confindence to declare a good classification
+    """
+    length     = len(images_list)                           # length of images list
+    iterations = math.ceil(length/batch_size)               # counter of how many batches will be used
+    pointer = 0                                             # batch number pointer
+    labels_list = [np.argmax(elem) for elem in labels_list] # convert labels to a simpler representation
+    wp = 0                                                  # counter for well predicted images
+    counter = 0                                             # global counter 
+
+    # images and labels lists must have the same lenght
+    if(len(labels_list) != length): 
+        sys.exit(colored("ERROR! Images and labels lists must have the same length!","red"))
+
+    ctime = time.time()
+    for its in range(iterations):
+        sub_images_list = images_list[pointer:pointer+batch_size]   # get batch of images
+        sub_labels_list = labels_list[pointer:pointer+batch_size]   # get batch of labels
+
+        probs = model.predict(sub_images_list)  # make predictions
+
+        # probabilities array and labels batch must have the same length
+        if(len(probs) != len(sub_labels_list)):
+            sys.exit(colored("ERROR! Probs and labels lists must have the same length!","red"))
+
+        for vals,classid in zip(probs,labels_list):
+            index = np.argmax(vals)     # get the index of the most probable class
+            val = np.amax(vals)
+            if(index == classid and val >= criteria):
+                wp += 1
+            counter += 1
+      
+        pointer += batch_size
+    ctime = time.time() - ctime
+    
+    if(counter != length):
+        sys.exit(colored("ERROR! Counter and length must be equal!","red"))
+    
+    acc = wp / length * 100
+    return np.round(acc,2)
+
 # function that classifies a image by a sliding window (in extreme, 1 window only)
-def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=True):
+def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,printout=True,criteria=0.75):
     """
     Function that classifies a set of images through a sliding window. In an extreme
     situation, it classifies just only one window.
@@ -164,6 +217,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
         `runid` - ID for this classification
         `nclasses` - number of classes
         `printout` - if False, it surpresses all prints
+        `criteria` - minimum confidence to classify correctly an image 
 
     Return: Images' labelID and confidence
     """
@@ -173,7 +227,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
         actual_stdout = sys.stdout
         sys.stdout = open(os.devnull,'w')
 
-    if(len(image_list) != len(label_list)):
+    if(len(images_list) != len(labels_list)):
         sys.exit()
         sys.exit(colored("ERROR: Image and labels list must have the same lenght!","red"))
     
@@ -182,13 +236,17 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
     edistances  = []
 
     # start sliding window for every image
-    for image,classid in zip(image_list,label_list):
-        hDIM,wDIM  = image.size     
+    for image,classid in zip(images_list,labels_list):
+        if(isinstance(image,PIL.Image.Image)):
+            hDIM,wDIM  = image.size
+        else:
+            hDIM = image.shape[0]
+            wDIM = image.shape[1]
+            classid = np.argmax(classid)
+
         img        = np.asarray(image)
         img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
-        img       -= scipy.ndimage.measurements.mean(img)       # confirmed. check data_utils.py on github
-        img       /= np.std(img)                                # confirmed. check data_utils.py on github
-
+        
         BLOCK = 128
         if(BLOCK > minimum or BLOCK < 2):           # checks if it isn't too big
             BLOCK = IMAGE                           # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
@@ -214,8 +272,8 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
         print("\t   Size: ", wDIM, "x", hDIM)
         print("\t  Block: ", BLOCK)
 
-        label = np.zeros(nclasses)  # creates an empty array with lenght of number of classes
-        label[classid] = 1          # create a class label by setting the value 1 on the corresponding index 
+        #label = np.zeros(nclasses)  # creates an empty array with lenght of number of classes
+        #label[classid] = 1          # create a class label by setting the value 1 on the corresponding index 
                                     # for example, with 4 classes and for index 2 -> [0 0 1 0]
 
         val = 0     # will store the highest probability 
@@ -244,7 +302,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
                 # NOTE: well predicted counter only increases when confidence > 0.75
                 if(index == classid):
                     confidence = probs[0][index]
-                    if(confidence > 0.75):
+                    if(confidence >= criteria):
                         wp += 1
                 
                 # NOTE: Sums correct predictions' confidences.
@@ -296,12 +354,13 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
             print("\t    Acc: ", acc2,"% (confidence > .75)")
             print("Error checked!\n")
 
-            error_file = "%s_error.txt" % runid
-            ferror = open(error_file, "a+")
-
-            array = ','.join(str(x) for x in counts)   # convert array of count into one single string
-            ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.3f | Acc2: %.3f | Time: %.3f\n" % (total,classid,array,acc,acc2,cls_time))
-            ferror.close()
+            # only writes output to file if there is a run_id
+            if(runid):
+                error_file = "%s_error.txt" % runid
+                ferror = open(error_file, "a+")
+                array = ','.join(str(x) for x in counts)   # convert array of count into one single string
+                ferror.write("Total: %5d | Class: %d | [%s] | Acc: %.2f | Acc2: %.2f | Time: %.3f\n" % (total,classid,array,acc,acc2,cls_time))
+                ferror.close()
 
             # accuracy by counting correct predictions (highest probability OR confidence > 0.75)
             accuracies.append(acc2)
@@ -321,7 +380,7 @@ def classify_sliding_window(model,image_list,label_list,runid,nclasses,printout=
     #edistances = np.around(edistances,2)
 
     out_var = accuracies
-    avg_acc = sum(out_var) / len(image_list)
+    avg_acc = sum(out_var) / len(images_list)
     avg_acc = np.round(avg_acc,2)
 
     # gets stdout back to normal
@@ -376,6 +435,6 @@ def classify_local_server(model,ip,port,runid,nclasses):
             print(colored("ERROR: Couldn't open %s!" % filename,"red"))
             continue
         
-        classify_sliding_window(model,background,classid,runid,nclasses,printout=True)
+        classify_sliding_window(model,background,classid,runid,nclasses,printout=True,criteria=0.8)
         
     return None

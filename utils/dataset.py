@@ -4,6 +4,7 @@ import tflearn
 import sys,math,time,os
 import numpy as np
 import scipy.ndimage
+import PIL
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_utils import build_image_dataset_from_dir          
 from PIL import Image
@@ -87,11 +88,11 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     print("Loading dataset (from directory)...")
     if(width and height):
         X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=False, 
-                                           dataset_file=train_path, filetypes=[".ppm"], shuffle_data=False, 
+                                           dataset_file=train_path, filetypes=[".bmp",".ppm"], shuffle_data=False, 
                                            categorical_Y=True)
     else:
         X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=False, dataset_file=train_path, 
-                                           filetypes=[".ppm"], shuffle_data=False, categorical_Y=True)
+                                           filetypes=[".bmp",".ppm"], shuffle_data=False, categorical_Y=True)
     
     width,height,ch = X[0].shape            # get images dimensions
     nimages,classes = Y.shape               # get number of images and classes    
@@ -162,7 +163,7 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
 """
 Function that loads a set of test images saved by class in distinct folders
 """
-def load_test_images(testdir=None):
+def load_test_images(testdir=None,resize=None):
     image_list = []
     label_list = []
     classid = -1
@@ -175,6 +176,8 @@ def load_test_images(testdir=None):
                 if file.endswith((".bmp",".jpg",".ppm")):
                     image_path = os.path.join(root, file)
                     image      = Image.open(image_path)
+                    if(resize):
+                        image = image.crop(resize)
                     image_list.append(image)
                     label_list.append(classid)
 
