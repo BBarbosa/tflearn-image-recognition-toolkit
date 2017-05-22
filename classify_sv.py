@@ -59,7 +59,7 @@ else:
     IMAGE   = 128   
     HEIGHT  = 128   
     WIDTH   = 128
-    classes = 7
+    classes = 11
 
     minimum = min(IMAGE, HEIGHT, WIDTH)
 

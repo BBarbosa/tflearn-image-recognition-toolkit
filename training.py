@@ -26,8 +26,8 @@ if (len(sys.argv) < 5):
 classifier.clear_screen()
 
 # change if you want a specific size
-HEIGHT = 128
-WIDTH  = 128
+HEIGHT = 32
+WIDTH  = 32
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images
@@ -72,7 +72,7 @@ tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
                      data_preprocessing=img_prep,       
-                     data_augmentation=img_aug)
+                     data_augmentation=None)
 
 network = architectures.build_network(arch,network,CLASSES)
 
@@ -82,7 +82,7 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_d
                     best_checkpoint_path=None)  
 
 # training parameters
-EPOCHS = 200                      # maximum number of epochs 
+EPOCHS = 100                      # maximum number of epochs 
 SNAP = 5                          # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP       # number of iterations (or evaluations) 
 
@@ -106,11 +106,11 @@ it = 0
 try:
     while(it < iterations):
         stime = time.time()
-        #train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.10)
-        #val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.10)
+        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.10)
+        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.10)
 
-        _,train_acc,_,_ = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
-        _,val_acc,_,_ = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
+        #_,train_acc,_,_ = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
+        #_,val_acc,_,_ = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
 
         test_acc = 0
         if(testdir): 
@@ -170,11 +170,11 @@ model.load("models/%s.tflearn" % run_id)
 print("\tModel: ","models/%s.tflearn" % run_id)
 print("Trained model loaded!\n")    
 
-#train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.10)
-#val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.10)
+train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.10)
+val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.10)
 
-_,train_acc,_,_ = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
-_,val_acc,_,_ = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
+#_,train_acc,_,_ = classifier.classify_sliding_window(model,X,Y,CLASSES,runid=None,printout=False,criteria=0.80)
+#_,val_acc,_,_ = classifier.classify_sliding_window(model,Xv,Yv,CLASSES,runid=None,printout=False,criteria=0.80)
 
 if(testdir):
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80)

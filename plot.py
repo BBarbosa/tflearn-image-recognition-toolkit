@@ -169,8 +169,8 @@ if(args.title == None):
         parts = args.file.split("\\")                               # parts = [mynet','mynet_r0_acc.txt']
     except:
         parts = args.file
-    last_part_index = max(len(parts)-1,0)                           # lpi = 1
-    new_title = parts[last_part_index].split(".")[0].split("_")[0]  # new_title = 'mynet'
+    last_part_index = max(len(parts)-1,0)                             # lpi = 1
+    new_title = parts[last_part_index].split(".")[0].split("_")[0]    # new_title = 'mynet_r0'
     args.title = new_title
 
 if(args.function == "plot"):    

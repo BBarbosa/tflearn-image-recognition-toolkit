@@ -57,14 +57,14 @@ else:
     IMAGE   = 128   
     HEIGHT  = IMAGE
     WIDTH   = HEIGHT
-    classes = 7
+    classes = 11
 
     # get command line arguments
     arch      = sys.argv[1]       # name of architecture
     modelpath = sys.argv[2]       # path to saved model
     filename  = sys.argv[3]       # test image name/path
     #classid   = int(sys.argv[4])  # test image class id. -1 for collages
-    classid   = sys.argv[4] # NOTE: temporary
+    classid   = sys.argv[4]       # NOTE: temporary
 
     # a bunch of flags
     saveOutputImage = False
@@ -110,15 +110,14 @@ else:
     Xt,Yt = dataset.load_test_images(filename)
     #Xt,Yt = dataset.load_test_images_from_index_file(filename,classid)
 
-    classifier.CHANNELS = 3
+    classifier.CHANNELS = 3 
     classifier.WIDTH  = 128
     classifier.HEIGHT = 128
     classifier.IMAGE  = 128
 
     #classifier.classify_set_of_images(model,images_list=Xt,runid="runid",labels_list=Yt,printout=True)
-    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,"run_id",classes,printout=False)
+    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,classes,runid="run_id",printout=False)
     
-    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,"run_id",classes,printout=False)
     print(colored("=============================","yellow"))
     print("Test:", test_acc, "%")
     print(" Min:", min_acc, "%") 

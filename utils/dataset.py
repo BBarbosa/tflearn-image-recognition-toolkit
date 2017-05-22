@@ -5,6 +5,7 @@ import sys,math,time,os
 import numpy as np
 import scipy.ndimage
 import PIL
+import re
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_utils import build_image_dataset_from_dir          
 from PIL import Image
@@ -13,6 +14,22 @@ from termcolor import colored
 
 # init colored print
 init()
+
+numbers = re.compile(r'(\d+)')      # regex for get numbers
+
+def numericalSort(value):
+    """
+    Splits out any digits in a filename, turns it into an actual 
+    number, and returns the result for sorting. Code from
+    http://stackoverflow.com/questions/12093940/reading-files-in-a-particular-order-in-python
+
+    For directories [1,2,3,10]
+    From CMD it gets [1,10,2,3]
+    With numerical sort it gets [1,2,3,10]
+    """
+    parts = numbers.split(value)
+    parts[1::2] = map(int, parts[1::2])
+    return parts
 
 # create dataset for HDF5 format
 def create_dataset(train_path,height,width,output_path,test_path=None,mode='folder'): 
@@ -160,27 +177,36 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
 
     return classes,Xtr,Ytr,height,width,ch,Xte,Yte
 
-"""
-Function that loads a set of test images saved by class in distinct folders
-"""
+# load test images from a directory
 def load_test_images(testdir=None,resize=None):
+    """
+    Function that loads a set of test images saved by class in distinct folders.
+    Returns a list of PIL images an labels.
+    """
     image_list = []
     label_list = []
-    classid = -1
+    classid = 0
     
     if(testdir):
         print("Loading test images...")
-        # picks every sa
-        for root, dirs, files in os.walk(testdir):
-            for file in files:
-                if file.endswith((".bmp",".jpg",".ppm")):
-                    image_path = os.path.join(root, file)
+        # get all directories from testdir 
+        dirs = sorted(os.walk(testdir).__next__()[1],key=numericalSort)
+        
+        # for each directory, get all the images inside it (same class)
+        for d in dirs:
+            #print(colored("\t%s" % d,"yellow"))    # just to confirm
+            tdir = os.path.join(testdir,d)
+            images = os.walk(tdir).__next__()[2]
+            
+            # for each image, load and append it to the images list 
+            for image in images:
+                if image.endswith((".bmp",".jpg",".ppm")):
+                    image_path = os.path.join(tdir, image)
                     image      = Image.open(image_path)
                     if(resize):
                         image = image.crop(resize)
                     image_list.append(image)
                     label_list.append(classid)
-
             classid += 1
         
         print("\t  Path: ",testdir)
@@ -192,11 +218,12 @@ def load_test_images(testdir=None,resize=None):
     
     return image_list,label_list
 
-"""
-Function that loads a set of test images according to a indexing file 
-with format: "path_to_image class_id"
-"""
+# load test images from an index file
 def load_test_images_from_index_file(testdir=None,infile=None):
+    """
+    Function that loads a set of test images according to a indexing file 
+    with format: "path_to_image class_id"
+    """
     image_list = []
     label_list = []
     index = 0
@@ -205,7 +232,7 @@ def load_test_images_from_index_file(testdir=None,infile=None):
         print("Loading test images...")
 
         try:
-            data = np.genfromtxt(infile,delimiter=" ",comments='#',names=True, 
+            data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
                                 skip_header=0,autostrip=True)
         except:
             print(colored("WARNING: Index file to test images is not set","yellow"))
@@ -219,6 +246,10 @@ def load_test_images_from_index_file(testdir=None,infile=None):
                 if file.endswith((".bmp",".jpg",".ppm")):
                     image_path = os.path.join(root, file)
                     image      = Image.open(image_path).resize((32,32))
+
+                    #print("Image:", image_path)
+                    #print("Label:", int(data[column][index]))
+                    #input("")
                     
                     image_list.append(image)
                     label_list.append(int(data[column][index]))
@@ -230,14 +261,15 @@ def load_test_images_from_index_file(testdir=None,infile=None):
         for i in range(lil):
             new_image_list[i] = np.array(image_list[i].getdata()).reshape(32,32,3)
 
-        #image_list = np.array(image_list)
-        #image_list = np.reshape(image_list,(-1,32,32,3))
+        image_list = np.array(image_list)
+        image_list = np.reshape(image_list,(-1,32,32,3))
 
         print("\t  Path: ",testdir)
-        print("\tImages: ",len(image_list))
+        print("\tImages: ",image_list.shape)
         print("\tLabels: ",len(label_list))
         print("Test images loaded...\n")
     else:
         print(colored("WARNING: Path to test images is not set","yellow"))
-    
-    return new_image_list,label_list
+        
+    return None
+    #return new_image_list,label_list

@@ -157,7 +157,7 @@ def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=No
 def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
     """
     Personal evaluation function. Uses the confidence (%) criteria confidence as 
-    a constraint to confirm if that an image is correctly classified. Suited to
+    a constraint to confirm if that an image is correctly classified. Meant to
     be used on images with the same dimensions as the training images.
 
     Params:
@@ -187,11 +187,11 @@ def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
 
         # probabilities array and labels batch must have the same length
         if(len(probs) != len(sub_labels_list)):
-            sys.exit(colored("ERROR! Probs and labels lists must have the same length!","red"))
+            sys.exit(colored("ERROR! Probs and sub labels lists must have the same length!","red"))
 
-        for vals,classid in zip(probs,labels_list):
+        for vals,classid in zip(probs,sub_labels_list):
             index = np.argmax(vals)     # get the index of the most probable class
-            val = np.amax(vals)
+            val = vals[index]           # get the confidence of the predicted class
             if(index == classid and val >= criteria):
                 wp += 1
             counter += 1
