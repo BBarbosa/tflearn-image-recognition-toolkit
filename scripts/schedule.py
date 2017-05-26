@@ -15,11 +15,12 @@ test  = False
 
 commands = ["python training.py"]
 
-datasets = ["dataset/signals/train"]
+datasets = ["dataset/ori/side128"]
 
-testdirs = [""] 
+testdirs = ["dataset/ori/test"] 
 
-architectures = ["mynet","cifar10"]
+architectures = ["mynet_v15","mynet_v16","mynet_v17","mynet_v18","mynet_v19","mynet_v111",
+                 "mynet_v112","mynet_v113","mynet_v114","mynet_v115","mynet_v116","mynet_v117"]
 
 batches = [32]
 
@@ -35,7 +36,7 @@ for command in commands:
                         #runid = data.split("/")[2] + "_" + arch + "_r" + str(run)
                         runid = "signals_" + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
-                        new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
+                        #new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)
                         if(train): os.system(new_command)
 

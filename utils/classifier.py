@@ -154,7 +154,7 @@ def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=No
     return indexes,confidences
 
 # similiar function to the TFlearn's Evaluate
-def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
+def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75,X2=None):
     """
     Personal evaluation function. Uses the confidence (%) criteria confidence as 
     a constraint to confirm if that an image is correctly classified. Meant to
@@ -183,7 +183,11 @@ def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
         sub_images_list = images_list[pointer:pointer+batch_size]   # get batch of images
         sub_labels_list = labels_list[pointer:pointer+batch_size]   # get batch of labels
 
-        probs = model.predict(sub_images_list)  # make predictions
+        if(False):
+            sub_x2 = X2[pointer:pointer+batch_size]
+            probs = model.predict([sub_images_list,sub_x2])  # make predictions
+        else:
+            probs = model.predict(sub_images_list)
 
         # probabilities array and labels batch must have the same length
         if(len(probs) != len(sub_labels_list)):
@@ -206,7 +210,7 @@ def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75):
     return np.round(acc,2)
 
 # function that classifies a image thorugh a sliding window
-def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,printout=True,criteria=0.75):
+def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,printout=True,criteria=0.75,X2=None):
     """
     Function that classifies a set of images through a sliding window. In an extreme
     situation, it classifies just only one window. Its meant to be used on images with
@@ -239,17 +243,19 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
     edistances  = []
 
     # start sliding window for every image
+    # NOTE: Attention when it is used with MEAN
     for image,classid in zip(images_list,labels_list):
+    #for image,classid,mean in zip(images_list,labels_list,X2):
         # special treatment for training and validation datasets
         if(isinstance(image,PIL.Image.Image)):
-            hDIM,wDIM  = image.size
+            wDIM,hDIM  = image.size
         else:
             hDIM = image.shape[0]
             wDIM = image.shape[1]
             classid = np.argmax(classid)
 
-        img        = np.asarray(image)
-        img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
+        img = np.array(image)
+        img = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
         
         BLOCK = 128
         if(BLOCK > minimum or BLOCK < 2):           # checks if it isn't too big
@@ -294,7 +300,12 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
                 img2 = np.reshape(img2,(1,HEIGHT,WIDTH,CHANNELS))
                 #img2 = np.reshape(img2,(1,IMAGE,IMAGE))    # for RNN 
 
-                probs = model.predict(img2)              # predicts image's classid
+                if(False):
+                    mean = np.array(mean)
+                    mean = np.reshape(mean,(-1,1))
+                    probs = model.predict([img2,mean])      # predicts image's classid
+                else:
+                    probs = model.predict(img2)
 
                 # NOTE: Euclidian distance
                 #prediction = np.asarray(probs[0])        # converts probabilities list to numpy array
@@ -303,7 +314,7 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
                 index = np.argmax(probs)
                 counts[index] = counts[index] + 1
                 
-                # NOTE: well predicted counter only increases when confidence > 0.75
+                # NOTE: well predicted counter only increases when confidence > criteria
                 if(index == classid):
                     confidence = probs[0][index]
                     if(confidence >= criteria):

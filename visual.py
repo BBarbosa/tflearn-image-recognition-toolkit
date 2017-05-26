@@ -8,7 +8,8 @@ import tensorflow as tf
 import numpy as np
 import math,scipy
 import matplotlib.pyplot as plt
-
+from tflearn.data_preprocessing import ImagePreprocessing
+from tflearn.data_augmentation import ImageAugmentation
 from tflearn.layers.core import input_data
 from utils import architectures
 from colorama  import init
@@ -160,6 +161,25 @@ def convolve_filters(image,weights,max_filters=None,input_channel=0):
     # in a single Notebook cell.
     plt.show()
 
+# NOTE: Not working properly
+# nice image printer 
+# Note: matplot lib is pretty inconsistent with how it plots these weird image arrays.
+# Try running them a couple of times if the output doesn't quite match the blog post results.
+def nice_image_printer(model, image):
+    """
+    Prints the image as a 2d array
+    """
+    image_batch = np.expand_dims(image,axis=0)
+    image_batch = np.reshape(image_batch,(1,HEIGHT,WIDTH,3))
+    conv_image2 = model.predict(image_batch)
+
+    conv_image2 = np.squeeze(conv_image2, axis=0)
+    print(conv_image2.shape)
+    conv_image2 = conv_image2.reshape(conv_image2.shape[:2])
+
+    print(conv_image2.shape)
+    plt.imshow(conv_image2)
+    
 """
 Script definition
 """
@@ -179,10 +199,10 @@ else:
 print("Operating System: %s\n" % OS)
 
 # images properties (inherit from trainning?)   
-HEIGHT   = 128
-WIDTH    = 128
+HEIGHT   = 200
+WIDTH    = 200
 CHANNELS = 3
-CLASSES  = 11
+CLASSES  = 10
 
 # get command line arguments
 arch      = sys.argv[1]       # name of architecture
@@ -190,12 +210,28 @@ modelpath = sys.argv[2]       # path to saved model
 layer     = sys.argv[3]       # layer name, for example, Conv2D or Conv2D_1
 ichannel  = int(sys.argv[4])  # input channel for displaying kernels and convolutions
 
+# Real-time data preprocessing
+img_prep = ImagePreprocessing()
+img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
+img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
+
+# Real-time data augmentation
+img_aug = ImageAugmentation()
+img_aug.add_random_flip_leftright()
+img_aug.add_random_flip_updown()
+img_aug.add_random_rotation(max_angle=10.)
+
 # network definition
 network = input_data(shape=[None, WIDTH, HEIGHT, CHANNELS],     # shape=[None,IMAGE, IMAGE] for RNN
                     data_preprocessing=None,       
                     data_augmentation=None) 
 
-network = architectures.build_network(arch,network,CLASSES)
+in2 = input_data(shape=[None,1])
+#print(network.shape)
+#print(in2.shape,"\n")
+network = architectures.build_merge_test(network,in2,CLASSES)
+
+#network = architectures.build_network(arch,network,CLASSES)
 
 # model definition
 model = tflearn.DNN(network, checkpoint_path='models',
@@ -250,6 +286,4 @@ if(load):
     """
     print("  Image shape: ",img.shape, type(img))
     convolve_filters(img,weights,input_channel=ichannel)
-    
-    #nimg = Image.fromarray(res,'RGB')
-    #nimg.show()
+    #nice_image_printer(model,img)

@@ -57,7 +57,7 @@ else:
     IMAGE   = 128   
     HEIGHT  = IMAGE
     WIDTH   = HEIGHT
-    classes = 11
+    classes = 10
 
     # get command line arguments
     arch      = sys.argv[1]       # name of architecture
@@ -116,7 +116,7 @@ else:
     classifier.IMAGE  = 128
 
     #classifier.classify_set_of_images(model,images_list=Xt,runid="runid",labels_list=Yt,printout=True)
-    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,classes,runid="run_id",printout=False)
+    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,classes,runid="run_id",printout=False,criteria=0.80)
     
     print(colored("=============================","yellow"))
     print("Test:", test_acc, "%")

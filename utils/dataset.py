@@ -8,7 +8,7 @@ import PIL
 import re
 from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
 from tflearn.data_utils import build_image_dataset_from_dir          
-from PIL import Image
+from PIL import Image,ImageStat
 from colorama import init
 from termcolor import colored
 
@@ -95,18 +95,17 @@ def load_dataset_ipl(train_path,height,width,test_path=None,mode='folder'):
     return classes,X,Y,Xt,Yt 
 
 # load images directly from images folder (ex: cropped/5/)
-def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,validation=0):
+def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,validation=0,mean=False):
     """ 
     Given a folder containing images separated by folders (classes) returns training and testing
     data, if specified.
     """
-    classes = X = Y = Xtr = Ytr = Xte = Yte= None
+    classes = X = Y = Xtr = Ytr = Xte = Yte = means_xtr = means_xte = None
 
     print("Loading dataset (from directory)...")
     if(width and height):
-        X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=False, 
-                                           dataset_file=train_path, filetypes=[".bmp",".ppm"], shuffle_data=False, 
-                                           categorical_Y=True)
+        X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=False, dataset_file=train_path, 
+                                           filetypes=[".bmp",".ppm"], shuffle_data=False, categorical_Y=True)
     else:
         X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=False, dataset_file=train_path, 
                                            filetypes=[".bmp",".ppm"], shuffle_data=False, categorical_Y=True)
@@ -155,7 +154,26 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     
     del(X)
     del(Y)
-    
+
+    # collect mean pixel value of each image
+    if(mean):
+        means_xtr = []
+        means_xte = []
+        
+        # training images
+        for img in Xtr:
+            means_xtr.append(np.mean(img))
+        
+        means_xtr = np.array(means_xtr)
+        means_xtr = np.reshape(means_xtr,(-1,1))
+
+        # validation images
+        for img in Xte:
+            means_xte.append(np.mean(img))
+        
+        means_xte = np.array(means_xte)
+        means_xte = np.reshape(means_xte,(-1,1))
+
     Xtr = np.array(Xtr)     # convert train images list to array
     Ytr = np.array(Ytr)     # convert train labels list to array
     Xte = np.array(Xte)     # convert test images list to array
@@ -170,21 +188,21 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
 
     print("\t         Path: ",train_path)
     print("\tShape (train): ",Xtr.shape,Ytr.shape)
-    if(validation > 0):
-        # only prints if they are allocated
-        print("\tShape  (test): ",Xte.shape,Yte.shape)
+    if(validation > 0): print("\tShape   (val): ",Xte.shape,Yte.shape)
+    if(mean):           print("\t        Means: ",means_xtr.shape,means_xte.shape)
     print("Data loaded!\n")
 
-    return classes,Xtr,Ytr,height,width,ch,Xte,Yte
+    return classes,Xtr,Ytr,height,width,ch,Xte,Yte,means_xtr,means_xte
 
 # load test images from a directory
-def load_test_images(testdir=None,resize=None):
+def load_test_images(testdir=None,resize=None,mean=False):
     """
     Function that loads a set of test images saved by class in distinct folders.
     Returns a list of PIL images an labels.
     """
     image_list = []
     label_list = []
+    means_xte = []
     classid = 0
     
     if(testdir):
@@ -194,7 +212,7 @@ def load_test_images(testdir=None,resize=None):
         
         # for each directory, get all the images inside it (same class)
         for d in dirs:
-            #print(colored("\t%s" % d,"yellow"))    # just to confirm
+            #print(colored("\t%s" % d,"yellow"))    # NOTE: just to confirm
             tdir = os.path.join(testdir,d)
             images = os.walk(tdir).__next__()[2]
             
@@ -205,6 +223,12 @@ def load_test_images(testdir=None,resize=None):
                     image      = Image.open(image_path)
                     if(resize):
                         image = image.crop(resize)
+                        #print("\tCroped: ",image.size)
+                    if(mean):
+                        m = np.mean(np.array(image))
+                        means_xte.append(m)
+                        #print("\t  Mean: ", m)
+
                     image_list.append(image)
                     label_list.append(classid)
             classid += 1
@@ -212,11 +236,15 @@ def load_test_images(testdir=None,resize=None):
         print("\t  Path: ",testdir)
         print("\tImages: ",len(image_list))
         print("\tLabels: ",len(label_list))
+        if(mean):
+            means_xte = np.array(means_xte)
+            means_xte = np.reshape(means_xte,(-1,1))
+            print("\t Mean: ", means_xte.shape)
         print("Test images loaded...\n")
     else:
         print(colored("WARNING: Path to test image is not set","yellow"))
     
-    return image_list,label_list
+    return image_list,label_list,means_xte
 
 # load test images from an index file
 def load_test_images_from_index_file(testdir=None,infile=None):
@@ -229,7 +257,7 @@ def load_test_images_from_index_file(testdir=None,infile=None):
     index = 0
     
     if(testdir):
-        print("Loading test images...")
+        print("Loading test images from index file...")
 
         try:
             data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
@@ -261,15 +289,14 @@ def load_test_images_from_index_file(testdir=None,infile=None):
         for i in range(lil):
             new_image_list[i] = np.array(image_list[i].getdata()).reshape(32,32,3)
 
-        image_list = np.array(image_list)
-        image_list = np.reshape(image_list,(-1,32,32,3))
+        #image_list = np.array(image_list)
+        #image_list = np.reshape(image_list,(-1,32,32,3))
 
         print("\t  Path: ",testdir)
-        print("\tImages: ",image_list.shape)
+        print("\tImages: ",new_image_list.shape)
         print("\tLabels: ",len(label_list))
         print("Test images loaded...\n")
     else:
         print(colored("WARNING: Path to test images is not set","yellow"))
         
-    return None
-    #return new_image_list,label_list
+    return new_image_list,label_list

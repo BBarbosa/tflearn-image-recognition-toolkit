@@ -7,6 +7,7 @@ from ast import literal_eval as make_tuple
 
 numbers = re.compile(r'(\d+)')      # regex for get numbers
 
+# function to sort string as the windows explorer does
 def numericalSort(value):
     """
     Splits out any digits in a filename, turns it into an actual 
@@ -20,6 +21,7 @@ def numericalSort(value):
     parts[1::2] = map(int, parts[1::2])
     return parts
 
+# function that plots data stored as a matrix
 def plot_accuracies(x,y,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function that creates a plot according to X and Y. Lengths must match.
@@ -42,6 +44,7 @@ def plot_accuracies(x,y,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,
     plt.savefig('%s.png' % title)
     plt.show()
 
+# function to plot one .csv file
 def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function to plot a single csv file.
@@ -65,6 +68,8 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     
     xticks = [8,16,32,48,64,80,96,128,256,512]      # a-axis values
     xticks = x
+
+    yticks = [0,10,20,30,40,50,60,70,80,90,100]
     
     #markers = ['ro','g^','bs','y+','c-','']
 
@@ -77,11 +82,13 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     plt.ylabel(ylabel)
     plt.grid(grid)
     plt.xticks(x,xticks)
+    plt.yticks(yticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
     plt.savefig('%s.png' % title)
     plt.show()
 
+# function to parse several .csv files and join all the info
 def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function to parse several csv files. For example, for N files it gathers all 
@@ -127,10 +134,7 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     plt.savefig('%s.png' % title)
     plt.show()
 
-"""
-Script definition
-"""
-
+# plot limits parser function
 def limits(s):
     """
     Function to parse plot's limits as they are represented as tuples
@@ -142,8 +146,9 @@ def limits(s):
         raise argparse.ArgumentTypeError("Coordinates must be x,y")
         return None
 
-
-
+"""
+Script definition
+"""
 # NOTE: arguments' parser
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
@@ -166,11 +171,12 @@ if(args.title == None):
     # NOTE: if title isn't specified then uses filename as title
     # args.file = 'mynet\\mynet_r0_accuracies.txt'
     try:
-        parts = args.file.split("\\")                               # parts = [mynet','mynet_r0_acc.txt']
+        parts = args.file.split("\\")                   # parts = ['mynet','mynet_r0_acc.txt']
     except:
         parts = args.file
-    last_part_index = max(len(parts)-1,0)                             # lpi = 1
-    new_title = parts[last_part_index].split(".")[0].split("_")[0]    # new_title = 'mynet_r0'
+
+    last_part_index = max(len(parts)-1,0)               # lpi = 1
+    new_title = parts[last_part_index].split(".")[0]    # new_title = 'mynet_r0_acc'
     args.title = new_title
 
 if(args.function == "plot"):    

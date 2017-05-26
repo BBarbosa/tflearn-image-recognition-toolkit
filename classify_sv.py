@@ -59,7 +59,7 @@ else:
     IMAGE   = 128   
     HEIGHT  = 128   
     WIDTH   = 128
-    classes = 11
+    classes = 10
 
     minimum = min(IMAGE, HEIGHT, WIDTH)
 
@@ -88,8 +88,8 @@ else:
 
     # network definition
     network = input_data(shape=[None, HEIGHT, WIDTH, 3],     # shape=[None,IMAGE, IMAGE] for RNN
-                        data_preprocessing=img_prep,       
-                        data_augmentation=img_aug) 
+                        data_preprocessing=None,       
+                        data_augmentation=None) 
 
     network = architectures.build_network(arch,network,classes)
 
