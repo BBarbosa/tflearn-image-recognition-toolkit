@@ -566,7 +566,22 @@ def build_mynet_v117(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# mynet_v2 ------------------------------
+# 1 conv layer network --------------------------------------------------------------------
+def build_1l_32f_5x5_fc512(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu', strides=4)
+    network = max_pool_2d(network,2) 
+    
+    network = fully_connected(network, 512, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
+
+
+# 2 conv layers network
 def build_2l_32f_5x5_fc512(network,classes):
     network = conv_2d(network, 32, 5, activation='relu', strides=2) 
     network = max_pool_2d(network, 2)
@@ -584,7 +599,7 @@ def build_2l_32f_5x5_fc512(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# mynet_v3 ------------------------------
+# 3 conv layers network
 def build_3l_32f_5x5_fc512(network,classes):
     network = conv_2d(network, 32, 5, activation='relu', strides=2) 
     network = max_pool_2d(network, 2)
@@ -624,6 +639,27 @@ def build_3l_32f_3x3_fc512(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
+# 4 conv layer network
+def build_4l_32f_5x5_fc512(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu') 
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 32, 5, activation='relu') 
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 32, 5, activation='relu')
+    network = max_pool_2d(network, 2)  
+    network = conv_2d(network, 32, 5, activation='relu')  
+    network = max_pool_2d(network, 2)
+    
+    network = fully_connected(network, 512, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    #sgd = tflearn.SGD(learning_rate=0.01, lr_decay=0.97, decay_step=41) # 0.005
+
+    network = regression(network, optimizer='adam', # 'adam',
+                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
+                        learning_rate=0.0001)    # 0.00005
+    return network
 
 # all cnn
 def build_all_cnn(network,classes):
@@ -824,9 +860,9 @@ def build_non_convolutional(network,classes):
     #network = fully_connected(network,128,activation='relu')
     network = fully_connected(network,classes,activation='softmax') 
 
-    network = regression(network, optimizer='adam', # 'adam',
-                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
-                        learning_rate=0.0001)    # 0.00005
+    network = regression(network, optimizer='adam',
+                        loss='categorical_crossentropy', 
+                        learning_rate=0.0001)   
 
     return network
 
@@ -867,9 +903,11 @@ def build_network(name,network,classes):
     elif(name == "mynet_v116"):    network = build_mynet_v116(network,classes)
     elif(name == "mynet_v117"):    network = build_mynet_v117(network,classes)
     
+    elif(name == "1l_32f_5x5_fc512"):  network = build_1l_32f_5x5_fc512(network,classes)
     elif(name == "2l_32f_5x5_fc512"):  network = build_2l_32f_5x5_fc512(network,classes)
-    elif(name == "3l_32f_5x5_fc512"):  network = build_3l_32f_5x5_fc512(network,classes)
     elif(name == "3l_32f_3x3_fc512"):  network = build_3l_32f_3x3_fc512(network,classes)
+    elif(name == "3l_32f_5x5_fc512"):  network = build_3l_32f_5x5_fc512(network,classes)
+    elif(name == "4l_32f_5x5_fc512"):  network = build_4l_32f_5x5_fc512(network,classes)
     
     elif(name == "mynetv3"):       network = build_mynet_v3(network,classes)
     elif(name == "cifar10"):       network = build_cifar10(network,classes)

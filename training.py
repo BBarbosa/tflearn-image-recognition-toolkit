@@ -25,9 +25,9 @@ if (len(sys.argv) < 5):
 # clears screen and shows OS
 classifier.clear_screen()
 
-# change if you want a specific size
-HEIGHT = None
-WIDTH  = None
+# NOTE: change if you want a specific size
+HEIGHT = 128
+WIDTH  = 128
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images
@@ -72,10 +72,10 @@ tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
-                     data_preprocessing=None,                  # NOTE: always check PP
+                     data_preprocessing=img_prep,                  # NOTE: always check PP
                      data_augmentation=None)                   # NOTE: always check DA
 
-# NOTE: an extra input_data layer
+# NOTE: an extra input_data layer. Use only when needed
 #in2 = input_data(shape=[None,1])
 #print(network.shape)
 #print(in2.shape,"\n")
@@ -148,6 +148,7 @@ try:
             if(use_criteria and train_acc > 97.5 and val_acc > 97.5):
                 break
         
+        # repeats the training operation until it reaches one stop criteria
         model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, 
                   batch_size=bs, snapshot_step=False, snapshot_epoch=False, 
                   run_id=run_id, validation_set=(Xv,Yv), callbacks=None)

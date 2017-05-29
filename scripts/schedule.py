@@ -19,8 +19,7 @@ datasets = ["dataset/ori/side128"]
 
 testdirs = ["dataset/ori/test"] 
 
-architectures = ["mynet_v15","mynet_v16","mynet_v17","mynet_v18","mynet_v19","mynet_v111",
-                 "mynet_v112","mynet_v113","mynet_v114","mynet_v115","mynet_v116","mynet_v117"]
+architectures = ["1l_32f_5x5_fc512", "2l_32f_5x5_fc512", "3l_32f_5x5_fc512", "3l_32f_3x3_fc512","4l_32f_5x5_fc512"]
 
 batches = [32]
 
@@ -34,7 +33,7 @@ for command in commands:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
                         #runid = data.split("/")[2] + "_" + arch + "_r" + str(run)
-                        runid = "signals_" + arch + "_r" + str(run)
+                        runid = "fabric_" + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         #new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)

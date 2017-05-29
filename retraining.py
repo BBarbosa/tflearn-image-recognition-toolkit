@@ -210,7 +210,7 @@ if(testdir):
 print(colored("=============================","green"))
 print(colored("Time: %.3f seconds\n" % ftime,"green"))
 
-if(OS == 'Windows'):
-    freq = 1000
-    dur  = 1500 
-    ws.Beep(freq,dur)
+# sound a beep
+freq = 1000
+dur  = 1500 
+ws.Beep(freq,dur)

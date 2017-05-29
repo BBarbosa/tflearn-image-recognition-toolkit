@@ -184,6 +184,7 @@ def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75,X2=No
         sub_labels_list = labels_list[pointer:pointer+batch_size]   # get batch of labels
 
         if(False):
+            # to use when there is more then one input layer
             sub_x2 = X2[pointer:pointer+batch_size]
             probs = model.predict([sub_images_list,sub_x2])  # make predictions
         else:
@@ -301,6 +302,7 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
                 #img2 = np.reshape(img2,(1,IMAGE,IMAGE))    # for RNN 
 
                 if(False):
+                    # to use when there is more then one input layer
                     mean = np.array(mean)
                     mean = np.reshape(mean,(-1,1))
                     probs = model.predict([img2,mean])      # predicts image's classid
