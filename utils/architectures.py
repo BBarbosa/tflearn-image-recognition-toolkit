@@ -400,7 +400,7 @@ def build_mynet_v144(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# mynet_v15 -----------------------
+# mynet_v15 ---------------------------------------------------------------
 def build_mynet_v15(network,classes):
     network = conv_2d(network, 24, 5, activation='relu', strides=4)
     network = max_pool_2d(network,2) 
@@ -456,7 +456,7 @@ def build_mynet_v18(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# mynet_v19 -----------------------------------------------
+# mynet_v19 -----------------------------------------------------------------------
 def build_mynet_v19(network,classes):
     network = conv_2d(network, 8, 3, activation='relu', strides=4)
     network = max_pool_2d(network,2) 
@@ -498,7 +498,7 @@ def build_mynet_v112(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# mynet_v113
+# mynet_v113 
 def build_mynet_v113(network,classes):
     network = conv_2d(network, 8, 11, activation='relu', strides=4)
     network = max_pool_2d(network,2) 
@@ -512,7 +512,7 @@ def build_mynet_v113(network,classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# mynet_v114
+# mynet_v114 --------------
 def build_mynet_v114(network,classes):
     network = conv_2d(network, 4, 5, activation='relu', strides=4)
     network = max_pool_2d(network,2) 

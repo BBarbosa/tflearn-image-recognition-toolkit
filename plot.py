@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 from ast import literal_eval as make_tuple
+import glob
 
 numbers = re.compile(r'(\d+)')      # regex for get numbers
 
@@ -88,7 +89,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     plt.savefig('%s.png' % title)
     plt.show()
 
-# function to parse several .csv files and join all the info
+# function to parse several .csv files and join all the info (mean)
 def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function to parse several csv files. For example, for N files it gathers all 
@@ -133,6 +134,59 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     if(xlim): plt.xlim(xlim)
     plt.savefig('%s.png' % title)
     plt.show()
+
+# plot several .csv files into one single plot
+def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+    """
+    Function to plot several csv files at one shot. For example, for N files it gathers all 
+    the data, calculate a mean and plots it. 
+
+    Params:
+        files_dir - directory where error files are stored (at least 2 files)
+    """
+
+    symbols = ['-','--',':','^']
+    colors  = ['r','g','b','y']
+    files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
+
+    for infile,color,_ in zip(files,colors,[1]):
+        print("Parsing file: " + infile)
+        
+        # len(data) == number of lines
+        data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
+                             skip_header=0,autostrip=True)
+        # data = [(x1,y1,z1),
+        #         (x2,y2,z2),
+        #             ...    ]
+        
+        # len(data[0]) == number of columns
+        x = np.arange(0,len(data[0])) 
+
+        ax = plt.subplot(111)
+        ax.bar(x, data[data.dtype.names[0]], width=0.1,color='b',align='center')
+        ax.bar(x, data[data.dtype.names[1]], width=0.1,color='g',align='center')
+        ax.bar(x, data[data.dtype.names[2]], width=0.1,color='r',align='center')
+        ax.bar(x, data[data.dtype.names[3]], width=0.1,color='y',align='center')
+
+        #for label,symbol in zip(data.dtype.names,symbols):
+        #    dot = '%s%s' % (color,symbol)
+        #    #plt.plot(x,data[label],dot,label=label)
+        #    plt.barh(x,data[label],align='center',alpha=0.5)
+    
+    xticks = x*5
+
+    plt.title(title,fontweight='bold')
+    plt.legend()
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.grid(grid)
+    plt.xticks(x,xticks)
+    if(ylim): plt.ylim(ylim)
+    if(xlim): plt.xlim(xlim)
+    plt.tight_layout()
+    plt.savefig('%s.png' % title)
+    plt.show()
+ 
 
 # plot limits parser function
 def limits(s):
@@ -183,7 +237,7 @@ if(args.function == "plot"):
     plot_csv_file(infile=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                   xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 elif (args.function == "parse"):
-    parse_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+    plot_several_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 else:
     print("ERROR: Unknown function!")
