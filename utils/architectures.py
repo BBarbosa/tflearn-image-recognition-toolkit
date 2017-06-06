@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 import tflearn
 import sys
 import numpy as np
-from tflearn.layers.core import input_data, dropout, fully_connected,flatten
-from tflearn.layers.conv import conv_2d, max_pool_2d,highway_conv_2d,avg_pool_2d
+from tflearn.layers.core import input_data,dropout,fully_connected,flatten
+from tflearn.layers.conv import conv_2d,max_pool_2d,highway_conv_2d,avg_pool_2d,upsample_2d,upscore_layer,conv_2d_transpose
 from tflearn.layers.estimator import regression
 from tflearn.layers.normalization import local_response_normalization,batch_normalization
 from tflearn.layers.merge_ops import merge
