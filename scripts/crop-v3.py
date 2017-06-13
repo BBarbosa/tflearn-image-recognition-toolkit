@@ -6,34 +6,51 @@
 import argparse
 import numpy as np
 from PIL import Image
+import os
+import glob
 
 # arguments' parser
 parser = argparse.ArgumentParser(description="Auxiliary script to crop many images",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("file",help="path to the .csv file with crop infos")
-parser.add_argument("directory",help="directory where images are stored")
+parser.add_argument("directory",help="directory where training images are stored")
 
 args = parser.parse_args()
 print(args)
 
-# NOTE: always check delimiter and dtype
-data = np.genfromtxt(args.file,delimiter=";",comments='#',names=True, 
-                             skip_header=0,autostrip=True,dtype=None)
+def crop_files_in_dir(directory):
+    """
+    Auxiliary function to crop images inside a class folder
+    """
+    infile = glob.glob("%s/%s" % (directory,'*.csv'))[0]
+    #print("\t",infile)
 
-# get the length of the .csv file
-length = len(data) 
+    # NOTE: always check delimiter and dtype
+    data = np.genfromtxt(infile,delimiter=";",comments='#',names=True, 
+                         skip_header=0,autostrip=True,dtype=None)
 
-for i in range(length):
-    filename,width,height,x1,y1,x2,y2,classid = data[:][i]
-    filename = filename.decode("utf-8")
+    # get the length of the .csv file
+    length = len(data) 
     
-    # using relative path
-    path = "%s%s" % (args.directory,filename)
-    #print(filename,width,height,x1,y1,x2,y2,classid)
-    img = Image.open(path)
-    img = img.crop((x1,y1,x2,y2))
-    
-    #img.show()
-    #imgc.show()
-    img.save(path)
+    for i in range(length):
+        filename,width,height,x1,y1,x2,y2,classid = data[:][i]
+        filename = filename.decode("utf-8")
+        
+        # using relative path
+        path = "%s/%s" % (directory,filename)
+        #print(filename,width,height,x1,y1,x2,y2,classid)
+        img = Image.open(path)
+        img = img.crop((y1,x1,y2,x2))
+        
+        #img.show()
+        #input("Any key...")
+        
+        img.save(path)
+
+"""
+Script definition
+"""
+for roots,dirs,files in os.walk(args.directory):
+    if not dirs:
+        #print(roots)
+        crop_files_in_dir(roots)

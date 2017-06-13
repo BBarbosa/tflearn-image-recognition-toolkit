@@ -26,8 +26,8 @@ if (len(sys.argv) < 5):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 128
-WIDTH  = 128
+HEIGHT = 32
+WIDTH  = 32
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images
@@ -110,6 +110,7 @@ fcsv.close()
 # training operation: can stop by reaching the max number of iterations or by Ctrl+C
 # iterator to control the maximum number of iterations 
 it = 0      
+use_criteria = True
 try:
     while(it < iterations):
         stime = time.time()
@@ -140,7 +141,6 @@ try:
         print(colored("Time: %.3f seconds\n" % ftime,"yellow"))
         
         # stop criteria by reaching a certain accuracy
-        use_criteria = True
         if(testdir):
             if(use_criteria and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
                 break

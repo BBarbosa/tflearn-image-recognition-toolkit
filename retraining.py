@@ -32,7 +32,7 @@ WIDTH  = None
 data = sys.argv[1]          # path to hdf5/file.pkl OR path/to/cropped/images
 arch = sys.argv[2]          # name of architecture
 bs   = int(sys.argv[3])     # bacth size
-out  = sys.argv[4]          # name for output model
+run_id  = sys.argv[4]          # name for output model
 modelpath = sys.argv[5]     # path to the already trained model
 
 try: 
@@ -44,7 +44,7 @@ vs = 0.1           # percentage of dataset for validation (manually)
 
 # load dataset and get image dimensions
 if(vs and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xt,Yt = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True,validation=vs)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xt,Yt,_,_ = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True,validation=vs)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -53,7 +53,7 @@ else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_= dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True)
 
 # load test images
-Xt,Yt = dataset.load_test_images(testdir)
+Xt,Yt,_ = dataset.load_test_images(testdir)
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -77,7 +77,7 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMA
 network = architectures.build_network(arch,network,CLASSES)
     
 # model definition
-model = tflearn.DNN(network, checkpoint_path="models/%s" % out, tensorboard_dir='logs/',
+model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_dir='logs/',
                     max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95,
                     best_checkpoint_path=None)  
 

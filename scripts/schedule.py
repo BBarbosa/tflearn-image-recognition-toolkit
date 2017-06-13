@@ -10,16 +10,16 @@ Training schedule
 """
 
 # control flags 
-train = False    
+train = True    
 test  = False   
 
 commands = ["python training.py"]
 
-datasets = ["dataset/ori/side128"]
+datasets = ["dataset/ori/side128_dirty_lv1","dataset/ori/side128_dirty_lv2","dataset/ori/side128_dirty_lv3"]
 
 testdirs = ["dataset/ori/test"] 
 
-architectures = ["1l_32f_5x5_fc512", "2l_32f_5x5_fc512", "3l_32f_5x5_fc512", "3l_32f_3x3_fc512","4l_32f_5x5_fc512"]
+architectures = ["1l_32f_5x5_fc512", "2l_32f_5x5_fc512", "3l_32f_5x5_fc512","4l_32f_5x5_fc512"]
 
 batches = [32]
 
@@ -32,8 +32,8 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        #runid = data.split("/")[2] + "_" + arch + "_r" + str(run)
-                        runid = "fabric_" + arch + "_r" + str(run)
+                        level = data.split("/")[2].split("_")[2] + "_"
+                        runid = "fabric_" + level + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         #new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)

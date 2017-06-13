@@ -63,7 +63,8 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
                              skip_header=0,autostrip=True)
     
-    x = np.arange(0,len(data))               # [1,2,3,4,...,n]
+    length = len(data)
+    x = np.arange(0,length)               # [1,2,3,4,...,n]
     #x = np.asarray([100+elem*10 for elem in x])
     x = x*5
     
@@ -72,8 +73,12 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
 
     yticks = [0,10,20,30,40,50,60,70,80,90,100]
     
+    criteria = [97.5] * length
     #markers = ['ro','g^','bs','y+','c-','']
 
+    plt.style.use('default')
+    
+    plt.plot(x,criteria,'r--',label="stop_criteria")
     for label in data.dtype.names:
         plt.plot(x,data[label],label=label)
     
