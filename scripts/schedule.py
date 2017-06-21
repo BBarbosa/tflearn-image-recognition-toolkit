@@ -15,15 +15,15 @@ test  = False
 
 commands = ["python training.py"]
 
-datasets = ["dataset/ori/side128_dirty_lv1","dataset/ori/side128_dirty_lv2","dataset/ori/side128_dirty_lv3"]
+datasets = ["dataset/ori/side128"]
 
 testdirs = ["dataset/ori/test"] 
 
-architectures = ["1l_32f_5x5_fc512", "2l_32f_5x5_fc512", "3l_32f_5x5_fc512","4l_32f_5x5_fc512"]
+architectures = ["1l_8f_5x5_fc50"]
 
 batches = [32]
 
-nruns = 3
+nruns = 100
 
 for command in commands:
     for data in datasets:
@@ -32,7 +32,7 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        level = data.split("/")[2].split("_")[2] + "_"
+                        level = "100runs_"
                         runid = "fabric_" + level + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         #new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)

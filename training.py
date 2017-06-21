@@ -40,7 +40,7 @@ try:
 except:
     testdir = None
 
-vs = 0.1    # percentage of data for validation (set manually)
+vs = 0.3    # percentage of data for validation (set manually)
 
 # load dataset and get image dimensions
 if(vs and True):
@@ -72,7 +72,7 @@ tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
-                     data_preprocessing=img_prep,                  # NOTE: always check PP
+                     data_preprocessing=img_prep,              # NOTE: always check PP
                      data_augmentation=None)                   # NOTE: always check DA
 
 # NOTE: an extra input_data layer. Use only when needed
@@ -81,7 +81,7 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMA
 #print(in2.shape,"\n")
 #network = architectures.build_merge_test(network,in2,CLASSES)
 
-network = architectures.build_network(arch,network,CLASSES)
+network,_ = architectures.build_network(arch,network,CLASSES)
 
 # model definition
 model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_dir='logs/',
@@ -89,12 +89,12 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_d
                     best_checkpoint_path=None)  
 
 # training parameters
-EPOCHS = 100                       # maximum number of epochs 
-SNAP = 5                           # evaluates network progress at each SNAP epochs
-iterations = EPOCHS // SNAP        # number of iterations (or evaluations) 
+EPOCHS = 2000                       # maximum number of epochs 
+SNAP = 5                          # evaluates network progress at each SNAP epochs
+iterations = EPOCHS // SNAP         # number of iterations (or evaluations) 
 
 print("Batch size:", bs)
-print("Validation:", vs, "%")
+print("Validation:", vs)
 print("    Epochs:", EPOCHS)
 print("  Snapshot:", SNAP, "\n")
 
@@ -110,7 +110,7 @@ fcsv.close()
 # training operation: can stop by reaching the max number of iterations or by Ctrl+C
 # iterator to control the maximum number of iterations 
 it = 0      
-use_criteria = True
+use_criteria = False
 try:
     while(it < iterations):
         stime = time.time()
@@ -150,7 +150,7 @@ try:
         
         # repeats the training operation until it reaches one stop criteria
         model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, 
-                  batch_size=bs, snapshot_step=False, snapshot_epoch=False, 
+                  batch_size=None, snapshot_step=False, snapshot_epoch=False, 
                   run_id=run_id, validation_set=(Xv,Yv), callbacks=None)
                   
         it += 1

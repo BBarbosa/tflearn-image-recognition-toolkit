@@ -156,7 +156,7 @@ def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=No
 # similiar function to the TFlearn's Evaluate
 def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75,X2=None):
     """
-    Personal evaluation function. Uses the confidence (%) criteria confidence as 
+    Costumized evaluation function. Uses the confidence (%) criteria confidence as 
     a constraint to confirm if that an image is correctly classified. Meant to
     be used on images with the same dimensions as the training images.
 

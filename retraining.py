@@ -50,7 +50,7 @@ if(vs and True):
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_= dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True)
 
 # load test images
 Xt,Yt,_ = dataset.load_test_images(testdir)
@@ -87,7 +87,7 @@ SNAP = 5                           # evaluates network progress at each SNAP epo
 iterations = EPOCHS // SNAP        # number of iterations (or evaluations) 
 
 print("Batch size:",bs)
-print("Validation:",vs,"%")
+print("Validation:",vs)
 print("    Epochs:",EPOCHS)
 print("  Snapshot:",snap,"\n")
 

@@ -104,13 +104,17 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
 
     print("Loading dataset (from directory)...")
     if(width and height):
-        X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=False, dataset_file=train_path, 
-                                           filetypes=[".bmp",".ppm"], shuffle_data=False, categorical_Y=True)
+        X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=True, dataset_file=train_path, 
+                                           filetypes=[".bmp",".ppm",".jpg"], shuffle_data=False, categorical_Y=True)
     else:
-        X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=False, dataset_file=train_path, 
-                                           filetypes=[".bmp",".ppm"], shuffle_data=False, categorical_Y=True)
+        X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=True, dataset_file=train_path, 
+                                           filetypes=[".bmp",".ppm",".jpg"], shuffle_data=False, categorical_Y=True)
+    try:
+        width,height,ch = X[0].shape            # get images dimensions
+    except:
+        width,height = X[0].shape
+        ch = 1
     
-    width,height,ch = X[0].shape            # get images dimensions
     nimages,classes = Y.shape               # get number of images and classes    
 
     #------------------------------ validation split ------------------------------------------------
