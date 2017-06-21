@@ -1025,26 +1025,48 @@ def build_merge_test(network,in2,classes):
     return network
 
 # costum net
-def build_costum_net(network,classes):
+def build_custom_net(network,classes):
     network = conv_2d(network, 16, 3, activation='relu')
     network = max_pool_2d(network, 2)
-    #network = local_response_normalization(network)
-    network = conv_2d(network, 32, 3, activation='relu')
+    network = local_response_normalization(network)
+    
+    network = conv_2d(network, 24, 3, activation='relu')
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+    
     network = conv_2d(network, 32, 3, activation='relu')
     network = max_pool_2d(network, 2)
-    #network = local_response_normalization(network)
+    network = local_response_normalization(network)
     
+    #network = flatten(network)
+    
+    network = fully_connected(network, 512, activation='relu')
+    network = dropout(network, 0.75)
     network = fully_connected(network, 256, activation='relu')
-    network = dropout(network, 0.8)
-    network = fully_connected(network, 128, activation='relu')
-    network = dropout(network, 0.8)
+    network = dropout(network, 0.75)
     network = fully_connected(network, classes, activation='softmax')
-    
-    network = regression(network, optimizer='adam', learning_rate=0.0001,
+
+    network = regression(network, optimizer='adam', learning_rate=0.001,
                         loss='categorical_crossentropy', name='target')
     return network
 
+# lenet net
+def build_lenet(network,classes):
+    network = conv_2d(network, 20, 5, activation='relu')
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 50, 5, activation='relu')
+    network = max_pool_2d(network, 2)
+    network = flatten(network)
+    
+    network = fully_connected(network, 500, activation='relu')
+    network = fully_connected(network, classes, activation='softmax')
+    
+    sgd = tflearn.SGD(learning_rate=0.01, lr_decay=0.96, decay_step=125)
+
+    network = regression(network, optimizer=sgd, learning_rate=0.001,
+                        loss='categorical_crossentropy', name='target')
     return network
+
 
 # non-convolutional 
 def build_non_convolutional(network,classes):
@@ -1055,7 +1077,7 @@ def build_non_convolutional(network,classes):
     network = fully_connected(network,classes,activation='softmax') 
 
     network = regression(network, optimizer='adam',
-                        loss='categorical_crossentropy', 
+                        loss='categorical_crossentropy',    
                         learning_rate=0.0001)   
 
     return network
@@ -1204,7 +1226,8 @@ def build_network(name,network,classes):
 
     elif(name == "autoencoder"):   network = build_autoencoder(network,classes)
     elif(name == "visual"):        network,l1 = build_visualizer(network,classes)
-    elif(name == "costum"):        network = build_costum_net(network,classes)
+    elif(name == "custom"):        network = build_custom_net(network,classes)
+    elif(name == "lenet"):         network = build_lenet(network,classes)
     
     else: sys.exit(colored("ERROR: Unknown architecture!","red"))
 

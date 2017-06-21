@@ -10,7 +10,7 @@ from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 import winsound as ws
 import numpy as np
-import time
+import time,cv2
 from utils import architectures,dataset,classifier
 from colorama import init
 from termcolor import colored
@@ -89,14 +89,17 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_d
                     best_checkpoint_path=None)  
 
 # training parameters
-EPOCHS = 2000                       # maximum number of epochs 
-SNAP = 5                          # evaluates network progress at each SNAP epochs
+EPOCHS = 100                        # maximum number of epochs 
+SNAP = 10                            # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP         # number of iterations (or evaluations) 
+use_criteria = False                # use stop criteria
+eval_criteria = 0.80                # evaluation criteria (confidence)
 
 print("Batch size:", bs)
 print("Validation:", vs)
 print("    Epochs:", EPOCHS)
-print("  Snapshot:", SNAP, "\n")
+print("  Snapshot:", SNAP)
+print("Eval crit.:", eval_criteria, "\n")
 
 # creates a new accuracies' .csv
 csv_file = "%s_accuracies.txt" % run_id
@@ -110,16 +113,15 @@ fcsv.close()
 # training operation: can stop by reaching the max number of iterations or by Ctrl+C
 # iterator to control the maximum number of iterations 
 it = 0      
-use_criteria = False
 try:
     while(it < iterations):
         stime = time.time()
-        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.80,X2=None)
-        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.80,X2=None)
+        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria,X2=None)
+        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria,X2=None)
 
         test_acc = 0
         if(testdir): 
-            _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80,X2=None)
+            _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria,X2=None)
         
         ftime = time.time() - stime
 
@@ -178,12 +180,12 @@ if(False):
 
 # final evaluation
 stime = time.time()
-train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.80)
-val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.80)
+train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
+val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 
 test_acc = 0
 if(testdir): 
-    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80)
+    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria)
 
 ftime = time.time() - stime
         
@@ -203,6 +205,26 @@ if(testdir):
     print("       Min:", min_acc, "%") 
 print(colored("=============================","green"))
 print(colored("Time: %.3f seconds\n" % ftime,"green"))
+
+# shows image and predicted class
+# NOTE: Turn to false when scheduling many trainings
+if(True):
+    print(colored("\n*** Showing dataset performance ***","yellow"))
+    for i in np.random.choice(np.arange(0, len(Xv)), size=(20,)):
+        # classify the digit
+        probs = model.predict(Xv[np.newaxis, i])
+        probs = np.asarray(probs)
+        prediction = probs.argmax(axis=1)
+    
+        # resize the image from a 28 x 28 image to a 96 x 96 image so we
+        # can better see it
+        image = Xv[i]
+        image = cv2.resize(image, (128, 128))
+
+        # show the image and prediction
+        print("[INFO] Predicted: {}, Actual: {}".format(prediction[0], np.argmax(Yv[i])))
+        cv2.imshow("Digit", image)
+        cv2.waitKey(0)
 
 # sound a beep
 freq = 1000
