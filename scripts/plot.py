@@ -69,7 +69,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     length = len(data)
     x = np.arange(0,length)               # [1,2,3,4,...,n]
     #x = np.asarray([100+elem*10 for elem in x])
-    x = x*5
+    x = x*10
     
     xticks = [8,16,32,48,64,80,96,128,256,512]      # a-axis values
     xticks = x
@@ -205,7 +205,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
         extension - files extension to use on glob
     """
 
-    nepochs = [0] * 100     # array to store number of epochs
+    counter = [0] * 21      # array that counts all the number of epochs needed on training
     tr_accs = [0] * 100     # array to store the values of last line training accuracy
     te_accs = [0] * 100     # array to store the values of last line testing accuracy
     va_accs = [0] * 100     # array to store the values of last line validation accuracy
@@ -220,30 +220,29 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
         print("File: " + infile, (file_lenght-1)*5)
         # -1 : final evaluation line (header line is automatically removeds)
         # *5 : each csv write was done after 5 epochs
-        nepochs[index] = (file_lenght - 1)*5
-        
+        counter[file_lenght-1] += 1
+
         tr_accs[index] = data[file_lenght-1][0]     # 
         va_accs[index] = data[file_lenght-1][1]     #
         te_accs[index] = data[file_lenght-1][2]     #
-        mi_accs[index] = data[file_lenght-1][3]     #
 
         index += 1
     
-    print(nepochs,len(nepochs))
-
     ax = plt.subplot(211)
-    #arr= plt.hist(nepochs,alpha=0.75,align='mid') # 20 bins = 100 / 5 (at each 5 epochs)
-    #ax.bar()
+    inds = np.arange(21)
+    inds = [x*5 for x in inds]
+    ax.bar(inds,counter,1)
     ax.set_title("Number of epochs needed to finish training",fontweight='bold')
     plt.xlabel("Epochs")
     plt.ylabel("Counter")
+    plt.xticks(inds,inds)
     plt.grid(grid)
     plt.tight_layout()
 
     ax = plt.subplot(212)
-    plt.hist(tr_accs,bins=4,alpha=0.75,color='r',label='training')
-    plt.hist(te_accs,bins=4,alpha=0.5,color='b',label='test')
-    plt.hist(va_accs,bins=4,alpha=0.5,color='g',label='validation')
+    plt.hist(te_accs,alpha=0.5,color='b',label='test')
+    plt.hist(va_accs,alpha=0.5,color='g',label='validation')
+    plt.hist(tr_accs,alpha=0.7,color='r',label='training')
     ax.set_title("Accuracy's values distribution",fontweight='bold')
     plt.xlabel("Accuracy")
     plt.ylabel("Counter")
@@ -276,7 +275,7 @@ Script definition
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("function",help="plot function to be used (plot/parse)")
+parser.add_argument("function",help="plot function to be used (plot/parse/info)")
 parser.add_argument("file",help="path to the file/folder")
 # optional arguments
 parser.add_argument("-t","--title",help="plot's title (string)")
@@ -305,9 +304,11 @@ if(args.title == None):
 if(args.function == "plot"):    
     plot_csv_file(infile=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                   xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
 elif(args.function == "parse"):
     plot_several_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
 elif(args.function == "info"):
     info_from_all_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)

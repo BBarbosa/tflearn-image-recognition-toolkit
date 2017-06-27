@@ -13,6 +13,7 @@ from utils import architectures,dataset,classifier
 from colorama import init
 from termcolor import colored
 import os.path
+import time
 
 # init colored print
 init()
@@ -25,14 +26,14 @@ if (len(sys.argv) < 6):
 classifier.clear_screen()
 
 # change if you want a specific size
-HEIGHT = None
-WIDTH  = None
+HEIGHT = 32
+WIDTH  = 32
 
 # get command line arguments
 data = sys.argv[1]          # path to hdf5/file.pkl OR path/to/cropped/images
 arch = sys.argv[2]          # name of architecture
 bs   = int(sys.argv[3])     # bacth size
-run_id  = sys.argv[4]          # name for output model
+run_id  = sys.argv[4]       # name for output model
 modelpath = sys.argv[5]     # path to the already trained model
 
 try: 
@@ -40,11 +41,11 @@ try:
 except:
     testdir = None
 
-vs = 0.1           # percentage of dataset for validation (manually)
+vs = 0.3           # percentage of dataset for validation (manually)
 
 # load dataset and get image dimensions
 if(vs and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xt,Yt,_,_ = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True,validation=vs)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(data,HEIGHT,WIDTH,shuffled=True,validation=vs,gray=True)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -74,7 +75,7 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMA
                      data_preprocessing=img_prep,       
                      data_augmentation=None) 
 
-network = architectures.build_network(arch,network,CLASSES)
+network,_ = architectures.build_network(arch,network,CLASSES)
     
 # model definition
 model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_dir='logs/',
@@ -82,14 +83,17 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % run_id, tensorboard_d
                     best_checkpoint_path=None)  
 
 # training parameters
-EPOCHS = 100                       # maximum number of epochs 
-SNAP = 5                           # evaluates network progress at each SNAP epochs
-iterations = EPOCHS // SNAP        # number of iterations (or evaluations) 
+EPOCHS = 2000                       # maximum number of epochs 
+SNAP = 10                           # evaluates network progress at each SNAP epochs
+iterations = EPOCHS // SNAP         # number of iterations (or evaluations) 
+use_criteria = False                # use stop criteria
+eval_criteria = 0.80                # evaluation criteria (confidence)
 
-print("Batch size:",bs)
-print("Validation:",vs)
-print("    Epochs:",EPOCHS)
-print("  Snapshot:",snap,"\n")
+print("Batch size:", bs)
+print("Validation:", vs)
+print("    Epochs:", EPOCHS)
+print("  Snapshot:", SNAP)
+print("Eval crit.:", eval_criteria, "\n")
 
 print("Loading trained model...")  
 model.load(modelpath)
@@ -119,12 +123,12 @@ it = 0
 try:
     while(it < iterations):
         stime = time.time()
-        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.80)
-        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.80)
+        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
+        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 
         test_acc = 0
         if(testdir): 
-            _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80)
+            _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria)
         
         ftime = time.time() - stime
 
@@ -146,7 +150,6 @@ try:
         print(colored("Time: %.3f seconds\n" % ftime,"yellow"))
         
         # stop criteria by reaching a certain accuracy
-        use_criteria = True
         if(testdir):
             if(use_criteria and train_acc > 97.5 and val_acc > 97.5 and test_acc > 97.5):
                 break
@@ -184,12 +187,12 @@ if(False):
 
 # final evaluation
 stime = time.time()
-train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=0.80)
-val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.80)
+train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
+val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 
 test_acc = 0
 if(testdir): 
-    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=0.80)
+    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria)
 
 ftime = time.time() - stime
         

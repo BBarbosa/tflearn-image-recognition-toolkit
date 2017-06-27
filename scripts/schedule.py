@@ -1,6 +1,9 @@
 #--------------------------------------------------------------------------
-# NOTE: Make sure that there isn't any other instace of TensorFlow running
-#       before calling this script
+# NOTE: 
+# * Make sure that there isn't any other instace of TensorFlow running
+#   before calling this script
+# 
+# * Check if test mode after training is not activated
 #--------------------------------------------------------------------------
 
 import os

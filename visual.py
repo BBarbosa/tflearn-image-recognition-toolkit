@@ -14,7 +14,7 @@ from tflearn.layers.core import input_data
 from utils import architectures
 from colorama  import init
 from termcolor import colored
-from scipy import ndimage,misc
+from scipy import ndimage,misc,interpolate
 from PIL import Image
 from multiprocessing import Process
 
@@ -50,6 +50,8 @@ def plot_conv_weights(weights, input_channel=0):
                 kernel = weights[:, :, :, i]
             else:
                 kernel = weights[:, :, input_channel, i]
+
+            kernel = scipy.misc.imresize(kernel,(32,32),interp='cubic')
 
             # Plot image.
             ax.imshow(kernel, vmin=None, vmax=None,interpolation='nearest',cmap='gray')
@@ -199,9 +201,9 @@ else:
 print("Operating System: %s\n" % OS)
 
 # images properties (inherit from trainning?)   
-HEIGHT   = 200
-WIDTH    = 200
-CHANNELS = 3
+HEIGHT   = 32
+WIDTH    = 32
+CHANNELS = 1
 CLASSES  = 10
 
 # get command line arguments
@@ -226,12 +228,12 @@ network = input_data(shape=[None, WIDTH, HEIGHT, CHANNELS],     # shape=[None,IM
                     data_preprocessing=None,       
                     data_augmentation=None) 
 
-in2 = input_data(shape=[None,1])
+#in2 = input_data(shape=[None,1])
 #print(network.shape)
 #print(in2.shape,"\n")
-network = architectures.build_merge_test(network,in2,CLASSES)
+#network = architectures.build_merge_test(network,in2,CLASSES)
 
-#network = architectures.build_network(arch,network,CLASSES)
+network,_ = architectures.build_network(arch,network,CLASSES)
 
 # model definition
 model = tflearn.DNN(network, checkpoint_path='models',

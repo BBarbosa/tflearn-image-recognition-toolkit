@@ -5,9 +5,8 @@ import sys,math,time,os
 import numpy as np
 import scipy.ndimage
 import PIL
-import re
-from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
-from tflearn.data_utils import build_image_dataset_from_dir          
+import re,glob
+from tflearn.data_utils import shuffle,build_image_dataset_from_dir          
 from PIL import Image,ImageStat
 from colorama import init
 from termcolor import colored
@@ -95,7 +94,7 @@ def load_dataset_ipl(train_path,height,width,test_path=None,mode='folder'):
     return classes,X,Y,Xt,Yt 
 
 # load images directly from images folder (ex: cropped/5/)
-def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,validation=0,mean=False):
+def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,validation=0,mean=False,gray=False):
     """ 
     Given a folder containing images separated by folders (classes) returns training and testing
     data, if specified.
@@ -104,10 +103,10 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
 
     print("Loading dataset (from directory)...")
     if(width and height):
-        X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=True, dataset_file=train_path, 
+        X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=gray, dataset_file=train_path, 
                                            filetypes=[".bmp",".ppm",".jpg"], shuffle_data=False, categorical_Y=True)
     else:
-        X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=True, dataset_file=train_path, 
+        X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=gray, dataset_file=train_path, 
                                            filetypes=[".bmp",".ppm",".jpg"], shuffle_data=False, categorical_Y=True)
     try:
         width,height,ch = X[0].shape            # get images dimensions
@@ -226,8 +225,8 @@ def load_test_images(testdir=None,resize=None,mean=False):
                     image_path = os.path.join(tdir, image)
                     image      = Image.open(image_path)
                     if(resize):
-                        image = image.crop(resize)
-                        #print("\tCroped: ",image.size)
+                        image = image.resize(resize,Image.ANTIALIAS)
+                        #print("\Resized: ",image.size)
                     if(mean):
                         m = np.mean(np.array(image))
                         means_xte.append(m)
@@ -246,7 +245,7 @@ def load_test_images(testdir=None,resize=None,mean=False):
             print("\t Mean: ", means_xte.shape)
         print("Test images loaded...\n")
     else:
-        print(colored("WARNING: Path to test image is not set","yellow"))
+        print(colored("WARNING: Path to test image is not set\n","yellow"))
     
     return image_list,label_list,means_xte
 
@@ -304,3 +303,35 @@ def load_test_images_from_index_file(testdir=None,infile=None):
         print(colored("WARNING: Path to test images is not set","yellow"))
         
     return new_image_list,label_list
+
+# load an image set from a single folder without subfolders and labels
+# TODO: generalize part of reshaping images_list
+def load_image_set_from_folder(datadir=None,resize=None):
+    images_list = []
+
+    print("Loading test images from folder...")
+    try:
+        filenames = sorted(glob.glob(datadir + "*.jpg"),key=numericalSort)
+    except:
+        print(colored("WARNING: Couldn't load test images","yellow"))
+        return None,None
+
+    for infile in filenames:
+        img = Image.open(infile)
+        if(resize):
+            img = img.resize(resize,Image.ANTIALIAS)
+        images_list.append(img)
+    
+    # lenght of image's list
+    lil = len(images_list)      
+    # NOTE: make it general
+    new_images_list = np.empty((lil,32,32,1),dtype=np.float32)
+    for i in range(lil):
+        # NOTE: make it general
+        new_images_list[i] = np.array(images_list[i].getdata()).reshape(32,32,1)
+    
+    print("\t  Path: ",datadir)
+    print("\tImages: ",new_images_list.shape)
+    print("Test images loaded...\n")
+    
+    return new_images_list,filenames
