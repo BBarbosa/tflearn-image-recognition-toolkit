@@ -2,23 +2,19 @@ from __future__ import division, print_function, absolute_import
 
 import os,sys,time,platform,six,socket
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
 import tflearn
 import winsound as ws  # for windows only
 import tensorflow as tf
 import scipy.ndimage
 import math
 import PIL
-
+import cv2
 from tflearn.layers.estimator import regression
 from tflearn.layers.core import input_data
 from tflearn.data_augmentation import ImageAugmentation
 from utils import architectures
-
 import numpy as np 
 from PIL import Image,ImageDraw
-
-from matplotlib import pyplot as plt
 from colorama import init
 from termcolor import colored
 
@@ -107,7 +103,7 @@ def classify_set_of_images(model,images_list,runid,batch_size=128,labels_list=No
         `batch_size` - 
         `printout` - 
 
-    Return: Images' labelID and confidence
+    Return: Images' labelID and confidences
     """
 
     length      = len(images_list)                  # lenght of images list
@@ -166,6 +162,8 @@ def my_evaluate(model,images_list,labels_list,batch_size=128,criteria=0.75,X2=No
         `labels_list` - labels set 
         `batch_size` - number  
         `criteria` - minimum confindence to declare a good classification
+    
+    Return: Accuracy (in percentage)
     """
     length     = len(images_list)                           # length of images list
     iterations = math.ceil(length/batch_size)               # counter of how many batches will be used
@@ -455,3 +453,55 @@ def classify_local_server(model,ip,port,runid,nclasses):
         classify_sliding_window(model,background,classid,nclasses,runid=runid,printout=True,criteria=0.8)
         
     return None
+
+# function to test a model's accuracy by showing the images where it gets wrong
+def test_model_accuracy(model,image_set,label_set,eval_criteria):
+    """
+    Function to test a model's accuracy by showing the images where it 
+    predicts wrong.
+
+    Params:
+        `image_set` - images set to be classified
+        `label_set` - labels set respective to the images
+        `eval_criteria` - evaluation criteria used in the training  
+    """
+    print(colored("INFO: Showing dataset performance","yellow"))
+    len_is = len(image_set)    # length of the dataset that will be tested
+    bp = 0                     # badly predicted counter 
+    wp = 0                     # well predicted counter (confidence > criteria) 
+    show_image = True          # flag to (not) show tested images
+
+    for i in np.arange(0,len_is):
+        # classify the digit
+        probs = model.predict(image_set[np.newaxis, i])
+        probs = np.asarray(probs)
+        # sorted indexes by confidences 
+        predictions = np.argsort(-probs,axis=1)[0]
+        # top-2 predictions
+        guesses = predictions[0:2]
+        
+        ci = int(guesses[0])
+        confidence = probs[0][ci]
+
+        # resize the image to 128 x 128 
+        image = image_set[i]
+        image = cv2.resize(image, (128, 128))
+
+        # show the image and prediction of badly predicted cases
+        if(guesses[0] != np.argmax(label_set[i])):
+            bp += 1
+            
+            if(show_image):
+                print("Predicted: {0}, Actual: {1}, Confidence: {2:3.2f}, Second guess: {3}".format(guesses[0], np.argmax(label_set[i]),confidence,guesses[1]))
+                cv2.imshow("Test image", image)
+                key = cv2.waitKey(0)
+
+            if(key == 27):
+                cv2.destroyWindow("Test image")
+                show_image = False
+        else:
+            if(confidence > eval_criteria):
+                wp +=1
+
+    print(colored("INFO: %d badly predicted images in a total of %d" % (bp,len_is),"yellow"))
+    print(colored("INFO: %d well predicted images (confidence > %.2f) in a total of %d" % (wp,eval_criteria,len_is),"yellow"))

@@ -70,6 +70,7 @@ img_aug.add_random_rotation(max_angle=10.)
 
 # computational resources definition (made changes on TFLearn's config.py)
 tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
+#tflearn.init_graph(num_cores=4)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
@@ -96,7 +97,6 @@ print("Trained model loaded!\n")
 stime = time.time()
 train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
 val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
-
 if(testdir and Xt is not None and Yt is not None): 
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria)
 
@@ -182,7 +182,6 @@ for i in np.arange(0,len_is):
         # show badly predicted images --------------------------------------
         if(guesses[0] != np.argmax(Yv[i])):
             bp += 1
-            #if(confidence < eval_criteria): bpc += 1
 
             if(show_image):
                 print("Predicted: {0}, Actual: {1}, Confidence: {2:3.3f}, Second guess: {3}".format(guesses[0], np.argmax(Yv[i]), confidence, guesses[1]))
@@ -190,6 +189,7 @@ for i in np.arange(0,len_is):
                 key = cv2.waitKey(0)
 
             if(key == 27):
+                # pressed Esc
                 cv2.destroyWindow("Test image") 
                 show_image = False
         
