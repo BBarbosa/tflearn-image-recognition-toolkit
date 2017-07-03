@@ -25,8 +25,8 @@ if (len(sys.argv) < 5):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 32
-WIDTH  = 32
+HEIGHT = 128
+WIDTH  = 128
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images
@@ -53,8 +53,12 @@ else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
 
 # load test images
-Xt,Yt,_ = dataset.load_test_images(testdir,resize=None,mean=False)
+Xt = Yt = []
+#Xt,Yt,_ = dataset.load_test_images(testdir,resize=None,mean=False)
 #Xt,Yt = dataset.load_test_images_from_index_file(testdir,"./dataset/signals/test/imgs_classes.txt")
+
+X = dataset.convert_images_colorspace(X,testdir)
+Xv = dataset.convert_images_colorspace(Xv,testdir)
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -84,10 +88,10 @@ model = tflearn.DNN(network,checkpoint_path="models/%s" % run_id,tensorboard_dir
                     best_checkpoint_path=None)  
 
 # training parameters
-EPOCHS = 200                        # maximum number of epochs 
-SNAP = 10                           # evaluates network progress at each SNAP epochs
+EPOCHS = 500                        # maximum number of epochs 
+SNAP = 5                            # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP         # number of iterations (or evaluations) 
-use_criteria = False                 # use stop criteria
+use_criteria = True                 # use stop criteria
 eval_criteria = 0.80                # evaluation criteria (confidence)
 
 helper.print_net_parameters(bs=bs,vs=vs,epochs=EPOCHS,snap=SNAP,eval_criteria=eval_criteria,
@@ -95,11 +99,12 @@ helper.print_net_parameters(bs=bs,vs=vs,epochs=EPOCHS,snap=SNAP,eval_criteria=ev
 
 # creates a new accuracies' .csv
 csv_filename = "%s_accuracies.txt" % run_id
-helper.create_accuracy_csv_file(filename=csv_filename,testdir=testdir)
+helper.create_accuracy_csv_file(filename=csv_filename,testdir=None)
 
 best_val_acc = 0
-time_per_epoch = 0
 no_progress = 0
+iteration_time = 0
+total_training_time = 0
 
 # training operation: can stop by reaching the max number of iterations OR Ctrl+C OR by not evolving
 it = 0      
@@ -109,7 +114,7 @@ try:
         train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria,X2=None)
         val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria,X2=None)
         test_acc = min_acc = None
-        if(testdir): 
+        if(testdir and False): 
             _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
                                                                       printout=False,criteria=eval_criteria)
         
@@ -126,21 +131,21 @@ try:
 
         # write to a .csv file the evaluation accuracy 
         helper.write_accuracy_on_csv(filename=csv_filename,train_acc=train_acc,val_acc=val_acc,
-                                     test_acc=test_acc,min_acc=min_acc,time=time_per_epoch)
-        
+                                     test_acc=test_acc,min_acc=min_acc,time=total_training_time)
+        # write accuracy's values on file
         helper.print_accuracy(name="Evaluation",train_acc=train_acc,val_acc=val_acc,test_acc=test_acc,
-                              min_acc=min_acc,time=time_per_epoch,ctime=ftime)
+                              min_acc=min_acc,time=total_training_time,ctime=ftime)
 
         # NOTE: stop criteria check - accuracy AND no progress
-        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,98,no_progress,5)): break
+        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,97.5,no_progress,5)): break
         
         # repeats the training operation until it reaches one stop criteria
-        time_per_epoch = time.time()
+        iteration_time = time.time()
         model.fit(X,Y,n_epoch=SNAP,shuffle=True,show_metric=True,batch_size=bs,snapshot_step=False, 
                   snapshot_epoch=False,run_id=run_id,validation_set=(Xv,Yv),callbacks=None)
         
-        time_per_epoch = time.time() - time_per_epoch
-        time_per_epoch = time_per_epoch / SNAP
+        iteration_time = time.time() - iteration_time
+        total_training_time += iteration_time
 
         it += 1
 # to stop the training at any moment by pressing Ctrl+C
@@ -149,23 +154,24 @@ except KeyboardInterrupt:
     train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
     val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
     test_acc = min_acc = None
-    if(testdir): 
+    if(testdir and False): 
         _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
                                                                   printout=False,criteria=eval_criteria)
 
-# save best model
+# save best model (need this check if Ctr+C was pressed)
 if(best_val_acc > val_acc):
     model = best_model
     print(colored("INFO: Restored the best model!","yellow"))
 
 # save trained model
-print("Saving trained model...")
-modelname = "models/%s.tflearn" % run_id
-print("\tModel: ",modelname)
-model.save(modelname)
-print("Trained model saved!\n")
+if(False):
+    print("Saving trained model...")
+    modelname = "models/%s.tflearn" % run_id
+    print("\tModel: ",modelname)
+    model.save(modelname)
+    print("Trained model saved!\n")
 
-# load model to figure out if there is something wrong 
+# load model from saved file (optional)
 if(False):
     print("Loading trained model...")  
     model.load("models/%s.tflearn" % run_id)
@@ -177,7 +183,7 @@ stime = time.time()
 train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
 val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 test_acc = min_acc = None
-if(testdir): 
+if(testdir and False): 
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
                                                               printout=False,criteria=eval_criteria)
 
@@ -185,13 +191,13 @@ ftime = time.time() - stime
                              
 # write to a .csv file the evaluation accuracy
 helper.write_accuracy_on_csv(filename=csv_filename,train_acc=train_acc,val_acc=val_acc,
-                             test_acc=test_acc,min_acc=min_acc,time=time_per_epoch)
-
+                             test_acc=test_acc,min_acc=min_acc,time=total_training_time)
+# write accuracy's values on file
 helper.print_accuracy(name="Final Eval",train_acc=train_acc,val_acc=val_acc,test_acc=test_acc,
                       min_acc=min_acc,time=None,ctime=ftime,color="green")
 
 # NOTE: Turn to false when scheduling many trainings
-if(True):
+if(False):
     classifier.test_model_accuracy(model=model,image_set=Xv,label_set=Yv,eval_criteria=eval_criteria)
 
 # sound a beep to notify that the training ended

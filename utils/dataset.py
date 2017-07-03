@@ -5,7 +5,7 @@ import sys,math,time,os
 import numpy as np
 import scipy.ndimage
 import PIL
-import re,glob
+import re,glob,cv2
 from tflearn.data_utils import shuffle,build_image_dataset_from_dir          
 from PIL import Image,ImageStat
 from colorama import init
@@ -104,10 +104,10 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     print("Loading dataset (from directory)...")
     if(width and height):
         X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=gray, dataset_file=train_path, 
-                                           filetypes=[".bmp",".ppm",".jpg"], shuffle_data=False, categorical_Y=True)
+                                           filetypes=[".bmp",".ppm",".jpg",".png"], shuffle_data=False, categorical_Y=True)
     else:
-        X,Y = build_image_dataset_from_dir(train_path, resize=None, convert_gray=gray, dataset_file=train_path, 
-                                           filetypes=[".bmp",".ppm",".jpg"], shuffle_data=False, categorical_Y=True)
+        X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=gray, dataset_file=train_path, 
+                                           filetypes=[".bmp",".ppm",".jpg",".png"], shuffle_data=False, categorical_Y=True)
     try:
         width,height,ch = X[0].shape            # get images dimensions
     except:
@@ -198,7 +198,7 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     return classes,Xtr,Ytr,height,width,ch,Xte,Yte,means_xtr,means_xte
 
 # load test images from a directory
-def load_test_images(testdir=None,resize=None,mean=False):
+def load_test_images(testdir=None,resize=None,mean=False,gray=False):
     """
     Function that loads a set of test images saved by class in distinct folders.
     Returns a list of PIL images an labels.
@@ -207,6 +207,10 @@ def load_test_images(testdir=None,resize=None,mean=False):
     label_list = []
     means_xte = []
     classid = 0
+
+    channels = 3
+    if(gray):
+        channels = 1
     
     if(testdir):
         print("Loading test images...")
@@ -221,7 +225,7 @@ def load_test_images(testdir=None,resize=None,mean=False):
             
             # for each image, load and append it to the images list 
             for image in images:
-                if image.endswith((".bmp",".jpg",".ppm")):
+                if image.endswith((".bmp",".jpg",".ppm",".png")):
                     image_path = os.path.join(tdir, image)
                     image      = Image.open(image_path)
                     if(resize):
@@ -236,9 +240,17 @@ def load_test_images(testdir=None,resize=None,mean=False):
                     label_list.append(classid)
             classid += 1
         
+        lil = len(image_list)
+        image_array = np.empty((lil,resize[1],resize[0],channels),dtype=np.float32)
+
+        for i in range(lil):
+            image_array[i] = np.array(image_list[i].getdata()).reshape(resize[1],resize[0],channels)
+
+        labels_array = np.array(label_list)
+        
         print("\t  Path: ",testdir)
-        print("\tImages: ",len(image_list))
-        print("\tLabels: ",len(label_list))
+        print("\tImages: ",image_array.shape)
+        print("\tLabels: ",labels_array.shape)
         if(mean):
             means_xte = np.array(means_xte)
             means_xte = np.reshape(means_xte,(-1,1))
@@ -247,6 +259,7 @@ def load_test_images(testdir=None,resize=None,mean=False):
     else:
         print(colored("WARNING: Path to test image is not set\n","yellow"))
     
+    # NOTE: if needed change to return lists
     return image_list,label_list,means_xte
 
 # load test images from an index file
@@ -335,3 +348,39 @@ def load_image_set_from_folder(datadir=None,resize=None):
     print("Test images loaded...\n")
     
     return new_images_list,filenames
+
+def convert_images_colorspace(images_array=None,fromc=None,convert_to=None):
+    """
+    Minimalist function to convert images colorspaces. From RGB 
+    to other colorspace (HSV,YCrCb,YUV,...)
+
+    Params:
+        `images_array` - images to be converted
+        `fromc` - current input images colorspace
+        `convert_to` - colorspace that images will be converted
+    
+    Return: Converted images array if convert_to is a valid
+    colorspace.
+
+    TODO: Add option from/to
+    """
+    new_images_array = images_array
+
+    if(convert_to is not None):
+        if(convert_to == 'HSV'):
+            ccode = cv2.COLOR_RGB2HSV
+        elif(convert_to == 'YCrCb'):
+            ccode = cv2.COLOR_RGB2YCrCb
+        elif(convert_to == 'YUV'):
+            ccode = cv2.COLOR_RGB2YUV
+        elif(convert_to == 'RGB'):
+            ccode = cv2.COLOR_HSV2RGB
+        else:
+            print(colored("WARNING: Unknown colorspace! Returned original images."))
+            return images_array
+        
+        lia = len(new_images_array) # length of images array
+        for i in range(lia):
+            new_images_array[i] = cv2.cvtColor(images_array[i],ccode)
+
+    return new_images_array

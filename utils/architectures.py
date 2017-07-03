@@ -1115,6 +1115,31 @@ def build_custom2(network,classes):
                         loss='categorical_crossentropy', name='target')
     return network
 
+# costum net
+def build_custom3(network,classes):
+    network = conv_2d(network, 8, 5, activation='relu')
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+    
+    network = conv_2d(network, 16, 5, activation='relu')
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+    
+    network = conv_2d(network, 24, 5, activation='relu')
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+    
+    #network = flatten(network)
+    
+    network = fully_connected(network, 512, activation='relu')
+    network = dropout(network, 0.5)
+    #network = fully_connected(network, 256, activation='relu')
+    #network = dropout(network, 0.5)
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', learning_rate=0.001,
+                        loss='categorical_crossentropy', name='target')
+    return network
 
 # lenet net
 def build_lenet(network,classes):
@@ -1149,31 +1174,40 @@ def build_non_convolutional(network,classes):
 
 # autoencoder example
 def build_autoencoder(network,classes):                            
-    encoder = conv_2d(network, 32, 5, activation='relu') 
+    encoder = conv_2d(network, 16, 5, activation='relu') 
     encoder = max_pool_2d(encoder, 2)
-    encoder = conv_2d(encoder, 16, 5, activation='relu')
+    encoder = conv_2d(encoder, 32, 5, activation='relu')
     encoder = max_pool_2d(encoder, 2)
-    encoder = conv_2d(encoder, 8, 5, activation='relu')
+    encoder = conv_2d(encoder, 64, 5, activation='relu')
     encoder = max_pool_2d(encoder, 2)
+
+    #encoder = conv_2d(encoder, 64, 5, activation='relu')
+    #encoder = max_pool_2d(encoder, 2)
     
-    decoder = conv_2d(encoder, 8, 5, activation='relu')
-    decoder = upsample_2d(decoder, 2)
-    decoder = conv_2d(decoder, 16, 5, activation='relu')
+    #decoder = conv_2d(encoder, 64, 5, activation='relu')
+    #decoder = upsample_2d(decoder, 2)
+
+    decoder = conv_2d(encoder, 64, 5, activation='relu')
     decoder = upsample_2d(decoder, 2)
     decoder = conv_2d(decoder, 32, 5, activation='relu')
     decoder = upsample_2d(decoder, 2)
+    decoder = conv_2d(decoder, 16, 5, activation='relu')
+    decoder = upsample_2d(decoder, 2)
     
-    decoder = conv_2d(decoder, 1, 5) # NOTE: always check color space
+    decoder = conv_2d(decoder, 3, 5) # NOTE: always check color space
 
     # transpose (when use stride)
-    #decoder = conv_2d_transpose(encoder, 8, 5, [8,8], activation='relu')
+    #decoder = conv_2d_transpose(encoder, 64, 5, [16,53], activation='relu')
     #decoder = upsample_2d(decoder, 2)
-    #decoder = conv_2d_transpose(decoder, 16, 5, [16,16], activation='relu')
+    #decoder = conv_2d_transpose(decoder, 32, 5, [32,106], activation='relu')
     #decoder = upsample_2d(decoder, 2)
-    #decoder = conv_2d_transpose(decoder, 32, 5, [64,64], activation='relu', strides=2)
+    #decoder = conv_2d_transpose(decoder, 16, 5, [64,212], activation='relu')
     #decoder = upsample_2d(decoder, 2)
-    #
-    #decoder = conv_2d_transpose(decoder, 3, 5, [128,128])
+
+    #decoder = conv_2d_transpose(decoder, 8, 5, [64,64], activation='relu')
+    #decoder = upsample_2d(decoder, 2)
+    
+    #decoder = conv_2d_transpose(decoder, 3, 5, [128,424])
 
     # FC -> Convolutional
     # network = conv_2d(network, 512, 8, activation='relu')  
@@ -1293,6 +1327,7 @@ def build_network(name,network,classes):
     elif(name == "visual"):        network,l1 = build_visualizer(network,classes)
     elif(name == "custom"):        network = build_custom(network,classes)
     elif(name == "custom2"):       network = build_custom2(network,classes)
+    elif(name == "custom3"):       network = build_custom3(network,classes)
     elif(name == "lenet"):         network = build_lenet(network,classes)
     
     else: sys.exit(colored("ERROR: Unknown architecture!","red"))

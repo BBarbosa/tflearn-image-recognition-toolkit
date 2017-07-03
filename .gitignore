@@ -27,8 +27,8 @@
 !scripts/
 !scripts/**
 
-!logs/
-!logs/**
+#!logs/
+#!logs/**
 
 #!dataset/
 #!dataset/**

@@ -20,13 +20,13 @@ commands = ["python training.py"]
 
 datasets = ["dataset/ori/side128"]
 
-testdirs = ["dataset/ori/test"] 
+testdirs = ["HSV","YCrCb","YUV"] 
 
 architectures = ["1l_8f_5x5_fc50"]
 
 batches = [32]
 
-nruns = 100
+nruns = 3
 
 for command in commands:
     for data in datasets:
@@ -35,8 +35,7 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        level = "100runs_"
-                        runid = "fabric_" + level + arch + "_r" + str(run)
+                        runid = "fabric_" + testdir + "_" + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         #new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)

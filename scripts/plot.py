@@ -199,17 +199,20 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
 def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function that gathers many accuracy's files and shows how they
+    Used on 100 runs experience
 
     Params:
         folder - directory where accuracy's files are stored    
         extension - files extension to use on glob
     """
+    
+    nruns = 100
+    max_epochs = 200
+    epoch_ticks = max_epochs // 5 + 1
 
-    counter = [0] * 21      # array that counts all the number of epochs needed on training
-    tr_accs = [0] * 100     # array to store the values of last line training accuracy
-    te_accs = [0] * 100     # array to store the values of last line testing accuracy
-    va_accs = [0] * 100     # array to store the values of last line validation accuracy
-    mi_accs = [0] * 100     # array to store the values of last line minimum accuracy
+    counter = [0] * epoch_ticks     # array that counts all the number of epochs needed on training
+    tr_accs = [0] * nruns           # array to store the values of last line training accuracy
+    va_accs = [0] * nruns           # array to store the values of last line validation accuracy
     index = 0
 
     for infile in sorted(glob.glob(files_dir + '*accuracies.txt'),key=numericalSort):
@@ -217,32 +220,30 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
                              skip_header=0,autostrip=True)
         
         file_lenght = len(data)
-        print("File: " + infile, (file_lenght-1)*5)
+        print("File: " + infile, "Epochs:", (file_lenght-1)*5)
         # -1 : final evaluation line (header line is automatically removeds)
         # *5 : each csv write was done after 5 epochs
         counter[file_lenght-1] += 1
-
-        tr_accs[index] = data[file_lenght-1][0]     # 
-        va_accs[index] = data[file_lenght-1][1]     #
-        te_accs[index] = data[file_lenght-1][2]     #
+        tr_accs[index] = data[file_lenght-1][0]     # get the first value of the tuple  
+        va_accs[index] = data[file_lenght-1][1]     # get the second value of the tuple
 
         index += 1
-    
+
     ax = plt.subplot(211)
-    inds = np.arange(21)
+    inds = np.arange(epoch_ticks)
     inds = [x*5 for x in inds]
     ax.bar(inds,counter,1)
     ax.set_title("Number of epochs needed to finish training",fontweight='bold')
     plt.xlabel("Epochs")
     plt.ylabel("Counter")
     plt.xticks(inds,inds)
+    plt.xlim((40,140))
     plt.grid(grid)
     plt.tight_layout()
 
     ax = plt.subplot(212)
-    plt.hist(te_accs,alpha=0.5,color='b',label='test')
-    plt.hist(va_accs,alpha=0.5,color='g',label='validation')
     plt.hist(tr_accs,alpha=0.7,color='r',label='training')
+    plt.hist(va_accs,alpha=0.5,color='g',label='validation')
     ax.set_title("Accuracy's values distribution",fontweight='bold')
     plt.xlabel("Accuracy")
     plt.ylabel("Counter")
