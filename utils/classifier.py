@@ -257,20 +257,20 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
         img = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
         
         BLOCK = 128
-        if(BLOCK > minimum or BLOCK < 2):           # checks if it isn't too big
-            BLOCK = IMAGE                           # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
+        if(BLOCK > minimum or BLOCK < 2):   # checks if it isn't too big
+            BLOCK = IMAGE                   # side of square block for painting: BLOCKxBLOCK. BLOCK <= IMAGE  
         
-        padding   = (IMAGE - BLOCK) // 2            # padding for centering sliding window
-        paddingh  = (HEIGHT - BLOCK) // 2           # padding for centering sliding window (rectangles)
-        paddingw  = (WIDTH - BLOCK) // 2            # padding for centering sliding window (rectangles)
+        padding   = (IMAGE - BLOCK) // 2    # padding for centering sliding window
+        paddingh  = (HEIGHT - BLOCK) // 2   # padding for centering sliding window (rectangles)
+        paddingw  = (WIDTH - BLOCK) // 2    # padding for centering sliding window (rectangles)
 
         nhDIM     = hDIM - 2*paddingh                                                
         nwDIM     = wDIM - 2*paddingw                                
         
-        hshifts   = nhDIM // BLOCK                  # number of sliding window shifts on height
-        wshifts   = nwDIM // BLOCK                  # number of sliding window shifts on width
-        total = hshifts*wshifts                     # total number of windows
-        counts = [0] * nclasses                     # will count the occurences of each class. resets at every image
+        hshifts   = nhDIM // BLOCK          # number of sliding window shifts on height
+        wshifts   = nwDIM // BLOCK          # number of sliding window shifts on width
+        total = hshifts*wshifts             # total number of windows
+        counts = [0] * nclasses             # will count the occurences of each class. resets at every image
 
         if(saveOutputImage):
             background = image                                      # copy image to a background image variable
@@ -283,7 +283,7 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
 
         #label = np.zeros(nclasses)  # creates an empty array with lenght of number of classes
         #label[classid] = 1          # create a class label by setting the value 1 on the corresponding index 
-                                    # for example, with 4 classes and for index 2 -> [0 0 1 0]
+                                     # for example, with 4 classes and for index 2 -> [0 0 1 0]
 
         val = 0     # will store the highest probability 
         ed = 0      # will store the sum of the euclidian distances
@@ -387,7 +387,6 @@ def classify_sliding_window(model,images_list,labels_list,nclasses,runid=None,pr
             # NOTE: euclidian distances (should it divide by the number of images?)
             #ed = ed / total
             #edistances.append(ed)
-
     
     # round accuracy array to %.2f
     accuracies = np.around(accuracies,2)
@@ -455,7 +454,7 @@ def classify_local_server(model,ip,port,runid,nclasses):
     return None
 
 # function to test a model's accuracy by showing the images where it gets wrong
-def test_model_accuracy(model,image_set,label_set,eval_criteria):
+def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True):
     """
     Function to test a model's accuracy by showing the images where it 
     predicts wrong.
@@ -469,7 +468,6 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria):
     len_is = len(image_set)    # length of the dataset that will be tested
     bp = 0                     # badly predicted counter 
     wp = 0                     # well predicted counter (confidence > criteria) 
-    show_image = True          # flag to (not) show tested images
 
     for i in np.arange(0,len_is):
         # classify the digit
@@ -495,13 +493,13 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria):
                 print("Predicted: {0}, Actual: {1}, Confidence: {2:3.2f}, Second guess: {3}".format(guesses[0], np.argmax(label_set[i]),confidence,guesses[1]))
                 cv2.imshow("Test image", image)
                 key = cv2.waitKey(0)
-
-            if(key == 27):
-                cv2.destroyWindow("Test image")
-                show_image = False
+                if(key == 27):
+                    # pressed Esc
+                    cv2.destroyWindow("Test image")
+                    show_image = False
         else:
             if(confidence > eval_criteria):
                 wp +=1
 
-    print(colored("INFO: %d badly predicted images in a total of %d" % (bp,len_is),"yellow"))
+    print(colored("INFO: %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
     print(colored("INFO: %d well predicted images (confidence > %.2f) in a total of %d" % (wp,eval_criteria,len_is),"yellow"))

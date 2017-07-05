@@ -26,8 +26,8 @@ if (len(sys.argv) < 4):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 32
-WIDTH  = 32
+HEIGHT = 64
+WIDTH  = 64
 
 # get command line arguments
 traindir   = sys.argv[1]         # path/to/cropped/images
@@ -39,11 +39,12 @@ try:
 except:
     testdir = None
 
-vs = 0.3    # percentage of data for validation (set manually)
+vs = 1    # percentage of data for validation (set manually)
 
 # load dataset and get image dimensions
 if(vs and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,mean_xtr,mean_xv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,validation=vs,mean=False,gray=True)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,mean_xtr,mean_xv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,
+                                                                                            validation=vs,mean=False,gray=True)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -55,7 +56,7 @@ else:
 Xt = Yt = None
 #Xt,Yt,mean_xte = dataset.load_test_images(testdir,resize=None,mean=False)
 #Xt,Yt = dataset.load_test_images_from_index_file(testdir,"./dataset/signals/test/imgs_classes.txt")
-Xt,filenames = dataset.load_image_set_from_folder(testdir,(HEIGHT,WIDTH))
+Xt,filenames = dataset.load_image_set_from_folder(testdir,resize=(WIDTH,HEIGHT))
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -85,7 +86,8 @@ model = tflearn.DNN(network, checkpoint_path=None, tensorboard_dir='logs/',
                     best_checkpoint_path=None)  
 
 eval_criteria = 0.80        # evaluation criteria (confidence)
-print("Eval crit.:", eval_criteria, "\n")
+print("Eval crit.:", eval_criteria)
+print("Validation:", vs*100 , "%\n")
 
 # load model to figure out if there is something wrong 
 print("Loading trained model...")  
@@ -95,7 +97,7 @@ print("Trained model loaded!\n")
 
 # final evaluation with the best model
 stime = time.time()
-train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
+#train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
 val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 if(testdir and Xt is not None and Yt is not None): 
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria)
@@ -103,7 +105,7 @@ if(testdir and Xt is not None and Yt is not None):
 ftime = time.time() - stime
 
 print(colored("===== Final Evaluation ======","green"))
-print("     Train:", train_acc, "%")
+#print("     Train:", train_acc, "%")
 print("Validation:", val_acc, "%")
 if(testdir and Xt is not None and Yt is not None):
     print("      Test:", test_acc, "%")
@@ -152,6 +154,9 @@ for i in np.arange(0,len_is):
         dest_file.reverse()
         dest_file = dest_file[0]
 
+        dest_folder = "./dataset/numbers/augmented_v6/"
+
+        # NOTE: move images by confirming them manually
         if(False):
             cv2.imshow("Test image", image)
             key = cv2.waitKey(0)
@@ -159,11 +164,11 @@ for i in np.arange(0,len_is):
             if(key == 13):
                 # enter
                 # NOTE: Always adapt the destination folder
-                dest = "./dataset/numbers/augmented_v2/" + str(guesses[0]) + "/_" + dest_file
+                dest = dest_folder + str(guesses[0]) + "/_" + dest_file
                 shutil.copy(src,dest)
             elif(key > 47 and key < 58):
                 # works for [0,9] but not for >9
-                dest = "./dataset/numbers/augmented_v2/" + str(key-48) + "/_" + dest_file
+                dest = dest_folder + str(key-48) + "/_" + dest_file
                 shutil.copy(src,dest)
                 pass
             elif(key == 32):
@@ -175,7 +180,8 @@ for i in np.arange(0,len_is):
             else:
                 pass
         else:
-            dest = "./dataset/numbers/augmented_v3/" + str(guesses[0]) + "/_" + dest_file
+            # NOTE: move files automatically
+            dest = dest_folder + str(guesses[0]) + "/_" + dest_file
             shutil.copy(src,dest)
     
     else:
@@ -197,7 +203,7 @@ for i in np.arange(0,len_is):
             if(confidence > eval_criteria):
                 wp += 1
 
-print(colored("INFO: %d badly predicted images in a total of %d" % (bp,len_is),"yellow"))
+print(colored("INFO: %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
 print(colored("INFO: %d well predicted images (confidence > %.2f) in a total of %d" % (wp,eval_criteria,len_is),"yellow"))
 
 # sound a beep

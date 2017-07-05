@@ -1,5 +1,5 @@
 from __future__ import division, print_function, absolute_import
-import sys,os,platform,time
+import sys,os,platform,time,copy
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
 import tensorflow as tf
@@ -43,22 +43,26 @@ vs = 0.3    # percentage of data for validation (set manually)
 
 # load dataset and get image dimensions
 if(vs and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,mean_xtr,mean_xv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,
-                                                                                            validation=vs,mean=False,gray=True)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,validation=vs,
+                                                                                            mean=False,gray=False,save_dd=True)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
 
 # load test images
+# TIP: Use dataset.load_test_images or dataset.load_dataset_windows as X
 Xt = Yt = []
-#Xt,Yt,_ = dataset.load_test_images(testdir,resize=None,mean=False)
+Xt,Yt,_ = dataset.load_test_images(testdir,resize=(WIDTH,HEIGHT),mean=False,to_array=False,gray=False)
 #Xt,Yt = dataset.load_test_images_from_index_file(testdir,"./dataset/signals/test/imgs_classes.txt")
+testdir = None
 
-X = dataset.convert_images_colorspace(X,testdir)
-Xv = dataset.convert_images_colorspace(Xv,testdir)
+#X = dataset.convert_images_colorspace(X,testdir)
+#Xv = dataset.convert_images_colorspace(Xv,testdir)
+#print("")
+#testdir = None
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -99,7 +103,7 @@ helper.print_net_parameters(bs=bs,vs=vs,epochs=EPOCHS,snap=SNAP,eval_criteria=ev
 
 # creates a new accuracies' .csv
 csv_filename = "%s_accuracies.txt" % run_id
-helper.create_accuracy_csv_file(filename=csv_filename,testdir=None)
+helper.create_accuracy_csv_file(filename=csv_filename,testdir=testdir)
 
 best_val_acc = 0
 no_progress = 0
@@ -114,7 +118,7 @@ try:
         train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria,X2=None)
         val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria,X2=None)
         test_acc = min_acc = None
-        if(testdir and False): 
+        if(testdir is not None): 
             _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
                                                                       printout=False,criteria=eval_criteria)
         
@@ -123,9 +127,9 @@ try:
         # save best model if there is a better validation accuracy
         if(val_acc > best_val_acc):
             no_progress = 0
-            best_model = model
+            best_model = copy.copy(model)
             best_val_acc = val_acc
-            print(colored("INFO: New best model!","yellow"))
+            print(colored("\nINFO: New best model!","yellow"))
         else:
             no_progress += 1
 
@@ -137,7 +141,7 @@ try:
                               min_acc=min_acc,time=total_training_time,ctime=ftime)
 
         # NOTE: stop criteria check - accuracy AND no progress
-        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,97.5,no_progress,5)): break
+        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,99,no_progress,10)): break
         
         # repeats the training operation until it reaches one stop criteria
         iteration_time = time.time()
@@ -154,7 +158,7 @@ except KeyboardInterrupt:
     train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
     val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
     test_acc = min_acc = None
-    if(testdir and False): 
+    if(testdir is not None): 
         _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
                                                                   printout=False,criteria=eval_criteria)
 
@@ -164,7 +168,7 @@ if(best_val_acc > val_acc):
     print(colored("INFO: Restored the best model!","yellow"))
 
 # save trained model
-if(False):
+if(True):
     print("Saving trained model...")
     modelname = "models/%s.tflearn" % run_id
     print("\tModel: ",modelname)
@@ -183,7 +187,7 @@ stime = time.time()
 train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
 val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 test_acc = min_acc = None
-if(testdir and False): 
+if(testdir is not None): 
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
                                                               printout=False,criteria=eval_criteria)
 
@@ -196,9 +200,9 @@ helper.write_accuracy_on_csv(filename=csv_filename,train_acc=train_acc,val_acc=v
 helper.print_accuracy(name="Final Eval",train_acc=train_acc,val_acc=val_acc,test_acc=test_acc,
                       min_acc=min_acc,time=None,ctime=ftime,color="green")
 
-# NOTE: Turn to false when scheduling many trainings
-if(False):
-    classifier.test_model_accuracy(model=model,image_set=Xv,label_set=Yv,eval_criteria=eval_criteria)
+# NOTE: Turn show_image to false when scheduling many trainings
+classifier.test_model_accuracy(model=model,image_set=Xv,label_set=Yv,
+                               eval_criteria=eval_criteria,show_image=False)
 
 # sound a beep to notify that the training ended
 freq = 1000

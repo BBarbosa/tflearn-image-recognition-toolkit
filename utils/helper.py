@@ -30,7 +30,7 @@ def print_accuracy(name="Accuracies",train_acc=None,val_acc=None,test_acc=None,
     if(val_acc is not None):   print("Validation:", val_acc, "%")
     if(test_acc is not None):  print("      Test:", test_acc, "%")
     if(min_acc is not None):   print("       Min:", min_acc, "%")
-    if(time is not None):      print("Time/Epoch: %.3f seconds" % time)
+    if(time is not None):      print("Total time: %.3f seconds" % time)
     
     print(colored("-----------------------------",color))
     if(ctime is not None): print(colored("Time: %.3f seconds\n" % ctime,color))
@@ -50,7 +50,7 @@ def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None
     """
     print("-------------------")
     if(bs is not None):            print("Batch size:", bs)
-    if(vs is not None):            print("Validation:", vs)
+    if(vs is not None):            print("Validation:", vs*100, "%")
     if(epochs is not None):        print("    Epochs:", epochs)
     if(snap is not None):          print("  Snapshot:", snap)
     if(use_criteria is not None):  print(" Use crit.:", use_criteria)

@@ -1161,9 +1161,10 @@ def build_lenet(network,classes):
 
 # non-convolutional 
 def build_non_convolutional(network,classes):
-    network = max_pool_2d(network, 50)
+    network = max_pool_2d(network, 20)
+    network = conv_2d(network, 10, 3, activation='relu')
 
-    network = fully_connected(network, 48,activation='relu')
+    network = fully_connected(network, 256,activation='relu')
     network = fully_connected(network,classes,activation='softmax') 
 
     network = regression(network, optimizer='adam',
@@ -1217,6 +1218,30 @@ def build_autoencoder(network,classes):
                          loss='mean_square',    
                          learning_rate=0.0001,
                          metric=None)  
+
+    return network
+
+# example of using upscore layer
+def build_upscore(network,classes):
+    network = conv_2d(network, 16, 5, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    network = local_response_normalization(network)
+    
+    network = conv_2d(network, 32, 5, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    network = local_response_normalization(network)
+    
+    network = conv_2d(network, 64, 5, activation='relu')
+    network = conv_2d(network, 64, 5, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    network = max_pool_2d(network, 2, strides=2)
+    network = local_response_normalization(network)
+    
+    network = upscore_layer(network, num_classes=classes, shape=[4, 53, 16], kernel_size=8)
+
+    network = regression(network,optimizer='adam',
+                         loss='weak_cross_entropy_2d',
+                         learning_rate=0.001)
 
     return network
 
@@ -1329,6 +1354,7 @@ def build_network(name,network,classes):
     elif(name == "custom2"):       network = build_custom2(network,classes)
     elif(name == "custom3"):       network = build_custom3(network,classes)
     elif(name == "lenet"):         network = build_lenet(network,classes)
+    elif(name == "upscore"):       network = build_upscore(network,classes)
     
     else: sys.exit(colored("ERROR: Unknown architecture!","red"))
 

@@ -1,15 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
 import tflearn
-import sys,math,time,os
+import sys,math,time,os,scipy.ndimage,PIL,re,glob,cv2
 import numpy as np
-import scipy.ndimage
-import PIL
-import re,glob,cv2
 from tflearn.data_utils import shuffle,build_image_dataset_from_dir          
 from PIL import Image,ImageStat
 from colorama import init
 from termcolor import colored
+from matplotlib import pyplot as plt
 
 # init colored print
 init()
@@ -94,7 +92,8 @@ def load_dataset_ipl(train_path,height,width,test_path=None,mode='folder'):
     return classes,X,Y,Xt,Yt 
 
 # load images directly from images folder (ex: cropped/5/)
-def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,validation=0,mean=False,gray=False):
+def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,
+                         validation=0,mean=False,gray=False,save_dd=False):
     """ 
     Given a folder containing images separated by folders (classes) returns training and testing
     data, if specified.
@@ -117,7 +116,7 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     nimages,classes = Y.shape               # get number of images and classes    
 
     #------------------------------ validation split ------------------------------------------------
-    if(validation > 0 and validation < 1):  # validation = [0,1] float
+    if(validation > 0 and validation <= 1):  # validation = [0,1] float
         counts  = [0] * classes             # create an array to store the number of images per class
 
         for i in range(0,nimages):
@@ -126,6 +125,26 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
         print("\t       Images: ", nimages)
         print("\t       Counts: ", counts)
         print("\t      Classes: ", classes)
+
+        # show data distribution
+        if(save_dd):
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            indices = np.arange(len(counts))
+            rects = plt.bar(indices,counts)
+            plt.xlabel("Class")
+            plt.xticks(indices)
+            plt.ylabel("Count")
+            plt.grid(True)
+            image_title = train_path.split("\\")
+            image_title.reverse()
+            image_title = image_title[1]
+            plt.title("Images distribution per class (%s)" % train_path,fontweight='bold')
+
+            for i, v in enumerate(counts):
+                ax.text(i - 0.25, v+1, str(v))
+    
+            plt.savefig("%s.png" % image_title,dpi=300,format='png')
 
         Xtr = []
         Xte = []
@@ -198,7 +217,7 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     return classes,Xtr,Ytr,height,width,ch,Xte,Yte,means_xtr,means_xte
 
 # load test images from a directory
-def load_test_images(testdir=None,resize=None,mean=False,gray=False):
+def load_test_images(testdir=None,resize=None,mean=False,gray=False,to_array=False):
     """
     Function that loads a set of test images saved by class in distinct folders.
     Returns a list of PIL images an labels.
@@ -212,7 +231,7 @@ def load_test_images(testdir=None,resize=None,mean=False,gray=False):
     if(gray):
         channels = 1
     
-    if(testdir):
+    if(testdir is not None):
         print("Loading test images...")
         # get all directories from testdir 
         dirs = sorted(os.walk(testdir).__next__()[1],key=numericalSort)
@@ -228,10 +247,11 @@ def load_test_images(testdir=None,resize=None,mean=False,gray=False):
                 if image.endswith((".bmp",".jpg",".ppm",".png")):
                     image_path = os.path.join(tdir, image)
                     image      = Image.open(image_path)
-                    if(resize):
+                    if(gray): image = image.convert('L')
+                    if(resize is not None):
                         image = image.resize(resize,Image.ANTIALIAS)
                         #print("\Resized: ",image.size)
-                    if(mean):
+                    if(mean is not None):
                         m = np.mean(np.array(image))
                         means_xte.append(m)
                         #print("\t  Mean: ", m)
@@ -240,27 +260,39 @@ def load_test_images(testdir=None,resize=None,mean=False,gray=False):
                     label_list.append(classid)
             classid += 1
         
-        lil = len(image_list)
-        image_array = np.empty((lil,resize[1],resize[0],channels),dtype=np.float32)
+        if(to_array and resize is not None):
+            lil = len(image_list)
+            image_array  = np.empty((lil,resize[1],resize[0],channels),dtype=np.float32)
+            labels_array = np.empty((lil,classid))
 
-        for i in range(lil):
-            image_array[i] = np.array(image_list[i].getdata()).reshape(resize[1],resize[0],channels)
-
-        labels_array = np.array(label_list)
+            for i in range(lil):
+                image_array[i]  = np.array(image_list[i].getdata()).reshape(resize[1],resize[0],channels)
+                temp = np.zeros(classid)
+                temp[label_list[i]] = 1
+                labels_array[i] = temp 
         
         print("\t  Path: ",testdir)
-        print("\tImages: ",image_array.shape)
-        print("\tLabels: ",labels_array.shape)
+        if(to_array and resize is not None):
+            print("\tImages: ",image_array.shape)
+            print("\tLabels: ",labels_array.shape)
+        else:
+            print("\tImages: ",len(image_list))
+            print("\tLabels: ",len(label_list))
+        
         if(mean):
             means_xte = np.array(means_xte)
             means_xte = np.reshape(means_xte,(-1,1))
             print("\t Mean: ", means_xte.shape)
+        
         print("Test images loaded...\n")
     else:
         print(colored("WARNING: Path to test image is not set\n","yellow"))
     
     # NOTE: if needed change to return lists
-    return image_list,label_list,means_xte
+    if(to_array and resize is not None):
+        return image_array,labels_array,means_xte
+    else:
+        return image_list,label_list,means_xte
 
 # load test images from an index file
 def load_test_images_from_index_file(testdir=None,infile=None):
@@ -318,7 +350,7 @@ def load_test_images_from_index_file(testdir=None,infile=None):
     return new_image_list,label_list
 
 # load an image set from a single folder without subfolders and labels
-# TODO: generalize part of reshaping images_list
+# TODO: generalize part of reshaping images_list and files extensions
 def load_image_set_from_folder(datadir=None,resize=None):
     images_list = []
 
@@ -326,7 +358,7 @@ def load_image_set_from_folder(datadir=None,resize=None):
     try:
         filenames = sorted(glob.glob(datadir + "*.jpg"),key=numericalSort)
     except:
-        print(colored("WARNING: Couldn't load test images","yellow"))
+        print(colored("WARNING: Couldn't load test images\n","yellow"))
         return None,None
 
     for infile in filenames:
@@ -338,10 +370,10 @@ def load_image_set_from_folder(datadir=None,resize=None):
     # lenght of image's list
     lil = len(images_list)      
     # NOTE: make it general
-    new_images_list = np.empty((lil,32,32,1),dtype=np.float32)
+    new_images_list = np.empty((lil,64,64,1),dtype=np.float32)
     for i in range(lil):
         # NOTE: make it general
-        new_images_list[i] = np.array(images_list[i].getdata()).reshape(32,32,1)
+        new_images_list[i] = np.array(images_list[i].getdata()).reshape(64,64,1)
     
     print("\t  Path: ",datadir)
     print("\tImages: ",new_images_list.shape)
@@ -349,6 +381,7 @@ def load_image_set_from_folder(datadir=None,resize=None):
     
     return new_images_list,filenames
 
+# function to change images colorspace
 def convert_images_colorspace(images_array=None,fromc=None,convert_to=None):
     """
     Minimalist function to convert images colorspaces. From RGB 
@@ -373,8 +406,6 @@ def convert_images_colorspace(images_array=None,fromc=None,convert_to=None):
             ccode = cv2.COLOR_RGB2YCrCb
         elif(convert_to == 'YUV'):
             ccode = cv2.COLOR_RGB2YUV
-        elif(convert_to == 'RGB'):
-            ccode = cv2.COLOR_HSV2RGB
         else:
             print(colored("WARNING: Unknown colorspace! Returned original images."))
             return images_array
@@ -382,5 +413,7 @@ def convert_images_colorspace(images_array=None,fromc=None,convert_to=None):
         lia = len(new_images_array) # length of images array
         for i in range(lia):
             new_images_array[i] = cv2.cvtColor(images_array[i],ccode)
+    else:
+        print(colored("WARNING: No colorspace selected! Returned original images.","yellow"))
 
     return new_images_array

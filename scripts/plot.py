@@ -45,7 +45,7 @@ def plot_accuracies(x,y,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,
     plt.xticks(x,xticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
-    plt.savefig('%s.png' % title)
+    plt.savefig('%s.png' % title,dpi=300)
     plt.show()
 
 # function to plot one .csv file
@@ -69,19 +69,19 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     length = len(data)
     x = np.arange(0,length)               # [1,2,3,4,...,n]
     #x = np.asarray([100+elem*10 for elem in x])
-    x = x*10
+    x = x*5
     
-    xticks = [8,16,32,48,64,80,96,128,256,512]      # a-axis values
-    xticks = x
+    xticks = [8,16,32,48,64,80,96,128]      # a-axis values
+    xticks = xticks
 
     yticks = [0,10,20,30,40,50,60,70,80,90,100]
     
-    criteria = [97.5] * length
+    #criteria = [97.5] * length
     #markers = ['ro','g^','bs','y+','c-','']
 
-    plt.style.use('default')
+    #plt.style.use('default')
     
-    plt.plot(x,criteria,'r--',label="stop_criteria")
+    #plt.plot(x,criteria,'r--',label="stop_criteria")
     for label in data.dtype.names:
         plt.plot(x,data[label],label=label)
     
@@ -94,7 +94,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     plt.yticks(yticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
-    plt.savefig('%s.png' % title)
+    plt.savefig('%s.png' % title,dpi=300)
     plt.show()
 
 # function to parse several .csv files and join all the info (mean)
@@ -140,7 +140,7 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     plt.xticks(x,xticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
-    plt.savefig('%s.png' % title)
+    plt.savefig('%s.png' % title,dpi=300)
     plt.show()
 
 # plot several .csv files into one single plot
@@ -192,7 +192,7 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
     plt.tight_layout()
-    plt.savefig('%s.png' % title)
+    plt.savefig('%s.png' % title,dpi=300)
     plt.show()
 
 # plot info about the data of several .csv files
@@ -245,7 +245,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     plt.hist(tr_accs,alpha=0.7,color='r',label='training')
     plt.hist(va_accs,alpha=0.5,color='g',label='validation')
     ax.set_title("Accuracy's values distribution",fontweight='bold')
-    plt.xlabel("Accuracy")
+    plt.xlabel("Accuracy (%)")
     plt.ylabel("Counter")
     plt.grid(grid)
     plt.tight_layout()
@@ -253,9 +253,38 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
 
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
-    if(title): plt.savefig('%s.png' % title)
+    if(title): plt.savefig('%s.png' % title,dpi=300)
     plt.show()
  
+# funtion to plot data distribution
+# TODO: add method to load data from files and extract counts
+def plot_data_distribution(counts):
+    """
+    Function to plot data distribution.
+
+    Params:
+        `indices` - 
+        `counts` - 
+    """
+    #print(colored("INFO: Saving data distribution image.","yellow"))
+    indices = np.arange(len(counts))
+    rects = plt.bar(indices,counts)
+    plt.xlabel("Class")
+    plt.xticks(indices)
+    plt.ylabel("Count")
+    plt.grid(True)
+    image_title = train_path.split("\\")
+    image_title.reverse()
+    image_title = image_title[1]
+    plt.title("Images distribution per class (%s)" % train_path,fontweight='bold')
+
+    for rect in rects:
+        height = rect.get_height()
+        plt.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+                '%d' % int(height),
+                ha='center', va='bottom')
+    
+    plt.savefig("%s.png" % image_title,dpi=300)
 
 # plot limits parser function
 def limits(s):
