@@ -13,12 +13,12 @@ Training schedule
 """
 
 # control flags 
-train = False    
+train = True    
 test  = False   
 
 commands = ["python training.py"]
 
-datasets = ["dataset/ori/side128"]
+datasets = ["dataset\\fabric\\side128\\"]
 
 testdirs = ["RGB","HSV","YCrCb","YUV"] 
 

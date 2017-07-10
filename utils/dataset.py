@@ -135,7 +135,6 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
             plt.xlabel("Class")
             plt.xticks(indices)
             plt.ylabel("Count")
-            plt.grid(True)
             image_title = train_path.split("\\")
             image_title.reverse()
             image_title = image_title[1]
@@ -407,12 +406,14 @@ def convert_images_colorspace(images_array=None,fromc=None,convert_to=None):
         elif(convert_to == 'YUV'):
             ccode = cv2.COLOR_RGB2YUV
         else:
-            print(colored("WARNING: Unknown colorspace! Returned original images."))
+            print(colored("WARNING: Unknown colorspace %s! Returned original images." % convert_to,"yellow"))
             return images_array
         
         lia = len(new_images_array) # length of images array
         for i in range(lia):
             new_images_array[i] = cv2.cvtColor(images_array[i],ccode)
+
+        print(colored("INFO: Converted images to colorspace %s" % convert_to,"yellow"))
     else:
         print(colored("WARNING: No colorspace selected! Returned original images.","yellow"))
 

@@ -53,16 +53,16 @@ else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
 
 # load test images
-# TIP: Use dataset.load_test_images or dataset.load_dataset_windows as X
+# TIP: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
 Xt = Yt = []
-Xt,Yt,_ = dataset.load_test_images(testdir,resize=(WIDTH,HEIGHT),mean=False,to_array=False,gray=False)
+#Xt,Yt,_ = dataset.load_test_images(testdir,resize=(WIDTH,HEIGHT),mean=False,to_array=False,gray=False)
 #Xt,Yt = dataset.load_test_images_from_index_file(testdir,"./dataset/signals/test/imgs_classes.txt")
-testdir = None
-
-#X = dataset.convert_images_colorspace(X,testdir)
-#Xv = dataset.convert_images_colorspace(Xv,testdir)
-#print("")
 #testdir = None
+
+X = dataset.convert_images_colorspace(images_array=X,fromc=None,convert_to=testdir)
+Xv = dataset.convert_images_colorspace(images_array=Xv,fromc=None,convert_to=testdir)
+print("")
+testdir = None
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -141,7 +141,7 @@ try:
                               min_acc=min_acc,time=total_training_time,ctime=ftime)
 
         # NOTE: stop criteria check - accuracy AND no progress
-        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,99,no_progress,10)): break
+        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,98,no_progress,10)): break
         
         # repeats the training operation until it reaches one stop criteria
         iteration_time = time.time()

@@ -115,7 +115,8 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
         data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
                              skip_header=0,autostrip=True)
         
-        mean = [0] * len(data[0])          # creates an empty array to store mean of each line
+        mean = [0] * len(data[0])   # creates an empty array to store mean of each line
+        print("mean",len(mean))
 
         # calculate mean of one X element
         for i,label in enumerate(data.dtype.names):
@@ -156,6 +157,7 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     symbols = ['-','--',':','^']
     colors  = ['r','g','b','y']
     files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
+    bar_width = 0.1
 
     for infile,color,_ in zip(files,colors,[1]):
         print("Parsing file: " + infile)
@@ -163,18 +165,23 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
         # len(data) == number of lines
         data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
                              skip_header=0,autostrip=True)
+        
+        # index    0  1  2
         # data = [(x1,y1,z1),
         #         (x2,y2,z2),
         #             ...    ]
         
         # len(data[0]) == number of columns
-        x = np.arange(0,len(data[0])) 
+        # len(data)    == number of lines
+        data_length = len(data)
+        x = np.arange(0,data_length) 
 
         ax = plt.subplot(111)
-        ax.bar(x, data[data.dtype.names[0]], width=0.1,color='b',align='center')
-        ax.bar(x, data[data.dtype.names[1]], width=0.1,color='g',align='center')
-        ax.bar(x, data[data.dtype.names[2]], width=0.1,color='r',align='center')
-        ax.bar(x, data[data.dtype.names[3]], width=0.1,color='y',align='center')
+        ax.bar(x, data[data.dtype.names[0]], width=bar_width,color='green',align='center',label=data.dtype.names[0]) # train_acc
+        ax.bar(x+bar_width, data[data.dtype.names[1]], width=bar_width,color='lightgreen',align='center',label=data.dtype.names[1]) # test_acc
+        
+        #ax.bar(x, data[data.dtype.names[2]], width=0.1,color='r',align='center') # test_acc OR time
+        #ax.bar(x, data[data.dtype.names[3]], width=0.1,color='y',align='center') # min_acc
 
         #for label,symbol in zip(data.dtype.names,symbols):
         #    dot = '%s%s' % (color,symbol)
@@ -305,15 +312,15 @@ Script definition
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("function",help="plot function to be used (plot/parse/info)")
+parser.add_argument("function",help="plot function to be used (plot/parse/plots/info)")
 parser.add_argument("file",help="path to the file/folder")
 # optional arguments
-parser.add_argument("-t","--title",help="plot's title (string)")
-parser.add_argument("-x","--xlabel",help="plot's x-axis label (string)")
-parser.add_argument("-y","--ylabel",help="plot's y-axis label (string)")
-parser.add_argument("-g","--grid",help="toggle plot's grid (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("-xl","--xlim",help="x-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
-parser.add_argument("-yl","--ylim",help="y-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
+parser.add_argument("-title",help="plot's title (string)")
+parser.add_argument("-xlabel",help="plot's x-axis label (string)")
+parser.add_argument("-ylabel",help="plot's y-axis label (string)")
+parser.add_argument("-grid",help="toggle plot's grid (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("-xlim",help="x-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
+parser.add_argument("-ylim",help="y-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
 
 args = parser.parse_args()
 
@@ -321,21 +328,26 @@ print(args)
 
 if(args.title == None):
     # NOTE: if title isn't specified then uses filename as title
-    # args.file = 'mynet\\mynet_r0_accuracies.txt'
+    # args.file = 'mynet\\mynet_r0_accuracies.txt' OR
+    # args.file = 'mynet\\mynet_folder\\'
     try:
-        parts = args.file.split("\\")                   # parts = ['mynet','mynet_r0_acc.txt']
+        parts = args.file.split("\\")   # parts = ['mynet','mynet_r0_acc.txt']
     except:
         parts = args.file
 
-    last_part_index = max(len(parts)-1,0)               # lpi = 1
-    new_title = parts[last_part_index].split(".")[0]    # new_title = 'mynet_r0_acc'
-    args.title = new_title
-
-if(args.function == "plot"):    
+    parts.reverse()                     # parts = ['mynet_r0_acc.txt','mynet']
+    args.title = parts[1]
+    
+if(args.function == "plot"):
+    args.title = parts[0].split(".")[0]   # new_title = 'mynet_r0_acc'    
     plot_csv_file(infile=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                   xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
 elif(args.function == "parse"):
+    parse_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                    xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+elif(args.function == "plots"):
     plot_several_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
