@@ -18,9 +18,11 @@ test  = False
 
 commands = ["python training.py"]
 
-datasets = ["dataset\\fabric\\side128\\"]
+datasets = ["dataset\\fabric\\side128\\","dataset\\fabric\\side128_dirty_lv1\\",
+            "dataset\\fabric\\side128_dirty_lv2\\","dataset\\fabric\\side128_dirty_lv3\\"]
 
-testdirs = ["RGB","HSV","YCrCb","YUV"] 
+testdirs = ["dataset\\fabric\\side128\\","dataset\\fabric\\side128_dirty_lv1\\",
+            "dataset\\fabric\\side128_dirty_lv2\\","dataset\\fabric\\side128_dirty_lv3\\"] 
 
 architectures = ["1l_8f_5x5_fc50"]
 
@@ -35,7 +37,21 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        runid = "fabric128_" + testdir + "_" + arch + "_r" + str(run)
+                        did = data.split("\\") # data ID
+                        did.reverse()
+                        did = did[1]
+                        did = did.split("_")
+                        did.reverse()
+                        did = did[0]
+                        
+                        rid = testdir.split("\\") # run ID
+                        rid.reverse()
+                        rid = rid[1]
+                        rid = rid.split("_")
+                        rid.reverse()
+                        rid = rid[0]
+                        
+                        runid = "fabric_" + did + "_" + rid + "_" + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         #new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)

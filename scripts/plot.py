@@ -11,6 +11,17 @@ numbers = re.compile(r'(\d+)')      # regex for get numbers
 if(platform.system() == 'Windows'):
     plt.style.use('default')            # plot's theme [default,seaborn]
 
+# points symbols
+symbols = ['-','--',':','^']
+
+# colors combination
+colors  = [('cornflowerblue','blue'),('navajowhite','orange'),('gold','goldenrod'),('lightgreen','green'),
+           ('paleturquoise','c'),('silver','gray'),('salmon','red'),('pink','hotpink')]
+
+# files ids
+ids = ['gray_','hsv_','rgb_','ycrycb_','yuv_']
+
+
 # function to sort string as the windows explorer does
 def numericalSort(value):
     """
@@ -154,15 +165,14 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
         files_dir - directory where error files are stored (at least 2 files)
     """
 
-    symbols = ['-','--',':','^']
-    colors  = ['r','g','b','y']
     files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
-    bar_width = 0.1
+    bar_width = 2
+    x = []
+    print("FIles in folder:\n",files)
 
-    for infile,color,_ in zip(files,colors,[1]):
+    for infile,color,rid in zip(files,colors,ids):
         print("Parsing file: " + infile)
         
-        # len(data) == number of lines
         data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
                              skip_header=0,autostrip=True)
         
@@ -174,28 +184,18 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
         # len(data[0]) == number of columns
         # len(data)    == number of lines
         data_length = len(data)
-        x = np.arange(0,data_length) 
+        x.append(data_length*5) 
 
         ax = plt.subplot(111)
-        ax.bar(x, data[data.dtype.names[0]], width=bar_width,color='green',align='center',label=data.dtype.names[0]) # train_acc
-        ax.bar(x+bar_width, data[data.dtype.names[1]], width=bar_width,color='lightgreen',align='center',label=data.dtype.names[1]) # test_acc
+        ax.bar(data_length*5-bar_width/2, data[data.dtype.names[0]][data_length-1], width=bar_width,color=color[0],align='center',label=rid+data.dtype.names[0]) # train_acc
+        ax.bar(data_length*5+bar_width/2, data[data.dtype.names[1]][data_length-1], width=bar_width,color=color[1],align='center',label=rid+data.dtype.names[1]) # test_acc
         
-        #ax.bar(x, data[data.dtype.names[2]], width=0.1,color='r',align='center') # test_acc OR time
-        #ax.bar(x, data[data.dtype.names[3]], width=0.1,color='y',align='center') # min_acc
-
-        #for label,symbol in zip(data.dtype.names,symbols):
-        #    dot = '%s%s' % (color,symbol)
-        #    #plt.plot(x,data[label],dot,label=label)
-        #    plt.barh(x,data[label],align='center',alpha=0.5)
-    
-    xticks = x*5
-
     plt.title(title,fontweight='bold')
     plt.legend()
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(grid)
-    plt.xticks(x,xticks)
+    #plt.xticks(x,x)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
     plt.tight_layout()
@@ -339,7 +339,7 @@ if(args.title == None):
     args.title = parts[1]
     
 if(args.function == "plot"):
-    args.title = parts[0].split(".")[0]   # new_title = 'mynet_r0_acc'    
+    #args.title = parts[0].split(".")[0]   # new_title = 'mynet_r0_acc'    
     plot_csv_file(infile=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                   xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 

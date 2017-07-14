@@ -78,7 +78,7 @@ def create_accuracy_csv_file(filename="accuracy.txt",testdir=None):
 
 # function to write accuracy on .csv file
 def write_accuracy_on_csv(filename="accuracy.txt",train_acc=None,val_acc=None,
-                          test_acc=None,min_acc=None,time=None):
+                          test_acc=None,min_acc=None,time=None,best=False):
     """
     Function to write accuracy values on a .csv formated file.
 
@@ -92,10 +92,16 @@ def write_accuracy_on_csv(filename="accuracy.txt",train_acc=None,val_acc=None,
     """
 
     fcsv = open(filename,"a+")
-    if(test_acc is not None):
-        fcsv.write("%.2f,%.2f,%.2f,%.2f,%.3f\n" % (train_acc,val_acc,test_acc,min_acc,time))
+    if(test_acc is not None and min_acc is not None):
+        if(best):
+            fcsv.write("%.2f,%.2f,%.2f,%.2f,%.3f,new_best\n" % (train_acc,val_acc,test_acc,min_acc,time))
+        else:
+            fcsv.write("%.2f,%.2f,%.2f,%.2f,%.3f\n" % (train_acc,val_acc,test_acc,min_acc,time))
     else:
-        fcsv.write("%.2f,%.2f,%.2f\n" % (train_acc,val_acc,time))
+        if(best):
+            fcsv.write("%.2f,%.2f,%.2f,best\n" % (train_acc,val_acc,time))
+        else:
+            fcsv.write("%.2f,%.2f,%.2f\n" % (train_acc,val_acc,time))
     fcsv.close()
 
 #-------------------------------------------------------------------------------
@@ -114,7 +120,7 @@ def check_stop_criteria(train_acc,val_acc,test_acc,maximum,no_progress,limit):
         `limit` - stop criteria for no progress 
     """
     if(test_acc is not None):
-        if((train_acc > maximum and val_acc > maximum and test_acc > maximum) or no_progress > limit):
+        if((train_acc > maximum and val_acc > maximum and test_acc > maximum) or no_progress >= limit):
             return True
     else:
         if((train_acc > maximum and val_acc > maximum) or no_progress > limit):

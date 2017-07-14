@@ -25,8 +25,8 @@ if (len(sys.argv) < 5):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 128
-WIDTH  = 128
+HEIGHT = 64
+WIDTH  = 64
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images
@@ -44,7 +44,7 @@ vs = 0.3    # percentage of data for validation (set manually)
 # load dataset and get image dimensions
 if(vs and True):
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,validation=vs,
-                                                                                            mean=False,gray=False,save_dd=True)
+                                                                               mean=False,gray=False,save_dd=False)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -54,14 +54,13 @@ else:
 
 # load test images
 # TIP: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
-Xt = Yt = []
+if(testdir is not None):
+    _,Xt,Yt,_,_,_,_,_,_,_ = dataset.load_dataset_windows(testdir,HEIGHT,WIDTH,shuffled=True,mean=False,gray=False,save_dd=True)
 #Xt,Yt,_ = dataset.load_test_images(testdir,resize=(WIDTH,HEIGHT),mean=False,to_array=False,gray=False)
 #Xt,Yt = dataset.load_test_images_from_index_file(testdir,"./dataset/signals/test/imgs_classes.txt")
-#testdir = None
-
-X = dataset.convert_images_colorspace(images_array=X,fromc=None,convert_to=testdir)
-Xv = dataset.convert_images_colorspace(images_array=Xv,fromc=None,convert_to=testdir)
-print("")
+#X = dataset.convert_images_colorspace(images_array=X,fromc=None,convert_to=testdir)
+#Xv = dataset.convert_images_colorspace(images_array=Xv,fromc=None,convert_to=testdir)
+#print("")
 testdir = None
 
 # Real-time data preprocessing
@@ -115,8 +114,9 @@ it = 0
 try:
     while(it < iterations):
         stime = time.time()
-        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria,X2=None)
-        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria,X2=None)
+        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
+        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
+        #val_acc = classifier.my_evaluate(model,Xt,Yt,batch_size=128,criteria=eval_criteria)
         test_acc = min_acc = None
         if(testdir is not None): 
             _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
@@ -127,21 +127,28 @@ try:
         # save best model if there is a better validation accuracy
         if(val_acc > best_val_acc):
             no_progress = 0
-            best_model = copy.copy(model)
             best_val_acc = val_acc
+            # Save best model to file
             print(colored("\nINFO: New best model!","yellow"))
+            print("Saving best trained model soo far...")
+            modelname = "models/%s.tflearn" % run_id
+            print("Model: %s" % modelname)
+            model.save(modelname)
+            print(colored("INFO: Best trained model saved!\n","yellow"))
+            new_best = True    
         else:
             no_progress += 1
+            new_best = False
 
         # write to a .csv file the evaluation accuracy 
-        helper.write_accuracy_on_csv(filename=csv_filename,train_acc=train_acc,val_acc=val_acc,
-                                     test_acc=test_acc,min_acc=min_acc,time=total_training_time)
+        helper.write_accuracy_on_csv(filename=csv_filename,train_acc=train_acc,val_acc=val_acc,test_acc=test_acc,
+                                     min_acc=min_acc,time=total_training_time,best=new_best)
         # write accuracy's values on file
         helper.print_accuracy(name="Evaluation",train_acc=train_acc,val_acc=val_acc,test_acc=test_acc,
                               min_acc=min_acc,time=total_training_time,ctime=ftime)
 
         # NOTE: stop criteria check - accuracy AND no progress
-        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,98,no_progress,10)): break
+        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,99,no_progress,10)): break
         
         # repeats the training operation until it reaches one stop criteria
         iteration_time = time.time()
@@ -157,35 +164,31 @@ except KeyboardInterrupt:
     # intermediate evaluation to check which is the best model once Ctrl+C was pressed
     train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
     val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
+    #val_acc = classifier.my_evaluate(model,Xt,Yt,batch_size=128,criteria=eval_criteria)
     test_acc = min_acc = None
     if(testdir is not None): 
         _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,
                                                                   printout=False,criteria=eval_criteria)
 
-# save best model (need this check if Ctr+C was pressed)
+# load best model (need this check if Ctr+C was pressed)
 if(best_val_acc > val_acc):
-    model = best_model
-    print(colored("INFO: Restored the best model!","yellow"))
-
-# save trained model
-if(True):
-    print("Saving trained model...")
-    modelname = "models/%s.tflearn" % run_id
-    print("\tModel: ",modelname)
-    model.save(modelname)
-    print("Trained model saved!\n")
-
-# load model from saved file (optional)
-if(False):
-    print("Loading trained model...")  
+    print(colored("INFO: Loading best trained model...","yellow"))  
     model.load("models/%s.tflearn" % run_id)
-    print("\tModel: ","models/%s.tflearn" % run_id)
-    print("Trained model loaded!\n")    
+    print("Model: models/%s.tflearn" % run_id)
+    print(colored("INFO: Restored the best model!","yellow"))
+else:
+    # save actual trained model
+    print(colored("INFO: Saving trained model...","yellow"))
+    modelname = "models/%s.tflearn" % run_id
+    print("Model: %s" % modelname)
+    model.save(modelname)
+    print(colored("INFO: Trained model saved!\n","yellow"))    
 
 # final evaluation with the best model
 stime = time.time()
 train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
 val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
+#val_acc = classifier.my_evaluate(model,Xt,Yt,batch_size=128,criteria=eval_criteria)
 test_acc = min_acc = None
 if(testdir is not None): 
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,

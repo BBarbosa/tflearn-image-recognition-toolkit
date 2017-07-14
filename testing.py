@@ -44,7 +44,7 @@ vs = 1    # percentage of data for validation (set manually)
 # load dataset and get image dimensions
 if(vs and True):
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,mean_xtr,mean_xv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,
-                                                                                            validation=vs,mean=False,gray=True)
+                                                                                            validation=vs,mean=False,gray=False)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -141,7 +141,8 @@ for i in np.arange(0,len_is):
 
     # resize the image to 128 x 128
     image = image_set[i]
-    image = cv2.resize(image, (128, 128))
+    #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.resize(image, (HEIGHT, WIDTH))
 
     # NOTE: exceptional case -----------------------------------------------
     if(separate):
@@ -154,7 +155,7 @@ for i in np.arange(0,len_is):
         dest_file.reverse()
         dest_file = dest_file[0]
 
-        dest_folder = "./dataset/numbers/augmented_v6/"
+        dest_folder = "./dataset/numbers/augmented_v7/"
 
         # NOTE: move images by confirming them manually
         if(False):
@@ -171,13 +172,11 @@ for i in np.arange(0,len_is):
                 dest = dest_folder + str(key-48) + "/_" + dest_file
                 shutil.copy(src,dest)
                 pass
-            elif(key == 32):
-                # space for skip
-                pass
             elif(key == 27):
                 # escape
                 break
             else:
+                # any other key to skip to the next image
                 pass
         else:
             # NOTE: move files automatically

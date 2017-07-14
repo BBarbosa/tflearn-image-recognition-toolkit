@@ -172,6 +172,8 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     else:
         Xtr = X
         Ytr = Y
+        Xte = None
+        Yte = None
     
     del(X)
     del(Y)
@@ -197,15 +199,15 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
 
     Xtr = np.array(Xtr)     # convert train images list to array
     Ytr = np.array(Ytr)     # convert train labels list to array
-    Xte = np.array(Xte)     # convert test images list to array
-    Yte = np.array(Yte)     # convert test labels list to array
+    if(Xte is not None): Xte = np.array(Xte)     # convert test images list to array
+    if(Yte is not None): Yte = np.array(Yte)     # convert test labels list to array
 
     if(shuffled):
         Xtr,Ytr = shuffle(Xtr,Ytr)      # shuflles training data
-        Xte,Yte = shuffle(Xte,Yte)      # shuflles validation data
+        if(Xte is not None and Yte is not None): Xte,Yte = shuffle(Xte,Yte)      # shuflles validation data
 
     Xtr = np.reshape(Xtr,(-1,height,width,ch))      # reshape array to fit on network format
-    Xte = np.reshape(Xte,(-1,height,width,ch))      # reshape array to fit on network format
+    if(Xte is not None): Xte = np.reshape(Xte,(-1,height,width,ch))      # reshape array to fit on network format
 
     print("\t         Path: ",train_path)
     print("\tShape (train): ",Xtr.shape,Ytr.shape)
