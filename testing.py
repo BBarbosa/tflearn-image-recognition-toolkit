@@ -56,7 +56,7 @@ else:
 Xt = Yt = None
 #Xt,Yt,mean_xte = dataset.load_test_images(testdir,resize=None,mean=False)
 #Xt,Yt = dataset.load_test_images_from_index_file(testdir,"./dataset/signals/test/imgs_classes.txt")
-Xt,filenames = dataset.load_image_set_from_folder(testdir,resize=(WIDTH,HEIGHT))
+Xt,filenames = dataset.load_image_set_from_folder(testdir,resize=(WIDTH,HEIGHT),extension="*.png")
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -118,9 +118,12 @@ print(colored("Time: %.3f seconds\n" % ftime,"green"))
 print(colored("INFO: Showing dataset performance","yellow"))
 
 # NOTE: Choose image set
-image_set = Xv
+image_set = Xt
 
-len_is = len(image_set)
+len_is = len(image_set)     # lenght of test set
+if(len_is < 1):
+    sys.exit(colored("INFO: Test set has no images!","yellow"))
+
 bp = 0                      # badly predicted counter
 wp = 0                      # well predicted counter  
 separate = False            # separates images with help of a trained model
@@ -185,11 +188,12 @@ for i in np.arange(0,len_is):
     
     else:
         # show badly predicted images --------------------------------------
-        if(guesses[0] != np.argmax(Yv[i])):
+        if(guesses[0] != np.argmax(Yv[i]) or True):
             bp += 1
 
             if(show_image):
                 print("Predicted: {0}, Actual: {1}, Confidence: {2:3.3f}, Second guess: {3}".format(guesses[0], np.argmax(Yv[i]), confidence, guesses[1]))
+                #converted = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
                 cv2.imshow("Test image", image)
                 key = cv2.waitKey(0)
 

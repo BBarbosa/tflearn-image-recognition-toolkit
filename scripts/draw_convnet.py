@@ -103,20 +103,24 @@ def label(xy, text, xy_off=[0, 4]):
 
 if __name__ == '__main__':
 
-    fc_unit_size = 2
-    layer_width = 40
+    fc_unit_size = 4
+    layer_width = 100
 
     patches = []
     colors = []
 
     fig, ax = plt.subplots()
 
-
     ############################
     # conv layers
-    size_list = [32, 32, 16, 16, 16, 8]  # NOTE: image size
-    num_list =  [3, 32, 32, 64, 64, 64]  # NOTE: number of output feature maps 
-    x_diff_list = [0, layer_width, layer_width, layer_width, layer_width, layer_width]
+    #size_list = [32, 32, 16, 16, 16, 8]  # NOTE: image size
+    #num_list =  [3, 32, 32, 64, 64, 64]  # NOTE: number of output feature maps
+    #x_diff_list = [0, layer_width, layer_width, layer_width, layer_width, layer_width]
+    
+    size_list = [128, 32, 16]    # NOTE: image size
+    num_list =  [  3, 32, 32]    # NOTE: number of output feature maps
+    x_diff_list = [0, layer_width, layer_width]
+    
     text_list = ['Inputs'] + ['Feature\nmaps'] * (len(size_list) - 1)
     loc_diff_list = [[3, -3]] * len(size_list)
 
@@ -133,10 +137,15 @@ if __name__ == '__main__':
 
     ############################
     # in between layers
-    start_ratio_list = [[0.4, 0.5], [0.4, 0.8], [0.4, 0.8], [0.4, 0.8], [0.4, 0.8]]
-    patch_size_list = [3, 2, 3, 3, 2]   # NOTE: kernel sizes
+    #start_ratio_list = [[0.4, 0.5], [0.4, 0.8], [0.4, 0.8], [0.4, 0.8], [0.4, 0.8]]
+    #patch_size_list = [3, 2, 3, 3, 2]   # NOTE: kernel sizes
+    
+    start_ratio_list = [[0.4, 0.5], [0.4, 0.8]]
+    patch_size_list = [5, 2]   # NOTE: kernel sizes
+    
+    
     ind_bgn_list = range(len(patch_size_list))
-    text_list = ['Convolution', 'Max-pooling', 'Convolution', 'Convolution', 'Max-pooling']
+    text_list = ['Convolution\nStride 4', 'Max-pooling',]
 
     for ind in range(len(patch_size_list)):
         add_mapping(patches, colors, start_ratio_list[ind],
@@ -148,8 +157,12 @@ if __name__ == '__main__':
 
     ############################
     # fully connected layers
+    #size_list = [fc_unit_size, fc_unit_size]
+    #num_list = [512, 2] # NOTE: number of fully connected neurons
+
     size_list = [fc_unit_size, fc_unit_size]
-    num_list = [512, 2] # NOTE: number of fully connected neurons
+    num_list = [50, 7] # NOTE: number of fully connected neurons
+
     num_show_list = list(map(min, num_list, [NumFcMax] * len(num_list)))
     x_diff_list = [sum(x_diff_list) + layer_width, layer_width, layer_width]
     top_left_list = np.c_[np.cumsum(x_diff_list), np.zeros(len(x_diff_list))]
@@ -175,9 +188,9 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.axis('equal')
     plt.axis('off')
-    plt.title("CIFAR-10 Architecture",fontweight='bold')
+    #plt.title("CIFAR-10 Architecture",fontweight='bold')
     plt.show()
-    fig.set_size_inches(8, 2.5)
+    #fig.set_size_inches(8, 2.5)
 
     fig_dir = './'
     fig_ext = '.png'

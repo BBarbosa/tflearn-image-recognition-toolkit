@@ -352,18 +352,18 @@ def load_test_images_from_index_file(testdir=None,infile=None):
 
 # load an image set from a single folder without subfolders and labels
 # TODO: generalize part of reshaping images_list and files extensions
-def load_image_set_from_folder(datadir=None,resize=None):
+def load_image_set_from_folder(datadir=None,resize=None,extension="*.jpg"):
     images_list = []
 
     print("Loading test images from folder...")
     try:
-        filenames = sorted(glob.glob(datadir + "*.jpg"),key=numericalSort)
+        filenames = sorted(glob.glob(datadir + extension),key=numericalSort)
     except:
         print(colored("WARNING: Couldn't load test images\n","yellow"))
         return None,None
 
     for infile in filenames:
-        img = Image.open(infile)
+        img = Image.open(infile).convert("RGB")
         if(resize):
             img = img.resize(resize,Image.ANTIALIAS)
         images_list.append(img)
@@ -371,10 +371,10 @@ def load_image_set_from_folder(datadir=None,resize=None):
     # lenght of image's list
     lil = len(images_list)      
     # NOTE: make it general
-    new_images_list = np.empty((lil,64,64,1),dtype=np.float32)
+    new_images_list = np.empty((lil,64,64,3),dtype=np.float32)
     for i in range(lil):
         # NOTE: make it general
-        new_images_list[i] = np.array(images_list[i].getdata()).reshape(64,64,1)
+        new_images_list[i] = np.array(images_list[i].getdata()).reshape(64,64,3)
     
     print("\t  Path: ",datadir)
     print("\tImages: ",new_images_list.shape)

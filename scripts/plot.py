@@ -15,11 +15,11 @@ if(platform.system() == 'Windows'):
 symbols = ['-','--',':','^']
 
 # colors combination
-colors  = [('cornflowerblue','blue'),('navajowhite','orange'),('gold','goldenrod'),('lightgreen','green'),
-           ('paleturquoise','c'),('silver','gray'),('salmon','red'),('pink','hotpink')]
+colors  = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
+           ('paleturquoise','c'),('gold','goldenrod'),('salmon','red'),('silver','gray')]
 
 # files ids
-ids = ['gray_','hsv_','rgb_','ycrycb_','yuv_']
+ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
 
 
 # function to sort string as the windows explorer does
@@ -187,8 +187,12 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
         x.append(data_length*5) 
 
         ax = plt.subplot(111)
-        ax.bar(data_length*5-bar_width/2, data[data.dtype.names[0]][data_length-1], width=bar_width,color=color[0],align='center',label=rid+data.dtype.names[0]) # train_acc
-        ax.bar(data_length*5+bar_width/2, data[data.dtype.names[1]][data_length-1], width=bar_width,color=color[1],align='center',label=rid+data.dtype.names[1]) # test_acc
+        
+        ax.bar(data_length*5-bar_width/2, data[data.dtype.names[0]][data_length-1], 
+               width=bar_width,color=color[0],align='center',label=rid+data.dtype.names[0]) # train_acc
+        
+        ax.bar(data_length*5+bar_width/2, data[data.dtype.names[1]][data_length-1], 
+               width=bar_width,color=color[1],align='center',label=rid+data.dtype.names[1]) # test_acc
         
     plt.title(title,fontweight='bold')
     plt.legend()

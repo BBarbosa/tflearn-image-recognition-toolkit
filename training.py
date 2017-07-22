@@ -25,8 +25,8 @@ if (len(sys.argv) < 5):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 64
-WIDTH  = 64
+HEIGHT = 128
+WIDTH  = 128
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images

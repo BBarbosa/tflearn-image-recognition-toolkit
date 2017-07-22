@@ -13,22 +13,19 @@ Training schedule
 """
 
 # control flags 
-train = True    
-test  = False   
+ready = True     
 
 commands = ["python training.py"]
 
-datasets = ["dataset\\fabric\\side128\\","dataset\\fabric\\side128_dirty_lv1\\",
-            "dataset\\fabric\\side128_dirty_lv2\\","dataset\\fabric\\side128_dirty_lv3\\"]
+datasets = ["dataset\\fabric\\side128\\"]
 
-testdirs = ["dataset\\fabric\\side128\\","dataset\\fabric\\side128_dirty_lv1\\",
-            "dataset\\fabric\\side128_dirty_lv2\\","dataset\\fabric\\side128_dirty_lv3\\"] 
+testdirs = [""] 
 
 architectures = ["1l_8f_5x5_fc50"]
 
 batches = [32]
 
-nruns = 3
+nruns = 100
 
 for command in commands:
     for data in datasets:
@@ -37,50 +34,14 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        did = data.split("\\") # data ID
-                        did.reverse()
-                        did = did[1]
-                        did = did.split("_")
-                        did.reverse()
-                        did = did[0]
+                        #did = data.split("\\") # data ID
+                        #did.reverse()
+                        #did = did[1]
+                        #did = did.split("_")
+                        #did.reverse()
+                        #did = did[0]
                         
-                        rid = testdir.split("\\") # run ID
-                        rid.reverse()
-                        rid = rid[1]
-                        rid = rid.split("_")
-                        rid.reverse()
-                        rid = rid[0]
-                        
-                        runid = "fabric_" + did + "_" + rid + "_" + arch + "_r" + str(run)
+                        runid = "fabric_100runs_" + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
-                        #new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)
-                        if(train): os.system(new_command)
-
-print("")
-
-"""
-Testing schedule
-NOTE: datasets and architectures must match those used on the training
-      NEED to solve test set conflict
-"""
-
-if(test == False):
-    exit(1)
-
-commands = ["python autotest.py"]
-
-models = ["models/"]
-
-testdirs = ["%s/../test" % ddir for ddir in datasets]
-testdirs = ["dataset/ori/test"]
-
-for command in commands:
-    for data,tdir in zip(datasets,testdirs):
-        for arch in architectures:
-            for model in models:
-                # NOTE: adapt runid according with the user's preferences
-                runid = "1ke"        
-                new_command = "%s %s %s %s %s %s" % (command,data,arch,model,tdir,runid)
-                print(new_command)
-                if(test): os.system(new_command)
+                        if(ready): os.system(new_command)
