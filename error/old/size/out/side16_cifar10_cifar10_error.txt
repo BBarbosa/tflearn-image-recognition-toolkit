@@ -1,7 +1,0 @@
-Total:  3969 | Class: 0 | [3915,42,0,7,0,0,5] | Acc: 98.64 | File: dataset\ori\test\1\1_4.bmp | Time: 6.088515
-Total:  3969 | Class: 1 | [0,3670,0,1,0,0,298] | Acc: 92.47 | File: dataset\ori\test\2\2_4.bmp | Time: 5.972577
-Total:  3969 | Class: 2 | [0,156,820,2301,0,0,692] | Acc: 20.66 | File: dataset\ori\test\3\3_4.bmp | Time: 6.264757
-Total:  3969 | Class: 3 | [0,33,24,3256,0,0,656] | Acc: 82.04 | File: dataset\ori\test\4\4_4.bmp | Time: 6.227809
-Total:  3969 | Class: 4 | [2,37,0,65,3082,0,783] | Acc: 77.65 | File: dataset\ori\test\5\5_4.bmp | Time: 6.045482
-Total:  3969 | Class: 5 | [0,11,0,41,0,3645,272] | Acc: 91.84 | File: dataset\ori\test\6\6_4.bmp | Time: 6.182393
-Total:  3969 | Class: 6 | [0,144,0,0,0,0,3825] | Acc: 96.37 | File: dataset\ori\test\7\7_4.bmp | Time: 6.158250

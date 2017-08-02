@@ -26,8 +26,8 @@ if (len(sys.argv) < 4):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 64
-WIDTH  = 64
+HEIGHT = 128
+WIDTH  = 128
 
 # get command line arguments
 traindir   = sys.argv[1]         # path/to/cropped/images
@@ -118,7 +118,7 @@ print(colored("Time: %.3f seconds\n" % ftime,"green"))
 print(colored("INFO: Showing dataset performance","yellow"))
 
 # NOTE: Choose image set
-image_set = Xt
+image_set = Xv
 
 len_is = len(image_set)     # lenght of test set
 if(len_is < 1):
@@ -188,13 +188,13 @@ for i in np.arange(0,len_is):
     
     else:
         # show badly predicted images --------------------------------------
-        if(guesses[0] != np.argmax(Yv[i]) or True):
+        if(guesses[0] != np.argmax(Yv[i])):
             bp += 1
 
             if(show_image):
                 print("Predicted: {0}, Actual: {1}, Confidence: {2:3.3f}, Second guess: {3}".format(guesses[0], np.argmax(Yv[i]), confidence, guesses[1]))
-                #converted = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-                cv2.imshow("Test image", image)
+                rgb = np.fliplr(image.reshape(-1,3)).reshape(image.shape)
+                cv2.imshow("Test image", rgb)
                 key = cv2.waitKey(0)
 
             if(key == 27):

@@ -815,6 +815,25 @@ def build_3l_32f_64f_64f_5x5_fc512(network,classes):
                         learning_rate=0.0001)    
     return network
 
+def build_3l_32f_64f_64f_5x5_fc256_fc512(network,classes):
+    network = conv_2d(network, 32, 5, activation='relu',strides=2) 
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 64, 5, activation='relu')
+    network = max_pool_2d(network, 2)  
+    network = conv_2d(network, 64, 5, activation='relu')  
+    network = max_pool_2d(network, 2)
+    
+    network = fully_connected(network, 256, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, 512, activation='relu') 
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam',
+                        loss='categorical_crossentropy', 
+                        learning_rate=0.0001)    
+    return network
+
 def build_3l_32f_64f_64f_5x5_fc512_ns(network,classes):
     network = conv_2d(network, 32, 5, activation='relu') 
     network = max_pool_2d(network, 2)
@@ -1364,15 +1383,16 @@ def build_network(name,network,classes):
     elif(name == "2l_32f_64f_5x5_fc512_ns"):  network = build_2l_32f_64f_5x5_fc512_ns(network,classes)
     
     # ----- 3 layers -----
-    elif(name == "3l_32f_3x3_fc512"):             network = build_3l_32f_3x3_fc512(network,classes)
-    elif(name == "3l_32f_3x3_fc512_ns"):          network = build_3l_32f_3x3_fc512_ns(network,classes)
-    elif(name == "3l_32f_5x5_fc512"):             network = build_3l_32f_5x5_fc512(network,classes)
-    elif(name == "3l_32f_5x5_fc512_ns"):          network = build_3l_32f_5x5_fc512_ns(network,classes)
-    elif(name == "3l_32f_64f_64f_3x3_fc512"):     network = build_3l_32f_64f_64f_3x3_fc512(network,classes)
-    elif(name == "3l_32f_64f_64f_3x3_fc512_ns"):  network = build_3l_32f_64f_64f_3x3_fc512_ns(network,classes)
-    elif(name == "3l_32f_64f_64f_5x5_fc512"):     network = build_3l_32f_64f_64f_5x5_fc512(network,classes)
-    elif(name == "3l_32f_64f_64f_5x5_fc512_ns"):  network = build_3l_32f_64f_64f_5x5_fc512_ns(network,classes)
-    elif(name == "3l_32f_64f_128f_5x5_fc512"):    network = build_3l_32f_64f_128f_5x5_fc512(network,classes)
+    elif(name == "3l_32f_3x3_fc512"):               network = build_3l_32f_3x3_fc512(network,classes)
+    elif(name == "3l_32f_3x3_fc512_ns"):            network = build_3l_32f_3x3_fc512_ns(network,classes)
+    elif(name == "3l_32f_5x5_fc512"):               network = build_3l_32f_5x5_fc512(network,classes)
+    elif(name == "3l_32f_5x5_fc512_ns"):            network = build_3l_32f_5x5_fc512_ns(network,classes)
+    elif(name == "3l_32f_64f_64f_3x3_fc512"):       network = build_3l_32f_64f_64f_3x3_fc512(network,classes)
+    elif(name == "3l_32f_64f_64f_3x3_fc512_ns"):    network = build_3l_32f_64f_64f_3x3_fc512_ns(network,classes)
+    elif(name == "3l_32f_64f_64f_5x5_fc512"):       network = build_3l_32f_64f_64f_5x5_fc512(network,classes)
+    elif(name == "3l_32f_64f_64f_5x5_fc256_fc512"): network = build_3l_32f_64f_64f_5x5_fc256_fc512(network,classes)
+    elif(name == "3l_32f_64f_64f_5x5_fc512_ns"):    network = build_3l_32f_64f_64f_5x5_fc512_ns(network,classes)
+    elif(name == "3l_32f_64f_128f_5x5_fc512"):      network = build_3l_32f_64f_128f_5x5_fc512(network,classes)
 
     # ----- 4 layers -----
     elif(name == "4l_32f_5x5_fc512"):                network = build_4l_32f_5x5_fc512(network,classes)

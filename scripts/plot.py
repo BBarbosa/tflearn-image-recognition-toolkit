@@ -218,7 +218,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     """
     
     nruns = 100
-    max_epochs = 200
+    max_epochs = 500
     epoch_ticks = max_epochs // 5 + 1
 
     counter = [0] * epoch_ticks     # array that counts all the number of epochs needed on training
@@ -227,8 +227,9 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     index = 0
 
     for infile in sorted(glob.glob(files_dir + '*accuracies.txt'),key=numericalSort):
-        data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
-                             skip_header=0,autostrip=True)
+        data = np.genfromtxt(infile,delimiter=",",comments='# ',names=True, 
+                             skip_header=0,autostrip=True,invalid_raise=False,
+                             usecols=(0,1,2))
         
         file_lenght = len(data)
         print("File: " + infile, "Epochs:", (file_lenght-1)*5)
@@ -248,7 +249,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     plt.xlabel("Epochs")
     plt.ylabel("Counter")
     plt.xticks(inds,inds)
-    plt.xlim((40,140))
+    if(xlim): plt.xlim(xlim)
     plt.grid(grid)
     plt.tight_layout()
 
@@ -262,8 +263,6 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     plt.tight_layout()
     plt.legend()
 
-    if(ylim): plt.ylim(ylim)
-    if(xlim): plt.xlim(xlim)
     if(title): plt.savefig('%s.png' % title,dpi=300)
     plt.show()
  

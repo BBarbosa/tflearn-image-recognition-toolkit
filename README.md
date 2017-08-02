@@ -1,4 +1,5 @@
 # Image classifier
+Image classifier toolkit supported by TFLearn on top of Tensorflow. 
 
 ## Folders descriptions
 * scripts/ - auxiliary scripts to preprocessing data 
@@ -10,3 +11,5 @@
 * dataset/ - contains raw images ready to be cropped so they fit on CNNs
   * train/ - folder containing images used for training
   * test/ - folder containing images for testing the network
+
+## Windows installation

@@ -25,8 +25,8 @@ if (len(sys.argv) < 5):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 128
-WIDTH  = 128
+HEIGHT = 32
+WIDTH  = 32
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images
@@ -53,7 +53,7 @@ else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
 
 # load test images
-# TIP: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
+# NOTE: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
 if(testdir is not None):
     _,Xt,Yt,_,_,_,_,_,_,_ = dataset.load_dataset_windows(testdir,HEIGHT,WIDTH,shuffled=True,mean=False,gray=False,save_dd=True)
 #Xt,Yt,_ = dataset.load_test_images(testdir,resize=(WIDTH,HEIGHT),mean=False,to_array=False,gray=False)
