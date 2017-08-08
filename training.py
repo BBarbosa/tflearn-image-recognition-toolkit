@@ -25,8 +25,8 @@ if (len(sys.argv) < 5):
 classifier.clear_screen()
 
 # NOTE: change if you want a specific size
-HEIGHT = 32
-WIDTH  = 32
+HEIGHT = 64
+WIDTH  = 64
 
 # get command line arguments
 traindir = sys.argv[1]         # path/to/cropped/images
@@ -102,7 +102,8 @@ helper.print_net_parameters(bs=bs,vs=vs,epochs=EPOCHS,snap=SNAP,eval_criteria=ev
 
 # creates a new accuracies' .csv
 csv_filename = "%s_accuracies.txt" % run_id
-helper.create_accuracy_csv_file(filename=csv_filename,testdir=testdir)
+helper.create_accuracy_csv_file(filename=csv_filename,testdir=testdir,traindir=traindir,vs=vs,
+                                height=HEIGHT,width=WIDTH,arch=arch,bs=bs,epochs=EPOCHS,ec=eval_criteria)
 
 best_val_acc = 0
 no_progress = 0

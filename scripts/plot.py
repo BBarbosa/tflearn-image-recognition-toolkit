@@ -9,10 +9,22 @@ import glob
 numbers = re.compile(r'(\d+)')      # regex for get numbers
 
 if(platform.system() == 'Windows'):
-    plt.style.use('default')            # plot's theme [default,seaborn]
+    plt.style.use('default')        # plot's theme [default,seaborn]
 
-# points symbols
-symbols = ['-','--',':','^']
+#####################################
+# NOTE: get data from .csv parameters
+delimiter     = ","
+comments      = '#'
+names         = True
+invalid_raise = False
+skip_header   = 10
+autostrip     = True,
+usecols       = (0,1) 
+#####################################
+
+# marker symbols
+symbols = ['-','--','s','8','P','X','^','+','d','*']
+marker_style = dict(linestyle='-')
 
 # colors combination
 colors  = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
@@ -20,7 +32,6 @@ colors  = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink')
 
 # files ids
 ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
-
 
 # function to sort string as the windows explorer does
 def numericalSort(value):
@@ -72,10 +83,13 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
         `grid` - (bool) show grid
         `xlim` - (tuple) x-axis limits
         `ylim` - (tuple) y-axis limits
+
+    NOTE: Always check the usecols parameter
     """
     
-    data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
-                             skip_header=0,autostrip=True)
+    data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
+                         invalid_raise=invalid_raise,skip_header=skip_header,
+                         autostrip=autostrip,usecols=usecols)
     
     length = len(data)
     x = np.arange(0,length)               # [1,2,3,4,...,n]
@@ -83,18 +97,18 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     x = x*5
     
     xticks = [8,16,32,48,64,80,96,128]      # a-axis values
-    xticks = xticks
+    xticks = x
 
     yticks = [0,10,20,30,40,50,60,70,80,90,100]
     
     #criteria = [97.5] * length
-    #markers = ['ro','g^','bs','y+','c-','']
-
     #plt.style.use('default')
     
+    labels = ['training','confidence 80%','normal']
+
     #plt.plot(x,criteria,'r--',label="stop_criteria")
-    for label in data.dtype.names:
-        plt.plot(x,data[label],label=label)
+    for i,label in enumerate(data.dtype.names):
+        plt.plot(x,data[label],symbols[i],label=label)
     
     plt.title(title,fontweight='bold')
     plt.legend()
@@ -102,7 +116,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     plt.ylabel(ylabel)
     plt.grid(grid)
     plt.xticks(x,xticks)
-    plt.yticks(yticks)
+    #plt.yticks(yticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
     plt.savefig('%s.png' % title,dpi=300)
@@ -123,8 +137,9 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     for infile in sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort):
         print("File: " + infile)
         
-        data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
-                             skip_header=0,autostrip=True)
+        data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
+                             invalid_raise=invalid_raise,skip_header=skip_header,
+                             autostrip=autostrip,usecols=usecols)
         
         mean = [0] * len(data[0])   # creates an empty array to store mean of each line
         print("mean",len(mean))
@@ -173,8 +188,9 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     for infile,color,rid in zip(files,colors,ids):
         print("Parsing file: " + infile)
         
-        data = np.genfromtxt(infile,delimiter=",",comments='#',names=True, 
-                             skip_header=0,autostrip=True)
+        data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
+                             invalid_raise=invalid_raise,skip_header=skip_header,
+                             autostrip=autostrip,usecols=usecols)
         
         # index    0  1  2
         # data = [(x1,y1,z1),
@@ -217,7 +233,8 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
         extension - files extension to use on glob
     """
     
-    nruns = 100
+    files_list = sorted(glob.glob(files_dir + '*accuracies.txt'),key=numericalSort)
+    nruns = len(files_list)
     max_epochs = 500
     epoch_ticks = max_epochs // 5 + 1
 
@@ -226,10 +243,10 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     va_accs = [0] * nruns           # array to store the values of last line validation accuracy
     index = 0
 
-    for infile in sorted(glob.glob(files_dir + '*accuracies.txt'),key=numericalSort):
-        data = np.genfromtxt(infile,delimiter=",",comments='# ',names=True, 
-                             skip_header=0,autostrip=True,invalid_raise=False,
-                             usecols=(0,1,2))
+    for infile in files_list:
+        data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
+                             invalid_raise=invalid_raise,skip_header=skip_header,
+                             autostrip=autostrip,usecols=usecols)
         
         file_lenght = len(data)
         print("File: " + infile, "Epochs:", (file_lenght-1)*5)
@@ -265,7 +282,24 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
 
     if(title): plt.savefig('%s.png' % title,dpi=300)
     plt.show()
- 
+    
+
+# accuracy comparison: normal VS confidence criteria
+def accuracy_comparison(files_dir,title="Title",grid=None,ylim=None,
+                        xlim=None,xlabel="Epochs",ylabel="Accuracy (%)"):
+    
+    data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
+                         invalid_raise=invalid_raise,skip_header=skip_header,
+                         autostrip=autostrip,usecols=usecols)
+
+    file_lenght = len(data) - 1
+    for i in range(file_lenght):
+        plt.plot()
+        plt.plot()
+        plt.plot()
+
+    return None
+
 # funtion to plot data distribution
 # TODO: add method to load data from files and extract counts
 def plot_data_distribution(counts):
@@ -305,7 +339,7 @@ def limits(s):
     try:
         return make_tuple(s)
     except:
-        raise argparse.ArgumentTypeError("Coordinates must be x,y")
+        raise argparse.ArgumentTypeError("Coordinates must be formatted like (x,y)")
         return None
 
 """
@@ -315,7 +349,7 @@ Script definition
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("function",help="plot function to be used (plot/parse/plots/info)")
+parser.add_argument("function",help="plot function to be used (plot/parse/plots/info/acc)")
 parser.add_argument("file",help="path to the file/folder")
 # optional arguments
 parser.add_argument("-title",help="plot's title (string)")
@@ -352,10 +386,15 @@ elif(args.function == "parse"):
 
 elif(args.function == "plots"):
     plot_several_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                    xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+                           xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
 elif(args.function == "info"):
     info_from_all_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                    xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+                        xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+elif(args.function == "acc"):
+    accuracy_comparison(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                        xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
 else:
     print("ERROR: Unknown function!")

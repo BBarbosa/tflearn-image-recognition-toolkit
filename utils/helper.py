@@ -61,7 +61,8 @@ def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None
 # functions to deal with .csv files
 #-------------------------------------------------------------------------------
 # function that creates a csv accuracy file
-def create_accuracy_csv_file(filename="accuracy.txt",testdir=None):
+def create_accuracy_csv_file(filename="accuracy.txt",testdir=None,traindir=None,vs=None,
+                             height=None,width=None,arch=None,bs=None,epochs=None,ec=None):
     """
     Function to create a accuracy .csv file.
 
@@ -70,6 +71,18 @@ def create_accuracy_csv_file(filename="accuracy.txt",testdir=None):
         `testdir` - test data directory (used as a boolean)
     """
     fcsv = open(filename,"w+")
+                
+    fcsv.write("################ TRAINING REPORT #################\n")
+    fcsv.write("# Images path   | %s\n"   % traindir)
+    fcsv.write("# Validation    | %.2f\n" % vs)
+    fcsv.write("# Height        | %d\n"   % height)
+    fcsv.write("# Width         | %d\n"   % width)
+    fcsv.write("# Architecure   | %s\n"   % arch)
+    fcsv.write("# Bacth Size    | %d\n"   % bs)
+    fcsv.write("# Epochs        | %d\n"   % epochs)
+    fcsv.write("# Eval Criteria | %.2f\n" % ec)
+    fcsv.write("##################################################\n")
+    
     if(testdir is not None):
         fcsv.write("train,validation,test,min,time\n")
     else:
@@ -92,11 +105,11 @@ def write_accuracy_on_csv(filename="accuracy.txt",train_acc=None,val_acc=None,
     """
 
     fcsv = open(filename,"a+")
-    if(test_acc is not None and min_acc is not None):
+    if(test_acc is not None):
         if(best):
-            fcsv.write("%.2f,%.2f,%.2f,%.2f,%.3f,new_best\n" % (train_acc,val_acc,test_acc,min_acc,time))
+            fcsv.write("%.2f,%.2f,%.2f,%.3f,best\n" % (train_acc,val_acc,test_acc,time))
         else:
-            fcsv.write("%.2f,%.2f,%.2f,%.2f,%.3f\n" % (train_acc,val_acc,test_acc,min_acc,time))
+            fcsv.write("%.2f,%.2f,%.2f,%.3f\n" % (train_acc,val_acc,test_acc,time))
     else:
         if(best):
             fcsv.write("%.2f,%.2f,%.2f,best\n" % (train_acc,val_acc,time))

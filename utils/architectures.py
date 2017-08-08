@@ -812,7 +812,7 @@ def build_3l_32f_64f_64f_5x5_fc512(network,classes):
 
     network = regression(network, optimizer='adam',
                         loss='categorical_crossentropy', 
-                        learning_rate=0.0001)    
+                        learning_rate=0.001) # 0.0001    
     return network
 
 def build_3l_32f_64f_64f_5x5_fc256_fc512(network,classes):
@@ -1094,13 +1094,13 @@ def build_resnet(network,classes):
 
 # dlib (used on mnist)
 def build_dlib(network,classes):
-    network = conv_2d(network, 6, 3, activation='relu', padding='valid') 
+    network = conv_2d(network, 6, 5, activation='relu', padding='same',strides=2) 
     network = max_pool_2d(network, 2)
-    network = conv_2d(network, 16, 3, activation='relu', padding='valid')
+    network = conv_2d(network, 16, 5, activation='relu', padding='same')
     network = max_pool_2d(network, 2) 
 
     network = fully_connected(network, 120, activation='relu') 
-    network = fully_connected(network, 100, activation='relu') 
+    network = fully_connected(network, 84, activation='relu') 
     network = fully_connected(network, classes, activation='softmax')
     
     network = regression(network, optimizer='adam',
