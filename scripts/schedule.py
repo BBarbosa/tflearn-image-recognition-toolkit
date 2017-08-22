@@ -3,7 +3,7 @@
 # * Make sure that there isn't any other instace of TensorFlow running
 #   before calling this script
 # 
-# * Check if test mode on training is not activated
+# * Check if test mode on training.py is not activated
 #
 # * When ready set the ready flag to True
 #--------------------------------------------------------------------------
@@ -16,24 +16,16 @@ try:
 except:
     ready = False
 
-commands = ["python training_vs.py"]
 commands = ["python training.py"]
 
-datasets = ["dataset\\fabric\\side128\\"]
-datasets = ["dataset\\signals\\train\\"]
-
-slots = [0,1,3,6,10]
 slot_imgs_path = "dataset\\parking\\slots\\"
-datasets = [slot_imgs_path + "slot" + str(s) + "\\" for s in [1]] #+ [slot_imgs_path + "all\\"]
+#datasets = [slot_imgs_path + "slot" + str(s) + "\\" for s in range(13)] + [slot_imgs_path + "all\\"]
+datasets = [slot_imgs_path + "all\\"]
 
 testdirs = [""] 
 
-architectures = ["1l_8f_5x5_fc50"]
-architectures = ["cifar10"]
-architectures = ["dlib"]
+architectures = ["3l_32f_64f_64f_5x5_fc512"]
 
-batches = [256,128,64,32,16,8,4,2,1]
-batches = [96]
 batches = [32]
 
 nruns = 3

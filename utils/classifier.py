@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 import os,sys,time,platform,six,socket
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
-import winsound as ws  # for windows only
 import tensorflow as tf
 import scipy.ndimage
 import math

@@ -51,7 +51,7 @@ def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None
     print("-------------------")
     if(bs is not None):            print("Batch size:", bs)
     if(vs is not None):            print("Validation:", vs*100, "%")
-    if(epochs is not None):        print("    Epochs:", epochs)
+    if(epochs is not None):        print("Max Epochs:", epochs)
     if(snap is not None):          print("  Snapshot:", snap)
     if(use_criteria is not None):  print(" Use crit.:", use_criteria)
     if(eval_criteria is not None): print("Eval crit.:", eval_criteria)

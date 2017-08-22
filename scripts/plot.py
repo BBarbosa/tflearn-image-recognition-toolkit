@@ -1,4 +1,9 @@
-# Auxiliary script to easily generate plots
+"""
+Auxiliary script to automatically generate plots.
+
+NOTE: Some code from 
+https://matplotlib.org/examples/lines_bars_and_markers/marker_reference.html
+"""
 import re,sys,argparse,platform
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -12,7 +17,7 @@ if(platform.system() == 'Windows'):
     plt.style.use('default')        # plot's theme [default,seaborn]
 
 #####################################
-# NOTE: get data from .csv parameters
+# NOTE: Parameters to get data from .csv 
 delimiter     = ","
 comments      = '#'
 names         = True
@@ -24,7 +29,9 @@ usecols       = (0,1)
 
 # marker symbols
 symbols = ['-','--','s','8','P','X','^','+','d','*']
-marker_style = dict(linestyle='-')
+text_style = dict(horizontalalignment='right', verticalalignment='center',
+                  fontsize=12, fontdict={'family': 'monospace'})
+marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
 
 # colors combination
 colors  = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),

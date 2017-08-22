@@ -51,6 +51,7 @@ if(vs and True):
     classifier.CHANNELS = CHANNELS
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
+    Xv = Yv = []
 
 # load test images
 # NOTE: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv

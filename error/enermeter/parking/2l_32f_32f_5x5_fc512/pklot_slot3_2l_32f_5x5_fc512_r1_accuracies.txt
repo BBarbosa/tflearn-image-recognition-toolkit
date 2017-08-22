@@ -1,0 +1,19 @@
+################ TRAINING REPORT #################
+# Images path   | dataset\parking\slots\slot3\
+# Validation    | 0.30
+# Height        | 64
+# Width         | 64
+# Architecure   | 2l_32f_5x5_fc512
+# Bacth Size    | 32
+# Epochs        | 500
+# Eval Criteria | 0.80
+##################################################
+train,validation,time
+0.00,0.00,0.00
+100.00,95.86,5.58,best
+100.00,92.91,9.69
+100.00,96.52,13.91,best
+100.00,96.26,17.97
+100.00,98.80,22.14,best
+99.83,99.06,26.37,best
+99.83,99.06,26.37
