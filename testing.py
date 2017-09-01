@@ -193,7 +193,7 @@ for i in np.arange(0,len_is):
 
             if(show_image):
                 print("Predicted: {0}, Actual: {1}, Confidence: {2:3.3f}, Second guess: {3}".format(guesses[0], np.argmax(Yv[i]), confidence, guesses[1]))
-                rgb = np.fliplr(image.reshape(-1,3)).reshape(image.shape)
+                rgb = np.fliplr(image.reshape(-1,CHANNELS)).reshape(image.shape)
                 cv2.imshow("Test image", rgb)
                 key = cv2.waitKey(0)
 

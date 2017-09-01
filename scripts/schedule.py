@@ -24,7 +24,7 @@ datasets = [slot_imgs_path + "all\\"]
 
 testdirs = [""] 
 
-architectures = ["3l_32f_64f_64f_5x5_fc512"]
+architectures = ["3l_32f_64f_64f_533_fc512"]
 
 batches = [32]
 

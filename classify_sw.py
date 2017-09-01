@@ -124,6 +124,7 @@ else:
     print(colored("=============================","yellow"))
 
     """"
+    """
     # Load the image file (need pre-processment)
     background = Image.open(filename)
     wDIM,hDIM  = background.size     
@@ -255,4 +256,4 @@ else:
         freq = 2000
         dur  = 1000 
         ws.Beep(freq,dur)
-                
+    """        
