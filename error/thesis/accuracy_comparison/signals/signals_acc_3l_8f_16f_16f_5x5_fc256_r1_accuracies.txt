@@ -1,0 +1,18 @@
+################ TRAINING REPORT #################
+# Images path   | .\dataset\signals\train\
+# Validation    | 0.30
+# Height        | 32
+# Width         | 32
+# Architecure   | 3l_8f_16f_16f_5x5_fc256
+# Bacth Size    | 32
+# Epochs        | 500
+# Eval Criteria | 0.80
+##################################################
+train,validation,test,min,time
+0.00,0.00,0.00,0.000
+66.55,58.94,77.34,10.215,best
+83.82,70.76,83.13,18.415,best
+89.82,75.97,85.51,27.212,best
+93.05,78.94,86.06,35.930,best
+94.10,79.83,86.85,44.835,best
+95.81,81.81,87.83,53.708,best

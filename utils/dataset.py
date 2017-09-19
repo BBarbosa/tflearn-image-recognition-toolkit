@@ -93,7 +93,7 @@ def load_dataset_ipl(train_path,height,width,test_path=None,mode='folder'):
 
 # load images directly from images folder (ex: cropped/5/)
 def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=False,
-                         validation=0,mean=False,gray=False,save_dd=False):
+                         validation=0,mean=False,gray=False,save_dd=False,dataset_file=None):
     """ 
     Given a folder containing images separated by folders (classes) returns training and testing
     data, if specified.

@@ -28,7 +28,7 @@ CHANNELS = 3
 minimum = min(IMAGE, HEIGHT, WIDTH)
 
 # control flags for extra features
-saveOutputImage = False
+saveOutputImage = True
 showProgress    = False and saveOutputImage
 
 # return a color according to the class

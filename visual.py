@@ -200,11 +200,11 @@ else:
     os.system('clear')
 print("Operating System: %s\n" % OS)
 
-# images properties (inherit from trainning?)   
+# NOTE: images properties 
 HEIGHT   = 64
 WIDTH    = 64
-CHANNELS = 3
-CLASSES  = 2
+CHANNELS = 1
+CLASSES  = 11
 
 # get command line arguments
 arch      = sys.argv[1]       # name of architecture

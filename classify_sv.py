@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import os,sys,time,platform,six
+import os,sys,time,platform,six,argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tflearn
@@ -56,10 +56,10 @@ else:
     print("Operating System: %s\n" % OS)
 
     # images properties (inherit from trainning?)
-    IMAGE   = 128   
-    HEIGHT  = 128   
-    WIDTH   = 128
-    classes = 10
+    IMAGE   = 64   
+    HEIGHT  = 64   
+    WIDTH   = 64
+    classes = 2
 
     minimum = min(IMAGE, HEIGHT, WIDTH)
 
@@ -70,7 +70,7 @@ else:
     modelpath = sys.argv[4]       # path to saved model
 
     # a bunch of flags
-    saveOutputImage = False
+    saveOutputImage = True
     showProgress    = False and saveOutputImage # required saveOutputImage flag to show the progress
 
     # Real-time data preprocessing
@@ -91,7 +91,7 @@ else:
                         data_preprocessing=None,       
                         data_augmentation=None) 
 
-    network = architectures.build_network(arch,network,classes)
+    network,_ = architectures.build_network(arch,network,classes)
 
     # model definition
     model = tflearn.DNN(network, checkpoint_path='models', session=None,
@@ -144,7 +144,10 @@ else:
         img        = scipy.ndimage.imread(filename, mode='RGB')     # mode='L', flatten=True -> grayscale
         img        = scipy.misc.imresize(img, (hDIM,wDIM), interp="bicubic").astype(np.float32, casting='unsafe')
         
-        BLOCK = 128                                                  # side of square block for painting: BLOCKxBLOCK
+        img        = tflearn.data_utils.samplewise_zero_center(img)
+        img        = tflearn.data_utils.samplewise_std_normalization(img)
+
+        BLOCK = 32                                                  # side of square block for painting: BLOCKxBLOCK
         if(BLOCK > minimum or BLOCK < 2):                           # checks if it isn't too big
             BLOCK = IMAGE
 

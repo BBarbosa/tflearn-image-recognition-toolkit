@@ -4,6 +4,7 @@ Auxiliary script to automatically generate plots.
 NOTE: Some code from 
 https://matplotlib.org/examples/lines_bars_and_markers/marker_reference.html
 """
+
 import re,sys,argparse,platform
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -16,7 +17,7 @@ numbers = re.compile(r'(\d+)')      # regex for get numbers
 if(platform.system() == 'Windows'):
     plt.style.use('default')        # plot's theme [default,seaborn]
 
-#####################################
+########################################
 # NOTE: Parameters to get data from .csv 
 delimiter     = ","
 comments      = '#'
@@ -25,7 +26,7 @@ invalid_raise = False
 skip_header   = 10
 autostrip     = True,
 usecols       = (0,1) 
-#####################################
+########################################
 
 # marker symbols
 symbols = ['-','--','s','8','P','X','^','+','d','*']

@@ -10,7 +10,7 @@ from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 import winsound as ws
 import numpy as np
-import time,cv2,glob,shutil
+import time,cv2,glob,shutil,argparse
 from utils import architectures,dataset,classifier
 from colorama import init
 from termcolor import colored
@@ -115,14 +115,14 @@ print(colored("Time: %.3f seconds\n" % ftime,"green"))
 
 # shows image and predicted class
 # NOTE: Turn to false when scheduling many trainings
-print(colored("INFO: Showing dataset performance","yellow"))
+print(colored("[INFO] Showing dataset performance","yellow"))
 
 # NOTE: Choose image set
 image_set = Xv
 
 len_is = len(image_set)     # lenght of test set
 if(len_is < 1):
-    sys.exit(colored("INFO: Test set has no images!","yellow"))
+    sys.exit(colored("[INFO] Test set has no images!","yellow"))
 
 bp = 0                      # badly predicted counter
 wp = 0                      # well predicted counter  
@@ -206,8 +206,8 @@ for i in np.arange(0,len_is):
             if(confidence > eval_criteria):
                 wp += 1
 
-print(colored("INFO: %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
-print(colored("INFO: %d well predicted images (confidence > %.2f) in a total of %d" % (wp,eval_criteria,len_is),"yellow"))
+print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
+print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d" % (wp,eval_criteria,len_is),"yellow"))
 
 # sound a beep
 freq = 1000

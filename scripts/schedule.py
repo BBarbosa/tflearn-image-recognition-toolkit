@@ -18,17 +18,15 @@ except:
 
 commands = ["python training.py"]
 
-slot_imgs_path = "dataset\\parking\\slots\\"
-#datasets = [slot_imgs_path + "slot" + str(s) + "\\" for s in range(13)] + [slot_imgs_path + "all\\"]
-datasets = [slot_imgs_path + "all\\"]
+datasets = [".\\dataset\\signals\\train\\"]
 
 testdirs = [""] 
 
-architectures = ["3l_32f_64f_64f_533_fc512"]
+architectures = ["cifar10"]
 
 batches = [32]
 
-nruns = 3
+nruns = 5
 
 for command in commands:
     for data in datasets:
@@ -37,8 +35,7 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        slot = data.split("\\")[3]
-                        runid = "pklot_" + slot + "_" + arch + "_r" + str(run)
+                        runid = "signals_acc_" + arch + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         print(new_command)
                         if(ready): os.system(new_command)

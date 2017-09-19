@@ -106,6 +106,7 @@ def build_cifar10(network,classes):
                         learning_rate=0.001)
     return network
 
+# cifar10 modified
 def build_cifar10_mod(network,classes):
     network = conv_2d(network, 32, 5, activation='relu',strides=2)
     #network = conv_2d(network, 8, 1, activation='relu')  
@@ -627,7 +628,8 @@ def build_2l_8f_16f_5x5_fc512(network,classes):
     #network = max_pool_2d(network, 2)
     
     network = fully_connected(network, 512, activation='relu') 
-    network = dropout(network, 0.75) 
+    network = dropout(network, 0.5)
+    network = fully_connected(network,256,activation='relu') 
     network = fully_connected(network, classes, activation='softmax')
 
     network = regression(network, optimizer='adam',
@@ -1242,7 +1244,7 @@ def build_small_net(network,classes):
     
     network = regression(network, optimizer='adam',
                         loss='categorical_crossentropy', 
-                        learning_rate=0.001)    
+                        learning_rate=0.001,name='Regression')    
     return network
 
 # small net
@@ -1456,96 +1458,7 @@ def build_upscore(network,classes):
 
     return network
 
-# fully-convolutional network
-def build_fcn_all(network,classes):
-    #Pool1
-    network = conv_2d(network, 16, 7, activation='relu')
-    network = max_pool_2d(network,2)
-    #Pool2
-    network = conv_2d(network, 32, 5, activation='relu')
-    network = max_pool_2d(network, 2)
-    #Pool3
-    network = conv_2d(network, 64, 5, activation='relu')
-    network_3 = max_pool_2d(network, 2)                       # output 8x_downsampled
-    #Pool4
-    network_4 = conv_2d(network_3, 128, 3, activation='relu') 
-    network_4 = max_pool_2d(network_4, 2)                     # output 16x_downsampled
 
-#start FCN-32s
-    #Pool5
-    network_32 = conv_2d(network_4, 256, 3, activation='relu')
-    network_32 = max_pool_2d(network_32, 2)
-    #Conv6-7
-    network_32 = conv_2d(network_32, 256, 3, activation='relu')
-    network_32 = conv_2d(network_32, 256, 3, activation='relu') # output 32x_downsampled
-#end FCN-32s
-
-#start FCN-16s
-    network_32_UP2 = upsample_2d(network_32, 2)
-    network_16 = merge([network_32_UP2, network_4], mode='concat', axis=3)
-    network_16 = conv_2d(network_16, 3, 256, activation='relu') # output 16x_downsampled
-#end FCN-16s
-
-#start FCN-8s
-    #network_32_UP4 = upsample_2d(network_32,4)
-    network_16_UP2  = upsample_2d(network_16,2)
-    #network_3_UP8   = upsample_2d(network_3,8)
-
-    #network_8 = merge([network_32_UP4, network_4_UP2, network_3], mode='concat', axis=3)
-    network_8 = merge([network_16_UP2, network_3], mode='concat', axis=3)
-    network_8 = conv_2d(network_8, 3, 1, activation='relu')
-#end FCN-8s
-    network_8 = upsample_2d(network_8,8)
-    #network_8 = upscore_layer(network_8,num_classes=3,kernel_size=2,strides=8,shape=[384,1216,3])
-
-    def my_loss(y_pred, y_true):
-        return tflearn.objectives.weak_cross_entropy_2d(y_pred, y_true, num_classes=3)
-    
-    network = tflearn.regression(network_8, 
-                                 loss='mean_square',
-                                 #loss='weak_cross_entropy_2d'
-                                )
-
-    return network
-
-def build_segnet(network,classes):
-    #Pool1
-    network_1 = conv_2d(network, 16, 3, activation='relu') #output 2x_downsampled
-    network_1 = conv_2d(network_1, 16, 3, activation='relu') #output 2x_downsampled
-    pool1 = max_pool_2d(network_1,2)
-    #Pool2
-    network_2 = conv_2d(pool1, 32, 3, activation='relu') #output 4x_downsampled
-    network_2 = conv_2d(network_2, 32, 3, activation='relu') #output 4x_downsampled
-    pool2 = max_pool_2d(network_2, 2)
-    #Pool3
-    network_3 = conv_2d(pool2, 64, 3, activation='relu') #output 8x_downsampled
-    network_3 = conv_2d(network_3, 64, 3, activation='relu') #output 8x_downsampled
-    pool3 = max_pool_2d(network_3, 2)
-
-    #Pool4
-    network_3 = conv_2d(pool3, 128, 3, activation='relu') #output 16x_downsampled
-    network_3 = conv_2d(network_3, 128, 3, activation='relu') #output 16x_downsampled
-    pool4 = max_pool_2d(network_3, 2)
-
-    # ----- decoder -----
-    decoder = conv_2d_transpose(pool4, 128, 3, strides=4, output_shape=[48, 152, 128]) #  16x downsample to 4x downsample
-    decoder = conv_2d(decoder, 128, 3, activation='relu')
-    pool5 = conv_2d(decoder, 128, 3, activation='relu')
-
-    decoder = conv_2d_transpose(pool3, 64, 3, strides=2, output_shape=[48, 152, 64]) # 8x downsample to 4x downsample
-    decoder = conv_2d(decoder, 64, 3, activation='relu')
-    pool6 = conv_2d(decoder, 64, 3, activation='relu')
-
-    pool6=merge([pool6, pool5, pool2], mode='concat', axis=3) #merge all 4x downsampled layers
-
-    decoder = conv_2d_transpose(pool6, 32, 3, strides=4, output_shape=[192, 608, 32]) #upsample to original size
-    decoder = conv_2d(decoder, 32, 3, activation='relu')
-    pool6 = conv_2d(decoder, 32, 3, activation='relu')
-   
-    decoder = conv_2d(pool6, 3, 1)
-    network = tflearn.regression(decoder, optimizer='adam', loss='mean_square') 
-    
-    return network
 
 # network visualizer
 def build_visualizer(network,classes):

@@ -1,6 +1,7 @@
-#---------------------------------------
-# Set of auxiliary printable functions
-#---------------------------------------
+"""
+Set of auxiliary functions
+"""
+
 from colorama import init
 from termcolor import colored
 
@@ -83,7 +84,7 @@ def create_accuracy_csv_file(filename="accuracy.txt",testdir=None,traindir=None,
     fcsv.write("# Eval Criteria | %.2f\n" % ec)
     fcsv.write("##################################################\n")
     
-    if(testdir is not None):
+    if(testdir is not None or True):
         fcsv.write("train,validation,test,min,time\n")
     else:
         fcsv.write("train,validation,time\n")
@@ -100,7 +101,7 @@ def write_accuracy_on_csv(filename="accuracy.txt",train_acc=None,val_acc=None,
         `train_acc` - training accuracy
         `val_acc` - validation accuracy
         `test_acc` - test accuracy
-        `min_acc` - minimum accuracy
+        `min_acc` - minimum accuracy (not used temporarly)
         `time` - time
     """
 
