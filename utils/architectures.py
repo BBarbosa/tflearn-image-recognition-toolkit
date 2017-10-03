@@ -1434,6 +1434,49 @@ def build_autoencoder(network,classes):
 
     return network
 
+# segnet-like 
+def build_segnet(network):
+    HEIGHT = 240
+    WIDTH  = 320
+
+    #Pool1
+    network_1 = conv_2d(network, 16, 3, activation='relu') #output 2x_downsampled
+    network_1 = conv_2d(network_1, 16, 3, activation='relu') #output 2x_downsampled
+    pool1 = max_pool_2d(network_1,2)
+    #Pool2
+    network_2 = conv_2d(pool1, 32, 3, activation='relu') #output 4x_downsampled
+    network_2 = conv_2d(network_2, 32, 3, activation='relu') #output 4x_downsampled
+    pool2 = max_pool_2d(network_2, 2)
+    #Pool3
+    network_3 = conv_2d(pool2, 64, 3, activation='relu') #output 8x_downsampled
+    network_3 = conv_2d(network_3, 64, 3, activation='relu') #output 8x_downsampled
+    pool3 = max_pool_2d(network_3, 2)
+
+    #Pool4
+    network_3 = conv_2d(pool3, 128, 3, activation='relu') #output 16x_downsampled
+    network_3 = conv_2d(network_3, 128, 3, activation='relu') #output 16x_downsampled
+    pool4 = max_pool_2d(network_3, 2)
+
+    # ----- decoder ----- 
+    decoder = conv_2d_transpose(pool4, 128, 3, strides=4, output_shape=[HEIGHT//4, WIDTH//4, 128]) #  16x downsample to 4x downsample
+    decoder = conv_2d(decoder, 128, 3, activation='relu')
+    pool5 = conv_2d(decoder, 128, 3, activation='relu')
+ 
+    decoder = conv_2d_transpose(pool3, 64, 3, strides=2, output_shape=[HEIGHT//4, WIDTH//4, 64]) # 8x downsample to 4x downsample
+    decoder = conv_2d(decoder, 64, 3, activation='relu')
+    pool6 = conv_2d(decoder, 64, 3, activation='relu')
+
+    pool6=merge([pool6, pool5, pool2], mode='concat', axis=3) #merge all 4x downsampled layers
+
+    decoder = conv_2d_transpose(pool6, 32, 3, strides=4, output_shape=[HEIGHT, WIDTH, 32])
+    decoder = conv_2d(decoder, 32, 3, activation='relu')
+    pool6 = conv_2d(decoder, 32, 3, activation='relu')
+   
+    decoder = conv_2d(pool6, 3, 1)
+    network = tflearn.regression(decoder, optimizer='adam', loss='mean_square') 
+    
+    return network
+
 # example of using upscore layer
 def build_upscore(network,classes):
     network = conv_2d(network, 16, 5, activation='relu')
@@ -1697,7 +1740,7 @@ def build_network(name,network,classes):
     
     elif(name == "fcn"):           network = build_fcn_all(network,classes)
     elif(name == "autoencoder"):   network = build_autoencoder(network,classes)
-    elif(name == "segnet"):        network = build_segnet(network,classes)
+    elif(name == "segnet"):        network = build_segnet(network)
     
     else: sys.exit(colored("ERROR: Unknown architecture!","red"))
 

@@ -34,10 +34,11 @@ parser.add_argument("batch_size",help="batch size",type=int)
 parser.add_argument("run_id",help="model's path",type=str)
 # optional arguments
 parser.add_argument("--test_dir",help="directory to the training data",type=str)
-parser.add_argument("--height",help="images height",default=32,type=int)
-parser.add_argument("--width", help="images width", default=32,type=int)
-parser.add_argument("--validation",help="percentage of training data to validation",default=0.3,type=float)
-parser.add_argument("--freeze_model",help="freeze graph (not for retraining)",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--height",help="images height (default 32)",default=32,type=int)
+parser.add_argument("--width", help="images width (default 32)", default=32,type=int)
+parser.add_argument("--val_set",help="percentage of training data to validation (default 0.3)",default=0.3,type=float)
+parser.add_argument("--gray",help="convert images to grayscale",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--freeze",help="freeze graph (not for retraining)",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 
 # parse arguments
 args = parser.parse_args()
@@ -48,9 +49,9 @@ HEIGHT = args.height
 WIDTH  = args.width
 
 # load dataset and get image dimensions
-if(args.validation and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,validation=args.validation,
-                                                                               mean=False,gray=False,save_dd=False)
+if(args.val_set and True):
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,validation=args.val_set,
+                                                                               mean=False,gray=args.gray,save_dd=False)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -62,7 +63,7 @@ else:
 # load test images
 # NOTE: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
 if(args.test_dir is not None):
-    _,Xt,Yt,_,_,_,_,_,_,_ = dataset.load_dataset_windows(args.test_dir,HEIGHT,WIDTH,shuffled=True,mean=False,gray=False,save_dd=True)
+    _,Xt,Yt,_,_,_,_,_,_,_ = dataset.load_dataset_windows(args.test_dir,HEIGHT,WIDTH,shuffled=True,mean=False,gray=args.gray,save_dd=True)
     #Xt,Yt,_ = dataset.load_test_images(args.test_dir,resize=(WIDTH,HEIGHT),mean=False,to_array=False,gray=False)
     #Xt,Yt = dataset.load_test_images_from_index_file(args.test_dir,"./dataset/signals/test/imgs_classes.txt")
     #X = dataset.convert_images_colorspace(images_array=X,fromc=None,convert_to=args.test_dir)
@@ -97,7 +98,7 @@ model = tflearn.DNN(network,checkpoint_path="models/%s" % args.run_id,tensorboar
 
 # training parameters
 EPOCHS = 500                    # maximum number of epochs 
-SNAP = 1                        # evaluates network progress at each SNAP epochs
+SNAP = 5                        # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP     # number of iterations (or evaluations) 
 use_criteria = True             # use stop criteria
 eval_criteria = 0.80            # evaluation criteria (confidence)
@@ -108,12 +109,12 @@ iteration_time = 0              # time between each snapshot
 total_training_time = 0         # total training time
 
 # print networks parameters on screen
-helper.print_net_parameters(bs=args.batch_size,vs=args.validation,epochs=EPOCHS,snap=SNAP,eval_criteria=eval_criteria,
+helper.print_net_parameters(bs=args.batch_size,vs=args.val_set,epochs=EPOCHS,snap=SNAP,eval_criteria=eval_criteria,
                             use_criteria=use_criteria)
 
 # creates a new accuracies file.csv
 csv_filename = "%s_accuracies.txt" % args.run_id
-helper.create_accuracy_csv_file(filename=csv_filename,testdir=args.test_dir,traindir=args.train_dir,vs=args.validation,
+helper.create_accuracy_csv_file(filename=csv_filename,testdir=args.test_dir,traindir=args.train_dir,vs=args.val_set,
                                 height=HEIGHT,width=WIDTH,arch=args.architecture,bs=args.batch_size,epochs=EPOCHS,ec=eval_criteria)
 
 # training operation: can stop by reaching the max number of iterations OR Ctrl+C OR by not evolving
@@ -128,7 +129,7 @@ try:
         if(args.test_dir is not None): 
             _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
                                                                       printout=False,criteria=eval_criteria)
-        test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
+            test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
         
         ftime = time.time() - stime
 
@@ -137,14 +138,14 @@ try:
             no_progress = 0
             best_val_acc = val_acc
             # Save best model to file
-            if(args.freeze_model):
+            if(args.freeze):
                 # NOTE: use it for freezing model
                 del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:] 
             
             print(colored("\n[INFO] New best model!","yellow"))
-            print("Saving best trained model soo far...")
+            print(colored("[INFO] Saving best trained model soo far...","yellow"))
             modelname = "models/%s.tflearn" % args.run_id
-            print("Model: %s" % modelname)
+            print(colored("[INFO] Model: %s" % modelname,"yellow"))
             model.save(modelname)
             print(colored("[INFO] Best trained model saved!\n","yellow"))
             new_best = True    
@@ -181,7 +182,7 @@ except KeyboardInterrupt:
     if(args.test_dir is not None): 
         _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
                                                                   printout=False,criteria=eval_criteria)
-    test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
+        test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
 
 # load best model (need this check if Ctr+C was pressed)
 if(best_val_acc > val_acc):
@@ -191,13 +192,13 @@ if(best_val_acc > val_acc):
     print(colored("[INFO] Restored the best model!","yellow"))
 else:
     # save actual trained model
-    if(args.freeze_model):
+    if(args.freeze):
         # NOTE: use it for freezing model
         del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
 
     print(colored("[INFO] Saving trained model...","yellow"))
     modelname = "models/%s.tflearn" % args.run_id
-    print("Model: %s" % modelname)
+    print(colored("[INFO] Model: %s" % modelname,"yellow"))
     model.save(modelname)
     print(colored("[INFO] Trained model saved!\n","yellow"))    
 
@@ -211,7 +212,7 @@ if(args.test_dir is not None):
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
                                                               printout=False,criteria=eval_criteria)
 
-test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
+    test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
 
 ftime = time.time() - stime
                              

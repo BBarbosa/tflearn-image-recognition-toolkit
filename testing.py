@@ -207,7 +207,7 @@ for i in np.arange(0,len_is):
                 wp += 1
 
 print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
-print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d" % (wp,eval_criteria,len_is),"yellow"))
+print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d (Acc. %.4f)" % (wp,eval_criteria,len_is,wp/len_is),"yellow"))
 
 # sound a beep
 freq = 1000

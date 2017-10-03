@@ -463,7 +463,7 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True)
         `label_set` - labels set respective to the images
         `eval_criteria` - evaluation criteria used in the training  
     """
-    print(colored("INFO: Showing dataset performance","yellow"))
+    print(colored("[INFO] Showing dataset performance","yellow"))
     len_is = len(image_set)    # length of the dataset that will be tested
     bp = 0                     # badly predicted counter 
     wp = 0                     # well predicted counter (confidence > criteria) 
@@ -500,5 +500,5 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True)
             if(confidence > eval_criteria):
                 wp +=1
 
-    print(colored("INFO: %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
-    print(colored("INFO: %d well predicted images (confidence > %.2f) in a total of %d" % (wp,eval_criteria,len_is),"yellow"))
+    print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
+    print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d (Acc. %.4f)" % (wp,eval_criteria,len_is,wp/len_is),"yellow"))

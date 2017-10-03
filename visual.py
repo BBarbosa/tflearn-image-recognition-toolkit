@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import sys,os,platform,six
+import sys,os,platform,six,argparse,cv2
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tflearn
@@ -46,7 +46,7 @@ def plot_conv_weights(weights, input_channel=0):
             # Get the weights for the i'th filter of the input channel.
             # See new_conv_layer() for details on the format
             # of this 4-dim tensor.
-            if(input_channel == 3):
+            if(input_channel == 1000):
                 kernel = weights[:, :, :, i]
             else:
                 kernel = weights[:, :, input_channel, i]
@@ -54,7 +54,7 @@ def plot_conv_weights(weights, input_channel=0):
             kernel = scipy.misc.imresize(kernel,(32,32),interp='cubic')
 
             # Plot image.
-            ax.imshow(kernel, vmin=None, vmax=None,interpolation='nearest',cmap='gray')
+            ax.imshow(kernel, vmin=None, vmax=None,interpolation='bilinear',cmap='gray')
         
         # Remove ticks from the plot.
         ax.set_xticks([])
@@ -206,6 +206,10 @@ WIDTH    = 64
 CHANNELS = 1
 CLASSES  = 11
 
+HEIGHT   = 240
+WIDTH    = 320
+CHANNELS = 3
+
 # get command line arguments
 arch      = sys.argv[1]       # name of architecture
 modelpath = sys.argv[2]       # path to saved model
@@ -224,7 +228,7 @@ img_aug.add_random_flip_updown()
 img_aug.add_random_rotation(max_angle=10.)
 
 # network definition
-network = input_data(shape=[None, WIDTH, HEIGHT, CHANNELS],     # shape=[None,IMAGE, IMAGE] for RNN
+network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],     # shape=[None,IMAGE, IMAGE] for RNN
                     data_preprocessing=None,       
                     data_augmentation=None) 
 
@@ -239,10 +243,10 @@ network,_ = architectures.build_network(arch,network,CLASSES)
 model = tflearn.DNN(network, checkpoint_path='models',
                     max_checkpoints=1, tensorboard_verbose=0) # tensorboard_dir='logs'
 
-print("Loading trained model...")  
+print("[INFO] Loading trained model...")  
 model.load(modelpath)
-print("\tModel: ",modelpath)
-print("Trained model loaded!\n")
+print("[INFO] Model: ",modelpath)
+print("[INFO] Trained model loaded!\n")
 
 # get layer by its name
 if isinstance(layer, six.string_types):
@@ -253,14 +257,8 @@ else:
 
 # load weights (learnt filters) and plots them
 weights = model.get_weights(variable)
-print("Weights shape: ", weights.shape)
+print("[INFO] Weights shape: ", weights.shape)
 plot_conv_weights(weights,input_channel=ichannel)
-
-# weights[:, :, input_channel, i]
-# print(" Filter shape: ", weights[:,:,:,0].shape)
-
-# choose kernel
-# kernel = weights[:,:,:,2]
 
 # tries to load a image
 load = True
@@ -273,7 +271,8 @@ try:
     plt.imshow(img,cmap='gray')
 except:
     load = False
-    sys.exit(colored("WARNING: Image not mentioned!","yellow"))
+    print(colored("[WARNING] Image not mentioned!","yellow"))
+    plt.waitforbuttonpress()
 
 # if loaded image correctly
 if(load):

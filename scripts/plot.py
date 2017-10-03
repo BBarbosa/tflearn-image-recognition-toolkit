@@ -15,7 +15,7 @@ import glob
 numbers = re.compile(r'(\d+)')      # regex for get numbers
 
 if(platform.system() == 'Windows'):
-    plt.style.use('default')        # plot's theme [default,seaborn]
+    plt.style.use('classic')        # plot's theme [default,seaborn]
 
 ########################################
 # NOTE: Parameters to get data from .csv 
@@ -23,20 +23,22 @@ delimiter     = ","
 comments      = '#'
 names         = True
 invalid_raise = False
-skip_header   = 10
+skip_header   = 0
 autostrip     = True,
 usecols       = (0,1) 
 ########################################
 
 # marker symbols
-symbols = ['-','--','s','8','P','X','^','+','d','*']
+symbols = ['-','--','-.','s','8','P','X','^','+','d','*']
+
 text_style = dict(horizontalalignment='right', verticalalignment='center',
                   fontsize=12, fontdict={'family': 'monospace'})
+
 marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
 
 # colors combination
-colors  = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
-           ('paleturquoise','c'),('gold','goldenrod'),('salmon','red'),('silver','gray')]
+colors = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
+          ('paleturquoise','c'),('gold','goldenrod'),('salmon','red'),('silver','gray')]
 
 # files ids
 ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
@@ -83,6 +85,9 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     """
     Function to plot a single csv file.
 
+    Used on:
+    - accuracy comparison 
+
     Params:
         `infile` - (string) path to .csv file
         `title` - (string) plot title
@@ -112,22 +117,22 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     #criteria = [97.5] * length
     #plt.style.use('default')
     
-    labels = ['training','confidence 80%','normal']
+    labels = ['training (confidence >=75%)','validation (confidence >=75%)','validation (normal)']
 
     #plt.plot(x,criteria,'r--',label="stop_criteria")
     for i,label in enumerate(data.dtype.names):
-        plt.plot(x,data[label],symbols[i],label=label)
+        plt.plot(x,data[label],symbols[i],label=labels[i])
     
     plt.title(title,fontweight='bold')
-    plt.legend()
+    plt.legend(loc=0)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(grid)
     plt.xticks(x,xticks)
-    #plt.yticks(yticks)
+    plt.yticks(yticks,yticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
-    plt.savefig('%s.png' % title,dpi=300)
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
 # function to parse several .csv files and join all the info (mean)
@@ -234,14 +239,16 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
 def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function that gathers many accuracy's files and shows how they
-    Used on 100 runs experience
+    Used on:
+    - 100 runs experience
 
     Params:
         folder - directory where accuracy's files are stored    
         extension - files extension to use on glob
     """
     
-    files_list = sorted(glob.glob(files_dir + '*accuracies.txt'),key=numericalSort)
+    files_list = sorted(glob.glob(files_dir + '*.txt'),key=numericalSort)
+    print("[INFO] Found %d files" % len(files_list))
     nruns = len(files_list)
     max_epochs = 500
     epoch_ticks = max_epochs // 5 + 1
@@ -250,6 +257,9 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     tr_accs = [0] * nruns           # array to store the values of last line training accuracy
     va_accs = [0] * nruns           # array to store the values of last line validation accuracy
     index = 0
+
+    yticks = np.arange(5)
+    yticks = yticks * 5
 
     for infile in files_list:
         data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
@@ -274,11 +284,13 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     plt.xlabel("Epochs")
     plt.ylabel("Counter")
     plt.xticks(inds,inds)
+    plt.yticks(yticks,yticks)
     if(xlim): plt.xlim(xlim)
     plt.grid(grid)
     plt.tight_layout()
 
     ax = plt.subplot(212)
+    ax.ticklabel_format(useOffset=False)
     plt.hist(tr_accs,alpha=0.7,color='r',label='training')
     plt.hist(va_accs,alpha=0.5,color='g',label='validation')
     ax.set_title("Accuracy's values distribution",fontweight='bold')
@@ -288,7 +300,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     plt.tight_layout()
     plt.legend()
 
-    if(title): plt.savefig('%s.png' % title,dpi=300)
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
     
 
@@ -357,15 +369,15 @@ Script definition
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("function",help="plot function to be used (plot/parse/plots/info/acc)")
-parser.add_argument("file",help="path to the file/folder")
+parser.add_argument("--function",required=True,help="plot function to be used (plot/parse/plots/info/acc)")
+parser.add_argument("--file",required=True,help="path to the file/folder")
 # optional arguments
-parser.add_argument("-title",help="plot's title (string)")
-parser.add_argument("-xlabel",help="plot's x-axis label (string)")
-parser.add_argument("-ylabel",help="plot's y-axis label (string)")
-parser.add_argument("-grid",help="toggle plot's grid (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("-xlim",help="x-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
-parser.add_argument("-ylim",help="y-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
+parser.add_argument("--title",help="plot's title (string)")
+parser.add_argument("--xlabel",help="plot's x-axis label (string)")
+parser.add_argument("--ylabel",help="plot's y-axis label (string)")
+parser.add_argument("--grid",help="toggle plot's grid (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--xlim",help="x-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
+parser.add_argument("--ylim",help="y-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
 
 args = parser.parse_args()
 
