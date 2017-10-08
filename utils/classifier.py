@@ -453,7 +453,7 @@ def classify_local_server(model,ip,port,runid,nclasses):
     return None
 
 # function to test a model's accuracy by showing the images where it gets wrong
-def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True):
+def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True,cmatrix=None):
     """
     Function to test a model's accuracy by showing the images where it 
     predicts wrong.
@@ -461,12 +461,18 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True)
     Params:
         `image_set` - images set to be classified
         `label_set` - labels set respective to the images
-        `eval_criteria` - evaluation criteria used in the training  
+        `eval_criteria` - evaluation criteria used in the training 
+        `show_image` - flag to (not) show images
+        `cmatrix` - flag to (not) generate confusion matrix as a run ID  
     """
     print(colored("[INFO] Showing dataset performance","yellow"))
     len_is = len(image_set)    # length of the dataset that will be tested
     bp = 0                     # badly predicted counter 
     wp = 0                     # well predicted counter (confidence > criteria) 
+
+    if(cmatrix is not None):
+        fcsv = open(cmatrix + "_cmatrix.txt","w+")
+        fcsv.write("predicted,label\n")
 
     for i in np.arange(0,len_is):
         # classify the digit
@@ -480,16 +486,22 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True)
         ci = int(guesses[0])
         confidence = probs[0][ci]
 
+        true_label = np.argmax(label_set[i])
+
+        if(cmatrix is not None):
+            fcsv = open(cmatrix + "_cmatrix.txt","a+")
+            fcsv.write("%d,%d\n" % (guesses[0],true_label))
+
         # resize the image to 128 x 128 
         image = image_set[i]
         image = cv2.resize(image, (128, 128))
 
         # show the image and prediction of badly predicted cases
-        if(guesses[0] != np.argmax(label_set[i])):
+        if(guesses[0] != true_label):
             bp += 1
             
             if(show_image):
-                print("Predicted: {0}, Actual: {1}, Confidence: {2:3.2f}, Second guess: {3}".format(guesses[0], np.argmax(label_set[i]),confidence,guesses[1]))
+                print("Predicted: {0}, Actual: {1}, Confidence: {2:3.2f}, Second guess: {3}".format(guesses[0], true_label,confidence,guesses[1]))
                 cv2.imshow("Test image", image)
                 key = cv2.waitKey(0)
                 if(key == 27):
@@ -500,5 +512,8 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True)
             if(confidence > eval_criteria):
                 wp +=1
 
-    print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
+    if(cmatrix is not None):
+        fcsv.close()
+
+    print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.4f)" % (bp,len_is,bp/len_is),"yellow"))
     print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d (Acc. %.4f)" % (wp,eval_criteria,len_is,wp/len_is),"yellow"))

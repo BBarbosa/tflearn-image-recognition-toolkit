@@ -34,11 +34,12 @@ parser.add_argument("batch_size",help="batch size",type=int)
 parser.add_argument("run_id",help="model's path",type=str)
 # optional arguments
 parser.add_argument("--test_dir",help="directory to the training data",type=str)
-parser.add_argument("--height",help="images height (default 32)",default=32,type=int)
-parser.add_argument("--width", help="images width (default 32)", default=32,type=int)
+parser.add_argument("--height",help="images height (default 32)",default=64,type=int)
+parser.add_argument("--width", help="images width (default 32)", default=64,type=int)
 parser.add_argument("--val_set",help="percentage of training data to validation (default 0.3)",default=0.3,type=float)
 parser.add_argument("--gray",help="convert images to grayscale",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--freeze",help="freeze graph (not for retraining)",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--snap", help="evaluate training frequency", default=5,type=int)
 
 # parse arguments
 args = parser.parse_args()
@@ -59,6 +60,24 @@ if(args.val_set and True):
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
     Xv = Yv = []
+
+
+# to load CIFAR-10 dataset and MNIST
+if(False):
+    print("Loading dataset (from directory)...")
+
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=args.train_dir)
+    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=args.train_dir)
+
+    classifier.HEIGHT   = HEIGHT
+    classifier.WIDTH    = WIDTH
+    classifier.IMAGE    = HEIGHT
+    classifier.CHANNELS = CHANNELS
+
+    print("\t         Path:",args.train_dir)
+    print("\tShape (train):",X.shape,Y.shape)
+    print("\tShape   (val):",Xv.shape,Yv.shape)
+    print("Data loaded!\n")
 
 # load test images
 # NOTE: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
@@ -98,7 +117,7 @@ model = tflearn.DNN(network,checkpoint_path="models/%s" % args.run_id,tensorboar
 
 # training parameters
 EPOCHS = 500                    # maximum number of epochs 
-SNAP = 5                        # evaluates network progress at each SNAP epochs
+SNAP = args.snap                # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP     # number of iterations (or evaluations) 
 use_criteria = True             # use stop criteria
 eval_criteria = 0.80            # evaluation criteria (confidence)
@@ -122,14 +141,16 @@ it = 0
 try:
     while(it < iterations):
         stime = time.time()
-        train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
-        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
         
-        test_acc = min_acc = None
-        if(args.test_dir is not None): 
-            _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
-                                                                      printout=False,criteria=eval_criteria)
-            test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
+        train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.batch_size,criteria=eval_criteria)
+        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=eval_criteria)
+        test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=0.1)
+        min_acc = None
+        #test_acc = min_acc = None
+        #if(args.test_dir is not None): 
+        #    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
+        #                                                              printout=False,criteria=eval_criteria)
+        
         
         ftime = time.time() - stime
 
@@ -175,20 +196,21 @@ try:
 # to stop the training at any moment by pressing Ctrl+C
 except KeyboardInterrupt:
     # intermediate evaluation to check which is the best model once Ctrl+C was pressed
-    train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
-    val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
+    train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.batch_size,criteria=eval_criteria)
+    val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=eval_criteria)
+    test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=0.1)
+    min_acc = None
+    #test_acc = min_acc = None
+    #if(args.test_dir is not None): 
+    #    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
+    #                                                              printout=False,criteria=eval_criteria)
     
-    test_acc = min_acc = None
-    if(args.test_dir is not None): 
-        _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
-                                                                  printout=False,criteria=eval_criteria)
-        test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
 
 # load best model (need this check if Ctr+C was pressed)
 if(best_val_acc > val_acc):
     print(colored("[INFO] Loading best trained model...","yellow"))  
     model.load("models/%s.tflearn" % args.run_id)
-    print("Model: models/%s.tflearn" % args.run_id)
+    print(colored("[INFO] Model: models/%s.tflearn" % args.run_id,"yellow"))
     print(colored("[INFO] Restored the best model!","yellow"))
 else:
     # save actual trained model
@@ -204,15 +226,16 @@ else:
 
 # final evaluation with the best model
 stime = time.time()
-train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
-val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 
-test_acc = min_acc = None
-if(args.test_dir is not None): 
-    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
-                                                              printout=False,criteria=eval_criteria)
+train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.batch_size,criteria=eval_criteria)
+val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=eval_criteria)
+test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=0.1)
+min_acc = None
+#test_acc = min_acc = None
+#if(args.test_dir is not None): 
+#    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
+#                                                              printout=False,criteria=eval_criteria)
 
-    test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
 
 ftime = time.time() - stime
                              
@@ -224,8 +247,8 @@ helper.print_accuracy(name="Final Eval",train_acc=train_acc,val_acc=val_acc,test
                       min_acc=min_acc,time=None,ctime=ftime,color="green")
 
 # NOTE: Turn show_image to false when scheduling many trainings
-classifier.test_model_accuracy(model=model,image_set=Xv,label_set=Yv,
-                               eval_criteria=eval_criteria,show_image=False)
+classifier.test_model_accuracy(model=model,image_set=Xv,label_set=Yv,eval_criteria=eval_criteria,
+                               show_image=False,cmatrix=args.run_id)
 
 # sound a beep to notify that the training ended
 freq = 1000

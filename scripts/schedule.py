@@ -9,6 +9,7 @@
 #--------------------------------------------------------------------------
 
 import os,sys
+import numpy as np
 
 # control flag 
 try: 
@@ -18,15 +19,15 @@ except:
 
 commands = ["python training.py"]
 
-datasets = [".\\dataset\\signals\\train\\"]
+datasets = ["dataset\\parking\\pklot\\subset_of_mypklot\\"]
 
 testdirs = [""] 
 
 architectures = ["cifar10"]
 
-batches = [32]
+batches = [32,64,128,256,512]
 
-nruns = 5
+nruns = 2
 
 for command in commands:
     for data in datasets:
@@ -35,8 +36,9 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        runid = "signals_acc_" + arch + "_r" + str(run)
+                        runid = "pklot_all_" + arch + "_bs" + str(bs) + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
+                        new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)
                         if(ready): os.system(new_command)
 

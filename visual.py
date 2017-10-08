@@ -30,7 +30,7 @@ def plot_conv_weights(weights, input_channel=0):
 
     # Number of grids to plot.
     # Rounded-up, square-root of the number of filters.
-    # 32 filters » minimum grid 6x6 (=36) 
+    # 32 filters: minimum grid 6x6 (=36) 
     num_grids = math.ceil(math.sqrt(num_filters))
     print("         grid: ", num_grids, "x", num_grids,"\n")
 
@@ -129,7 +129,7 @@ def convolve_filters(image,weights,max_filters=None,input_channel=0):
 
     # Number of grids to plot.
     # Rounded-up, square-root of the number of filters.
-    # 32 filters » minimum grid 6x6 (=36) 
+    # 32 filters: minimum grid 6x6 (=36) 
     num_grids = math.ceil(math.sqrt(num_filters))
     print("         grid: ", num_grids, "x", num_grids,"\n")
 
@@ -206,9 +206,9 @@ WIDTH    = 64
 CHANNELS = 1
 CLASSES  = 11
 
-HEIGHT   = 240
-WIDTH    = 320
-CHANNELS = 3
+#HEIGHT   = 240
+#WIDTH    = 320
+#CHANNELS = 3
 
 # get command line arguments
 arch      = sys.argv[1]       # name of architecture

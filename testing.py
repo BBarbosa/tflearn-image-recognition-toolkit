@@ -52,6 +52,25 @@ if(vs and True):
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
 
+
+# to load CIFAR-10 dataset and MNIST
+if(False):
+    print("Loading dataset (from directory)...")
+
+    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=traindir)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=traindir)
+
+    classifier.HEIGHT   = HEIGHT
+    classifier.WIDTH    = WIDTH
+    classifier.IMAGE    = HEIGHT
+    classifier.CHANNELS = CHANNELS
+
+    print("\t         Path:",traindir)
+    print("\tShape (train):",X.shape,Y.shape)
+    print("\tShape   (val):",Xv.shape,Yv.shape)
+    print("Data loaded!\n")
+
+
 # load test images
 Xt = Yt = None
 #Xt,Yt,mean_xte = dataset.load_test_images(testdir,resize=None,mean=False)
@@ -128,6 +147,11 @@ bp = 0                      # badly predicted counter
 wp = 0                      # well predicted counter  
 separate = False            # separates images with help of a trained model
 show_image = True           # flag to (not) show tested images
+cmatrix = "digist_costum_r0" # NOTE: manually set by user
+
+if(cmatrix is not None):
+    fcsv = open(cmatrix + "_cmatrix.txt","w+")
+    fcsv.write("predicted,label\n")
 
 #for i in np.random.choice(np.arange(0, len_is), size=(20,)):
 for i in np.arange(0,len_is):
@@ -141,6 +165,12 @@ for i in np.arange(0,len_is):
 
     ci = int(guesses[0])
     confidence = probs[0][ci]
+
+    true_label = np.argmax(Yv[i])
+
+    if(cmatrix is not None):
+        fcsv = open(cmatrix + "_cmatrix.txt","a+")
+        fcsv.write("%d,%d\n" % (guesses[0],true_label))
 
     # resize the image to 128 x 128
     image = image_set[i]
@@ -188,12 +218,13 @@ for i in np.arange(0,len_is):
     
     else:
         # show badly predicted images --------------------------------------
-        if(guesses[0] != np.argmax(Yv[i])):
+        if(guesses[0] != true_label):
             bp += 1
 
             if(show_image):
                 print("Predicted: {0}, Actual: {1}, Confidence: {2:3.3f}, Second guess: {3}".format(guesses[0], np.argmax(Yv[i]), confidence, guesses[1]))
                 rgb = np.fliplr(image.reshape(-1,CHANNELS)).reshape(image.shape)
+                rgb = cv2.resize(rgb, (WIDTH*4,HEIGHT*4), interpolation=cv2.INTER_CUBIC)
                 cv2.imshow("Test image", rgb)
                 key = cv2.waitKey(0)
 
@@ -206,7 +237,10 @@ for i in np.arange(0,len_is):
             if(confidence > eval_criteria):
                 wp += 1
 
-print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.3f)" % (bp,len_is,bp/len_is),"yellow"))
+if(cmatrix is not None):
+    fcsv.close()
+
+print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.4f)" % (bp,len_is,bp/len_is),"yellow"))
 print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d (Acc. %.4f)" % (wp,eval_criteria,len_is,wp/len_is),"yellow"))
 
 # sound a beep

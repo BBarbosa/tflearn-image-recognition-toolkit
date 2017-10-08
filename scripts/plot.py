@@ -11,6 +11,7 @@ import matplotlib.patches as mpatches
 import numpy as np
 from ast import literal_eval as make_tuple
 import glob
+from sklearn.metrics import confusion_matrix
 
 numbers = re.compile(r'(\d+)')      # regex for get numbers
 
@@ -28,8 +29,18 @@ autostrip     = True,
 usecols       = (0,1) 
 ########################################
 
+# NOTE
+# index    0  1  2
+# data = [(x1,y1,z1),
+#         (x2,y2,z2),
+#             ...    ]
+
+# NOTE
+# len(data[0]) == number of columns
+# len(data)    == number of lines
+        
 # marker symbols
-symbols = ['-','--','-.','s','8','P','X','^','+','d','*']
+symbols = ['-','--','.','-.','s','8','P','X','^','+','d','*']
 
 text_style = dict(horizontalalignment='right', verticalalignment='center',
                   fontsize=12, fontdict={'family': 'monospace'})
@@ -39,6 +50,8 @@ marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
 # colors combination
 colors = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
           ('paleturquoise','c'),('gold','goldenrod'),('salmon','red'),('silver','gray')]
+
+markers = [['rs-','ro-.','r*-'],['gs-','go-.','g*-'],['bs-','bo-','b*-'],['ys-']]
 
 # files ids
 ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
@@ -77,7 +90,7 @@ def plot_accuracies(x,y,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,
     plt.xticks(x,xticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
-    plt.savefig('%s.png' % title,dpi=300)
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
 # function to plot one .csv file
@@ -180,7 +193,7 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     plt.xticks(x,xticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
-    plt.savefig('%s.png' % title,dpi=300)
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
 # plot several .csv files into one single plot
@@ -191,13 +204,20 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
 
     Params:
         files_dir - directory where error files are stored (at least 2 files)
+
+    Experiences:
+        with vs without stop critera 
     """
 
     files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
     bar_width = 2
     x = []
-    print("FIles in folder:\n",files)
+    
+    print("Files in folder:\n",files)
+    labels = ['training (conf. >=75%)','validation (conf. >=75%)','validation (normal)']
+    ids = ['no criteria', 'w/ criteria']
 
+    j=0
     for infile,color,rid in zip(files,colors,ids):
         print("Parsing file: " + infile)
         
@@ -205,46 +225,57 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
                              invalid_raise=invalid_raise,skip_header=skip_header,
                              autostrip=autostrip,usecols=usecols)
         
-        # index    0  1  2
-        # data = [(x1,y1,z1),
-        #         (x2,y2,z2),
-        #             ...    ]
-        
-        # len(data[0]) == number of columns
-        # len(data)    == number of lines
         data_length = len(data)
-        x.append(data_length*5) 
+        #x.append(data_length*5) 
+        
+        x = np.arange(0,data_length)               # [1,2,3,4,...,n]
+        #x = np.asarray([100+elem*10 for elem in x])
+        x = x*5
 
         ax = plt.subplot(111)
+
+        for i,label in enumerate(data.dtype.names):
+            plt.plot(x,data[label],markers[j][i],label=ids[j]+ " " + labels[i])
+
+        #plt.plot(x,data[0],symbols[0],label=labels[0]) # training
+        #plt.plot(x,data[1],symbols[1],label=labels[1]) # validation >80
+        #plt.plot(x,data[2],symbols[2],label=labels[2]) # validation
         
-        ax.bar(data_length*5-bar_width/2, data[data.dtype.names[0]][data_length-1], 
-               width=bar_width,color=color[0],align='center',label=rid+data.dtype.names[0]) # train_acc
-        
-        ax.bar(data_length*5+bar_width/2, data[data.dtype.names[1]][data_length-1], 
-               width=bar_width,color=color[1],align='center',label=rid+data.dtype.names[1]) # test_acc
+        # bar chart
+        #ax.bar(data_length*5-bar_width/2, data[data.dtype.names[0]][data_length-1], 
+        #       width=bar_width,color=color[0],align='center',label=rid+data.dtype.names[0]) # train_acc
+        #
+        #ax.bar(data_length*5+bar_width/2, data[data.dtype.names[1]][data_length-1], 
+        #       width=bar_width,color=color[1],align='center',label=rid+data.dtype.names[1]) # test_acc
+
+        j += 1
         
     plt.title(title,fontweight='bold')
-    plt.legend()
+    plt.legend(loc=0)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(grid)
     #plt.xticks(x,x)
+    
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
+    
     plt.tight_layout()
-    plt.savefig('%s.png' % title,dpi=300)
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
 # plot info about the data of several .csv files
 def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function that gathers many accuracy's files and shows how they
-    Used on:
-    - 100 runs experience
 
     Params:
-        folder - directory where accuracy's files are stored    
-        extension - files extension to use on glob
+        `folder` - directory where accuracy's files are stored    
+        `extension` - files extension to use on glob
+    
+    Experiences:
+        100 runs experience
+
     """
     
     files_list = sorted(glob.glob(files_dir + '*.txt'),key=numericalSort)
@@ -276,33 +307,84 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
 
         index += 1
 
-    ax = plt.subplot(211)
+    ax = plt.subplot(111)
     inds = np.arange(epoch_ticks)
     inds = [x*5 for x in inds]
     ax.bar(inds,counter,1)
-    ax.set_title("Number of epochs needed to finish training",fontweight='bold')
+    ax.set_title("Number of epochs needed to finish training on fabric dataset",fontweight='bold')
     plt.xlabel("Epochs")
-    plt.ylabel("Counter")
+    plt.ylabel("Counts")
     plt.xticks(inds,inds)
     plt.yticks(yticks,yticks)
     if(xlim): plt.xlim(xlim)
     plt.grid(grid)
     plt.tight_layout()
 
-    ax = plt.subplot(212)
+    plt.savefig('%s_nepochs.pdf' % title,format='pdf',dpi=300)
+    plt.show()
+
+    #ax = plt.subplot(212)
+    ax = plt.subplot(111)
     ax.ticklabel_format(useOffset=False)
     plt.hist(tr_accs,alpha=0.7,color='r',label='training')
     plt.hist(va_accs,alpha=0.5,color='g',label='validation')
-    ax.set_title("Accuracy's values distribution",fontweight='bold')
+    ax.set_title("Accuracy's values distribution on fabric dataset",fontweight='bold')
     plt.xlabel("Accuracy (%)")
-    plt.ylabel("Counter")
+    plt.ylabel("Counts")
     plt.grid(grid)
     plt.tight_layout()
     plt.legend()
 
+    plt.savefig('%s_accuracy_distribution.pdf' % title,format='pdf',dpi=300)
+    plt.show()
+
+# generate confusion matrix    
+def generate_cmatrix(files_dir,title="Title"):
+    """
+    Generate confusion matrix from 2 column file with (predicted,ground) format.abs
+
+    Params:
+        `files_dir` - path to confusion matrix file
+        `title` - plot title 
+    """
+
+    data = np.genfromtxt(files_dir,delimiter=delimiter,comments=comments,names=names,
+                         invalid_raise=invalid_raise,skip_header=skip_header,
+                         autostrip=autostrip,usecols=(0,1))
+    
+    nclasses = 7 # NOTE: defined manually
+    matrix   = np.zeros((nclasses,nclasses))  
+
+    for pair in data:
+        predicted  = int(pair[0])
+        true_label = int(pair[1])
+        matrix[predicted][true_label] +=1 
+
+    print(matrix)
+    
+    labels = [str(elem) for elem in np.arange(nclasses)]
+    #labels = ["with","without"] # NOTE: defined manually
+
+    fig = plt.figure()
+    
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(matrix)
+    fig.colorbar(cax)
+    
+    ax.set_xticklabels([''] + labels,rotation=45)
+    ax.xaxis.set_label_position('bottom')
+
+    ax.xaxis.tick_bottom()
+
+    ax.set_yticklabels([''] + labels)
+    
+    plt.title(title,fontweight='bold')
+    plt.ylabel('Predicted')
+    plt.xlabel('Actual')
+    plt.tight_layout()
+
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
-    
 
 # accuracy comparison: normal VS confidence criteria
 def accuracy_comparison(files_dir,title="Title",grid=None,ylim=None,
@@ -348,7 +430,7 @@ def plot_data_distribution(counts):
                 '%d' % int(height),
                 ha='center', va='bottom')
     
-    plt.savefig("%s.png" % image_title,dpi=300)
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
 
 # plot limits parser function
 def limits(s):
@@ -369,7 +451,7 @@ Script definition
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("--function",required=True,help="plot function to be used (plot/parse/plots/info/acc)")
+parser.add_argument("--function",required=True,help="plot function to be used (plot/parse/plots/info/acc/cmatrix)")
 parser.add_argument("--file",required=True,help="path to the file/folder")
 # optional arguments
 parser.add_argument("--title",help="plot's title (string)")
@@ -392,8 +474,11 @@ if(args.title == None):
     except:
         parts = args.file
 
-    parts.reverse()                     # parts = ['mynet_r0_acc.txt','mynet']
-    args.title = parts[1]
+    parts.reverse()
+    try:                     # parts = ['mynet_r0_acc.txt','mynet']
+        args.title = parts[1]
+    except:
+        pass
     
 if(args.function == "plot"):
     #args.title = parts[0].split(".")[0]   # new_title = 'mynet_r0_acc'    
@@ -415,6 +500,10 @@ elif(args.function == "info"):
 elif(args.function == "acc"):
     accuracy_comparison(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                         xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+elif(args.function == "cmatrix"):
+    generate_cmatrix(files_dir=args.file,title=args.title)
+
 
 else:
     print("ERROR: Unknown function!")

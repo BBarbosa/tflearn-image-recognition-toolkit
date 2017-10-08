@@ -84,7 +84,7 @@ def create_accuracy_csv_file(filename="accuracy.txt",testdir=None,traindir=None,
     fcsv.write("# Eval Criteria | %.2f\n" % ec)
     fcsv.write("##################################################\n")
     
-    if(testdir is not None):
+    if(testdir is not None or True):
         fcsv.write("train,validation,test,min,time\n")
     else:
         fcsv.write("train,validation,time\n")

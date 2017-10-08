@@ -19,14 +19,17 @@ from PIL import Image
 
 # NOTE: change if you want a specific size
 
-HEIGHT = 256
-HEIGHT = 240
+#HEIGHT = 256
+#HEIGHT = 240
 
-HEIGHT = 160 
-WIDTH  = 320
+HEIGHT = 192
+WIDTH  = 608
 
-HEIGHT = 96 
-WIDTH  = 320
+#HEIGHT = 96 
+#WIDTH  = 320
+
+#HEIGHT = 160 
+#WIDTH  = 320
 
 CHANNELS = 3
 
@@ -339,26 +342,22 @@ if(args.train_dir is not None):
         # NOTE: use it for freezing model
         del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
 
-    print("Saving trained model...")
+    print("[INFO] Saving trained model...")
     modelname = "models/%s.tflearn" % args.run_id
-    print("\tModel: ",modelname)
+    print("[INFO] Model: ",modelname)
     model.save(modelname)
-    print("Trained model saved!\n")
+    print("[INFO] Trained model saved!\n")
 
 else:
-    print("Loading trained model...")  
-    try:
-        model.load("models/%s.tflearn" % args.run_id)
-        print("\tModel: ","models/%s.tflearn" % args.run_id)
-    except:
-        model.load(args.run_id)
-        print("\tModel: ",args.run_id)
-    print("Trained model loaded!\n")
+    print("[INFO] Loading trained model...")  
+    model.load(args.run_id)
+    print("[INFO] Model: ",args.run_id)
+    print("[INFO] Trained model loaded!\n")
 
     if(args.test_dir):
         try:
             Xim,_ = image_dirs_to_samples(args.test_dir, resize=(WIDTH,HEIGHT), convert_gray=False, 
-                                          filetypes=[".png",".jpg",".bmp"]) 
+                                          filetypes=[".png",".jpg",".JPG",".bmp"]) 
             print("")
             print("Images: ", len(Xim), Xim[0].shape, "\n")
         except:
@@ -367,62 +366,63 @@ else:
 
 ##############################
 #----------- CAMERA ----------
-#if(args.video):
-#    delay = 1
-#    nimages = -1
-#
-#i=0
-#try:
-#    args.video = int(args.video)
-#except:
-#    pass
-#
-#print("[INFO] Video:",args.video,"\n")
-#
-#cam = cv2.VideoCapture(args.video)
-#while(not cam.isOpened()):
-#    cam = cv2.VideoCapture(args.video)
-#
-#while True:
-#    ret_val, cam_image = cam.read()
-#    while(not ret_val):
-#        ret_val, cam_image = cam.read()
-#    
-#    stime = time.time()
-#
-#    cam_image = cv2.cvtColor(cam_image,cv2.COLOR_BGR2RGB)
-#    test_image = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
-#    test_image2 = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
-#
-#    test_image = test_image / 255.
-#    #test_image2 = test_image2 / 255.
-#
+if(args.video):
+    delay = 1
+    nimages = -1
+
+i=0
+try:
+    args.video = int(args.video)
+except:
+    pass
+
+print("[INFO] Video:",args.video,"\n")
+
+cam = cv2.VideoCapture(args.video)
+while(not cam.isOpened()):
+    cam = cv2.VideoCapture(args.video)
+
+while True:
+    ret_val, cam_image = cam.read()
+    while(not ret_val):
+        ret_val, cam_image = cam.read()
+    
+    stime = time.time()
+
+    cam_image = cv2.cvtColor(cam_image,cv2.COLOR_BGR2RGB)
+    test_image = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
+    test_image2 = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
+
+    test_image = test_image / 255.
+    #test_image2 = test_image2 / 255.
+
 ################################
 
 
 ################################
 #-------- IMAGES FOLDER --------
-nimages = len(Xim)
-delay = 0
-for i in range(nimages):
-    stime = time.time()
+#nimages = len(Xim)
+#delay = 0
+#for i in range(nimages):
+#    stime = time.time()
 ################################ 
 
-    test_image = np.reshape(Xim[i],(1, HEIGHT, WIDTH, CHANNELS)) 
-    #test_image = np.reshape(test_image,(1, HEIGHT, WIDTH, 3)) 
+    #test_image = np.reshape(Xim[i],(1, HEIGHT, WIDTH, CHANNELS)) 
+    test_image = np.reshape(test_image,(1, HEIGHT, WIDTH, 3)) # video capture
     
     predicts = model.predict(test_image)
     pred_image = np.reshape(predicts[0], (HEIGHT, WIDTH, CHANNELS))
     
-    ### original image 
-    original = cv2.cvtColor(Xim[i],cv2.COLOR_RGB2BGR)
+    ### original image --------------------------------------------
+    #original = cv2.cvtColor(Xim[i],cv2.COLOR_RGB2BGR)
     
-    #original = test_image2
-    #original = cv2.cvtColor(test_image2,cv2.COLOR_RGB2BGR)
-    #original = original / 255.
+    original = test_image2                                 # video capture
+    original = cv2.cvtColor(test_image2,cv2.COLOR_RGB2BGR) # video capture
+    original = original / 255.                             # video capture
+    
     #cv2.imshow("Original",original)
 
-    ### predicted segmentation 
+    ### predicted segmentation ------------------------------------
     pred_image = np.absolute(pred_image)
     predicted = cv2.cvtColor(pred_image,cv2.COLOR_RGB2BGR)
     

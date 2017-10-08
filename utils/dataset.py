@@ -100,7 +100,7 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     """
     classes = X = Y = Xtr = Ytr = Xte = Yte = means_xtr = means_xte = None
 
-    print("Loading dataset (from directory)...")
+    print("[INFO] Loading dataset (from directory)...")
     if(width and height):
         X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=gray, dataset_file=train_path, 
                                            filetypes=[".bmp",".ppm",".jpg",".png"], shuffle_data=False, categorical_Y=True)
@@ -213,7 +213,7 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
     print("\tShape (train): ",Xtr.shape,Ytr.shape)
     if(validation > 0): print("\tShape   (val): ",Xte.shape,Yte.shape)
     if(mean):           print("\t        Means: ",means_xtr.shape,means_xte.shape)
-    print("Data loaded!\n")
+    print("[INFO] Data loaded!\n")
 
     return classes,Xtr,Ytr,height,width,ch,Xte,Yte,means_xtr,means_xte
 
@@ -420,3 +420,36 @@ def convert_images_colorspace(images_array=None,fromc=None,convert_to=None):
         print(colored("WARNING: No colorspace selected! Returned original images.","yellow"))
 
     return new_images_array
+
+# funtion to load CIFAR-10 dataset
+def load_cifar10_dataset(data_dir=None):
+    from tflearn.datasets import cifar10
+    from tflearn.data_utils import to_categorical
+    
+    HEIGHT   = 32 
+    WIDTH    = 32
+    CHANNELS = 3
+    CLASSES  = 10
+
+    (X, Y), (Xv, Yv) = cifar10.load_data(dirname=data_dir)
+    X, Y = shuffle(X, Y)
+    Y = to_categorical(Y, 10)
+    Yv = to_categorical(Yv, 10)
+
+    return CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv
+
+# funtion to load MNIST dataset
+def load_mnist_dataset(data_dir=None):
+    import tflearn.datasets.mnist as mnist
+    from tflearn.data_utils import to_categorical
+
+    HEIGHT   = 28 
+    WIDTH    = 28
+    CHANNELS = 1
+    CLASSES  = 10
+
+    X, Y, Xv, Yv = mnist.load_data(data_dir=data_dir,one_hot=True)
+    X = X.reshape([-1, 28, 28, 1])
+    Xv = Xv.reshape([-1, 28, 28, 1])
+
+    return CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv

@@ -1,0 +1,18 @@
+################ TRAINING REPORT #################
+# Images path   | dataset\digits\augmented_v456\
+# Validation    | 0.30
+# Height        | 64
+# Width         | 64
+# Architecure   | custom
+# Bacth Size    | 32
+# Epochs        | 500
+# Eval Criteria | 0.80
+##################################################
+train,validation,test,min,time
+0.00,0.00,0.00,0.000
+98.72,97.05,98.72,7.011,best
+100.00,98.72,98.85,12.105,best
+100.00,98.72,98.85,17.241
+100.00,98.85,99.10,22.343,best
+100.00,99.23,99.23,27.442,best
+100.00,99.23,99.23,27.442
