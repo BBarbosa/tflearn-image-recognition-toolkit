@@ -33,11 +33,14 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import platform
 plt.rcdefaults()
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 
+if(platform.system() == 'Windows'):
+    plt.style.use('classic')
 
 NumConvMax = 8
 NumFcMax = 20
@@ -117,7 +120,7 @@ if __name__ == '__main__':
     #num_list =  [3, 32, 32, 64, 64, 64]  # NOTE: number of output feature maps
     #x_diff_list = [0, layer_width, layer_width, layer_width, layer_width, layer_width]
     
-    size_list = [128, 32, 16]    # NOTE: image size
+    size_list = [64, 32, 16]    # NOTE: image size
     num_list =  [  3, 32, 32]    # NOTE: number of output feature maps
     x_diff_list = [0, layer_width, layer_width]
     
@@ -193,6 +196,6 @@ if __name__ == '__main__':
     #fig.set_size_inches(8, 2.5)
 
     fig_dir = './'
-    fig_ext = '.png'
+    fig_ext = '.pdf'
     fig.savefig(os.path.join(fig_dir, 'convnet_fig' + fig_ext),
                 bbox_inches='tight', pad_inches=0)

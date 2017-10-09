@@ -7,7 +7,7 @@ import os
 import random
 
 CROP = 64
-NIMAGES = 100
+NIMAGES = 16
 
 fname = os.path.splitext(sys.argv[1])[0]   # /canvas1/canvas1-a-p001.png -> /canvas1/canvas1-a-p001
 img = Image.open(sys.argv[1]) 
@@ -24,5 +24,5 @@ for i in range(0,NIMAGES):
     h = random.randint(0,limit_h)
     w = random.randint(0,limit_w)
     img2 = img.crop((w,h,w+CROP,h+CROP))
-    filename = "../../../cropped/4/%s_%d.png" % (fname, i)  
+    filename = "../training/%s_%d.png" % (fname, i)  
     img2.save(filename)

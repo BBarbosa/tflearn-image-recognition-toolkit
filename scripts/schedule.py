@@ -19,13 +19,13 @@ except:
 
 commands = ["python training.py"]
 
-datasets = ["dataset\\parking\\pklot\\subset_of_mypklot\\"]
+datasets = ["dataset\\kylberg\\training\\"]
 
 testdirs = [""] 
 
-architectures = ["cifar10"]
+architectures = ["2l_8f_16f_5x5_fc256"]
 
-batches = [32,64,128,256,512]
+batches = [512,256,128,64,32]
 
 nruns = 2
 
@@ -36,7 +36,7 @@ for command in commands:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        runid = "pklot_all_" + arch + "_bs" + str(bs) + "_r" + str(run)
+                        runid = "kylberg_" + arch + "_bs" + str(bs) + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)

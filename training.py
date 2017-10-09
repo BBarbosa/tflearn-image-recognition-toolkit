@@ -119,7 +119,7 @@ model = tflearn.DNN(network,checkpoint_path="models/%s" % args.run_id,tensorboar
 EPOCHS = 500                    # maximum number of epochs 
 SNAP = args.snap                # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP     # number of iterations (or evaluations) 
-use_criteria = True             # use stop criteria
+use_criteria = False             # use stop criteria
 eval_criteria = 0.80            # evaluation criteria (confidence)
 
 best_val_acc = 0                # best validation accuracy 

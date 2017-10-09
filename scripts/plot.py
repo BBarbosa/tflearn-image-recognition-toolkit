@@ -24,7 +24,7 @@ delimiter     = ","
 comments      = '#'
 names         = True
 invalid_raise = False
-skip_header   = 0
+skip_header   = 10
 autostrip     = True,
 usecols       = (0,1) 
 ########################################
@@ -40,7 +40,7 @@ usecols       = (0,1)
 # len(data)    == number of lines
         
 # marker symbols
-symbols = ['-','--','.','-.','s','8','P','X','^','+','d','*']
+symbols = ['-','--','-.','s','8','P','X','^','+','d','*']
 
 text_style = dict(horizontalalignment='right', verticalalignment='center',
                   fontsize=12, fontdict={'family': 'monospace'})
@@ -51,7 +51,7 @@ marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
 colors = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
           ('paleturquoise','c'),('gold','goldenrod'),('salmon','red'),('silver','gray')]
 
-markers = [['rs-','ro-.','r*-'],['gs-','go-.','g*-'],['bs-','bo-','b*-'],['ys-']]
+markers = [['rs-','ro--','r*-'],['gs-','go--','g*-'],['bs-','bo-','b*-'],['ys-']]
 
 # files ids
 ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
@@ -99,7 +99,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     Function to plot a single csv file.
 
     Used on:
-    - accuracy comparison 
+        accuracy comparison 
 
     Params:
         `infile` - (string) path to .csv file
@@ -131,10 +131,11 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     #plt.style.use('default')
     
     labels = ['training (confidence >=75%)','validation (confidence >=75%)','validation (normal)']
+    markers = ['r-','r--','b--']
 
     #plt.plot(x,criteria,'r--',label="stop_criteria")
     for i,label in enumerate(data.dtype.names):
-        plt.plot(x,data[label],symbols[i],label=labels[i])
+        plt.plot(x,data[label],markers[i],label=labels[i])
     
     plt.title(title,fontweight='bold')
     plt.legend(loc=0)
@@ -361,18 +362,23 @@ def generate_cmatrix(files_dir,title="Title"):
         matrix[predicted][true_label] +=1 
 
     print(matrix)
-    
-    labels = [str(elem) for elem in np.arange(nclasses)]
-    #labels = ["with","without"] # NOTE: defined manually
 
     fig = plt.figure()
     
     ax = fig.add_subplot(111)
     cax = ax.matshow(matrix)
     fig.colorbar(cax)
+
+    labels = [str(elem) for elem in np.arange(nclasses)]
+    #labels = ["canvas","cushion","linseeds","sand","seat","stone"] # NOTE: defined manually
+    
+    #ticks = [int(elem) for elem in labels]
+    #ax.set_xticks(ticks)
+    #ax.set_yticks(ticks)
+    #print(ticks)
     
     ax.set_xticklabels([''] + labels,rotation=45)
-    ax.xaxis.set_label_position('bottom')
+    #ax.xaxis.set_label_position('bottom')
 
     ax.xaxis.tick_bottom()
 

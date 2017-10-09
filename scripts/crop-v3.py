@@ -10,7 +10,7 @@ import os
 import glob
 
 # arguments' parser
-parser = argparse.ArgumentParser(description="Auxiliary script to crop many images",
+parser = argparse.ArgumentParser(description="Auxiliary script to crop many images by a .csv file",
                                  prefix_chars='-') 
 # required arguments
 parser.add_argument("directory",help="directory where training images are stored")

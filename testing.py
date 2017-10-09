@@ -40,7 +40,7 @@ except:
     testdir = None
 
 vs = 1    # percentage of data for validation (set manually)
-
+"""
 # load dataset and get image dimensions
 if(vs and True):
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,mean_xtr,mean_xv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,
@@ -51,10 +51,10 @@ if(vs and True):
     classifier.CHANNELS = CHANNELS
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
-
+"""
 
 # to load CIFAR-10 dataset and MNIST
-if(False):
+if(True):
     print("Loading dataset (from directory)...")
 
     #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=traindir)
@@ -147,7 +147,7 @@ bp = 0                      # badly predicted counter
 wp = 0                      # well predicted counter  
 separate = False            # separates images with help of a trained model
 show_image = True           # flag to (not) show tested images
-cmatrix = "digist_costum_r0" # NOTE: manually set by user
+cmatrix = "mnist_mnist_r6" # NOTE: manually set by user
 
 if(cmatrix is not None):
     fcsv = open(cmatrix + "_cmatrix.txt","w+")

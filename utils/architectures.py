@@ -637,7 +637,27 @@ def build_2l_8f_16f_5x5_fc512(network,classes):
                         learning_rate=0.001) # 0.001    
     return network
 
-def build_2l_16f_32f_5x5_fc512(network,classes):
+def build_2l_8f_16f_5x5_fc256(network,classes):
+    network = conv_2d(network, 8, 5, activation='relu', strides=2) 
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+
+    network = conv_2d(network, 16, 5, activation='relu')  
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+
+    network = fully_connected(network,256, activation='relu') 
+    network = dropout(network, 0.75)
+    network = fully_connected(network,128,activation='relu')
+    network = dropout(network, 0.75) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam',
+                        loss='categorical_crossentropy', 
+                        learning_rate=0.001) # 0.001    
+    return network
+
+def build_2l_16f_32f_5x5_fc256(network,classes):
     network = conv_2d(network, 16, 5, activation='relu', strides=2) 
     network = max_pool_2d(network, 2)
     network = conv_2d(network, 32, 5, activation='relu', strides=2)  
@@ -1674,6 +1694,7 @@ def build_network(name,network,classes):
 
     # ----- 2 layers -----
     elif(name == "2l_8f_16f_5x5_fc512"):      network = build_2l_8f_16f_5x5_fc512(network,classes)
+    elif(name == "2l_8f_16f_5x5_fc256"):      network = build_2l_8f_16f_5x5_fc256(network,classes)
     elif(name == "2l_16f_32f_5x5_fc512"):     network = build_2l_16f_32f_5x5_fc512(network,classes)
     elif(name == "2l_32f_5x5_fc512"):         network = build_2l_32f_5x5_fc512(network,classes)
     elif(name == "2l_32f_5x5_fc512_ns"):      network = build_2l_32f_5x5_fc512_ns(network,classes)
