@@ -51,10 +51,10 @@ if(vs and True):
     classifier.CHANNELS = CHANNELS
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
-"""
+"""  
 
 # to load CIFAR-10 dataset and MNIST
-if(True):
+if(False):
     print("Loading dataset (from directory)...")
 
     #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=traindir)
@@ -188,7 +188,7 @@ for i in np.arange(0,len_is):
         dest_file.reverse()
         dest_file = dest_file[0]
 
-        dest_folder = "./dataset/numbers/augmented_v7/"
+        dest_folder = "./dataset/numbers/augmented_v7/" # NOTE: set manually by user
 
         # NOTE: move images by confirming them manually
         if(False):

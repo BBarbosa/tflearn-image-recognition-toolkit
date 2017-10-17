@@ -1,0 +1,18 @@
+################ TRAINING REPORT #################
+# Images path   | dataset\parking\pklot\subset_of_mypklot\
+# Validation    | 0.30
+# Height        | 64
+# Width         | 64
+# Architecure   | cifar10_half
+# Bacth Size    | 32
+# Epochs        | 500
+# Eval Criteria | 0.80
+##################################################
+train,validation,test,min,time
+0.00,0.00,48.61,0.000
+99.82,88.41,93.25,16.440,best
+99.96,81.13,87.84,31.312
+99.92,80.08,88.98,46.170
+99.92,78.59,86.35,61.001
+99.94,79.07,87.79,75.812
+100.00,79.17,88.17,90.519

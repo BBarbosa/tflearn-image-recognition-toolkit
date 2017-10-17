@@ -25,8 +25,8 @@ from PIL import Image
 HEIGHT = 192
 WIDTH  = 608
 
-#HEIGHT = 96 
-#WIDTH  = 320
+HEIGHT = 96 
+WIDTH  = 320
 
 #HEIGHT = 160 
 #WIDTH  = 320
@@ -160,47 +160,49 @@ def build_autoencoder(network):
 # fully-convolutional network
 def build_fcn_all(network):
     #Pool1
-    network = conv_2d(network, 8, 7, activation='relu')
-    network = max_pool_2d(network,2)
+    conv1 = conv_2d(network, 8, 7, activation='relu')
+    pool1 = max_pool_2d(conv1,2)
     #Pool2
-    network = conv_2d(network, 16, 5, activation='relu')
-    network = max_pool_2d(network, 2)
+    conv2 = conv_2d(pool1, 16, 5, activation='relu')
+    pool2 = max_pool_2d(conv2, 2)
     #Pool3
-    network = conv_2d(network, 32, 5, activation='relu')
-    network_3 = max_pool_2d(network, 2)                       # output 8x_downsampled
+    conv3 = conv_2d(pool2, 32, 5, activation='relu')
+    pool3 = max_pool_2d(conv3, 2)                       # output 8x_downsampled
     #Pool4
-    network_4 = conv_2d(network_3, 64, 3, activation='relu') 
-    network_4 = max_pool_2d(network_4, 2)                     # output 16x_downsampled
+    conv4 = conv_2d(pool3, 64, 3, activation='relu') 
+    pool4 = max_pool_2d(conv4, 2)                       # output 16x_downsampled
 
-    #start FCN-32s
+    #start FCN-32s -----------------------------------  
     #Pool5
-    network_32 = conv_2d(network_4, 128, 3, activation='relu')
-    network_32 = max_pool_2d(network_32, 2)
-    #Conv6-7
-    network_32 = conv_2d(network_32, 128, 3, activation='relu')
-    network_32 = conv_2d(network_32, 128, 3, activation='relu') # output 32x_downsampled
-    #end FCN-32s
+    conv5 = conv_2d(pool4, 128, 3, activation='relu')
+    pool5 = max_pool_2d(conv5, 2)
+    #Conv6-7 
+    conv6 = conv_2d(pool5, 128, 3, activation='relu')
+    conv7 = conv_2d(conv6, 128, 3, activation='relu')   # output 32x_downsampled
+    #end FCN-32s -----------------------------------
 
-    #start FCN-16s
-    network_32_UP2 = upsample_2d(network_32, 2)
-    network_16 = merge([network_32_UP2, network_4], mode='concat', axis=3)
-    network_16 = conv_2d(network_16, 3, 128, activation='relu') # output 16x_downsampled
-    #end FCN-16s
+    ##start FCN-16s -----------------------------------
+    #network_32_UP2 = upsample_2d(network_32, 2)
+    #network_16 = merge([network_32_UP2, network_4], mode='concat', axis=3)
+    #network_16 = conv_2d(network_16, 3, 128, activation='relu') # output 16x_downsampled
+    ##end FCN-16s -----------------------------------
 
-    #start FCN-8s
+    ##start FCN-8s -----------------------------------
     #network_32_UP4 = upsample_2d(network_32,4)
-    network_16_UP2  = upsample_2d(network_16,2)
+    #network_16_UP2  = upsample_2d(network_16,2)
     #network_3_UP8   = upsample_2d(network_3,8)
-
+    pool4_x2 = upsample_2d(pool4,2)
+    conv7_x4 = upsample_2d(conv7,4)
     #network_8 = merge([network_32_UP4, network_4_UP2, network_3], mode='concat', axis=3)
-    network_8 = merge([network_16_UP2, network_3], mode='concat', axis=3)
-    network_8 = conv_2d(network_8, 3, 1, activation='relu')
-    #end FCN-8s
+    fcn_8s = merge([pool3, pool4_x2, conv7_x4], mode='concat', axis=3)
+    fcn_8s = conv_2d(fcn_8s, 3, 1, activation='relu')
+    ##end FCN-8s -----------------------------------
     
-    network_8 = upsample_2d(network_8,8)
+    out = conv_2d(fcn_8s, 3, 1, activation='relu')
+    out = upsample_2d(out,8)
     #network_8 = upscore_layer(network_8,num_classes=3,kernel_size=2,strides=8,shape=[384,1216,3])
     
-    network = tflearn.regression(network_8, 
+    network = tflearn.regression(out, 
                                  loss='mean_square',
                                  #loss='weak_cross_entropy_2d',
                                 )
@@ -366,59 +368,59 @@ else:
 
 ##############################
 #----------- CAMERA ----------
-if(args.video):
-    delay = 1
-    nimages = -1
-
-i=0
-try:
-    args.video = int(args.video)
-except:
-    pass
-
-print("[INFO] Video:",args.video,"\n")
-
-cam = cv2.VideoCapture(args.video)
-while(not cam.isOpened()):
-    cam = cv2.VideoCapture(args.video)
-
-while True:
-    ret_val, cam_image = cam.read()
-    while(not ret_val):
-        ret_val, cam_image = cam.read()
-    
-    stime = time.time()
-
-    cam_image = cv2.cvtColor(cam_image,cv2.COLOR_BGR2RGB)
-    test_image = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
-    test_image2 = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
-
-    test_image = test_image / 255.
-    #test_image2 = test_image2 / 255.
-
+#if(args.video):
+#    delay = 1
+#    nimages = -1
+#
+#i=0
+#try:
+#    args.video = int(args.video)
+#except:
+#    pass
+#
+#print("[INFO] Video:",args.video,"\n")
+#
+#cam = cv2.VideoCapture(args.video)
+#while(not cam.isOpened()):
+#    cam = cv2.VideoCapture(args.video)
+#
+#while True:
+#    ret_val, cam_image = cam.read()
+#    while(not ret_val):
+#        ret_val, cam_image = cam.read()
+#    
+#    stime = time.time()
+#
+#    cam_image = cv2.cvtColor(cam_image,cv2.COLOR_BGR2RGB)
+#    test_image = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
+#    test_image2 = cv2.resize(cam_image, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
+#
+#    test_image = test_image / 255.
+#    #test_image2 = test_image2 / 255.
+#
 ################################
 
 
 ################################
 #-------- IMAGES FOLDER --------
-#nimages = len(Xim)
-#delay = 0
-#for i in range(nimages):
-#    stime = time.time()
+nimages = len(Xim)
+delay = 0
+for i in range(nimages):
+    stime = time.time()
 ################################ 
 
-    #test_image = np.reshape(Xim[i],(1, HEIGHT, WIDTH, CHANNELS)) 
-    test_image = np.reshape(test_image,(1, HEIGHT, WIDTH, 3)) # video capture
+    test_image = np.reshape(Xim[i],(1, HEIGHT, WIDTH, CHANNELS)) 
+    #test_image = np.reshape(test_image,(1, HEIGHT, WIDTH, 3)) # video capture
     
     predicts = model.predict(test_image)
     pred_image = np.reshape(predicts[0], (HEIGHT, WIDTH, CHANNELS))
     
     ### original image --------------------------------------------
-    #original = cv2.cvtColor(Xim[i],cv2.COLOR_RGB2BGR)
+    original = cv2.cvtColor(Xim[i],cv2.COLOR_RGB2BGR)
     
-    original = test_image2                                 # video capture
-    original = cv2.cvtColor(test_image2,cv2.COLOR_RGB2BGR) # video capture
-    original = original / 255.                             # video capture
+    #original = test_image2                                 # video capture
+    #original = cv2.cvtColor(test_image2,cv2.COLOR_RGB2BGR) # video capture
+    #original = original / 255.                             # video capture
     
     #cv2.imshow("Original",original)
 

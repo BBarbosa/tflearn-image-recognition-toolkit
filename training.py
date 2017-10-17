@@ -50,9 +50,10 @@ HEIGHT = args.height
 WIDTH  = args.width
 
 # load dataset and get image dimensions
+"""
 if(args.val_set and True):
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,validation=args.val_set,
-                                                                               mean=False,gray=args.gray,save_dd=False)
+                                                                               mean=False,gray=args.gray,save_dd=True)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -60,11 +61,11 @@ if(args.val_set and True):
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
     Xv = Yv = []
-
+"""
 
 # to load CIFAR-10 dataset and MNIST
-if(False):
-    print("Loading dataset (from directory)...")
+if(True):
+    print("[INFO] Loading dataset (from directory)...")
 
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=args.train_dir)
     #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=args.train_dir)
@@ -74,10 +75,10 @@ if(False):
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 
-    print("\t         Path:",args.train_dir)
-    print("\tShape (train):",X.shape,Y.shape)
-    print("\tShape   (val):",Xv.shape,Yv.shape)
-    print("Data loaded!\n")
+    print("[INFO] \t         Path:",args.train_dir)
+    print("[INFO] \tShape (train):",X.shape,Y.shape)
+    print("[INFO] \tShape   (val):",Xv.shape,Yv.shape)
+    print("[INFO] Data loaded!\n")
 
 # load test images
 # NOTE: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
@@ -92,6 +93,7 @@ if(args.test_dir is not None):
 img_prep = ImagePreprocessing()
 img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
 img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
+#img_prep.add_zca_whitening()
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
@@ -100,7 +102,7 @@ img_aug.add_random_flip_updown()
 img_aug.add_random_rotation(max_angle=10.)
 
 # computational resources definition (made changes on TFLearn's config.py)
-tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
+tflearn.init_graph(num_cores=4,allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
@@ -119,7 +121,7 @@ model = tflearn.DNN(network,checkpoint_path="models/%s" % args.run_id,tensorboar
 EPOCHS = 500                    # maximum number of epochs 
 SNAP = args.snap                # evaluates network progress at each SNAP epochs
 iterations = EPOCHS // SNAP     # number of iterations (or evaluations) 
-use_criteria = False             # use stop criteria
+use_criteria = True             # use stop criteria
 eval_criteria = 0.80            # evaluation criteria (confidence)
 
 best_val_acc = 0                # best validation accuracy 

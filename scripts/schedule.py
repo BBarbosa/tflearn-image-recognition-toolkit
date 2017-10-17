@@ -17,7 +17,9 @@ try:
 except:
     ready = False
 
-commands = ["python training.py"]
+commands = ["python training_nothing.py","python training_pp.py","python training_da.py","python training_both.py"]
+
+ids = ["none","pp","da","both"]
 
 datasets = ["dataset\\kylberg\\training\\"]
 
@@ -25,18 +27,18 @@ testdirs = [""]
 
 architectures = ["2l_8f_16f_5x5_fc256"]
 
-batches = [512,256,128,64,32]
+batches = [32]
 
-nruns = 2
+nruns = 3
 
-for command in commands:
+for command,idn in zip(commands,ids):
     for data in datasets:
         for arch in architectures:
             for bs in batches:
                 for testdir in testdirs:
                     for run in range(0,nruns):
                         # NOTE: adapt runid according with the user's preferences
-                        runid = "kylberg_" + arch + "_bs" + str(bs) + "_r" + str(run)
+                        runid = "kylberg_" + idn + "_" + arch + "_bs" + str(bs) + "_r" + str(run)
                         new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
                         new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
                         print(new_command)

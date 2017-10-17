@@ -20,13 +20,15 @@ if(platform.system() == 'Windows'):
 
 ########################################
 # NOTE: Parameters to get data from .csv 
-delimiter     = ","
-comments      = '#'
-names         = True
-invalid_raise = False
-skip_header   = 10
-autostrip     = True,
-usecols       = (0,1) 
+delimiter      = ","
+comments       = '#'
+names          = True
+invalid_raise  = False
+skip_header    = 0
+autostrip      = True,
+usecols        = (0,1,2) 
+label_fontsize = 20
+title_fontsize = 25
 ########################################
 
 # NOTE
@@ -121,11 +123,16 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     x = np.arange(0,length)               # [1,2,3,4,...,n]
     #x = np.asarray([100+elem*10 for elem in x])
     x = x*5
-    
+
     xticks = [8,16,32,48,64,80,96,128]      # a-axis values
     xticks = x
+    xticks = np.arange(min(x), max(x)+1, 30)
+    xticks = list(np.arange(0,10+1,5)) + list(np.arange(40,max(x)+1,30))
 
+    print("xticks",xticks)
+    
     yticks = [0,10,20,30,40,50,60,70,80,90,100]
+    yticks = np.arange(0, 100+1, 20) 
     
     #criteria = [97.5] * length
     #plt.style.use('default')
@@ -135,14 +142,16 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
 
     #plt.plot(x,criteria,'r--',label="stop_criteria")
     for i,label in enumerate(data.dtype.names):
-        plt.plot(x,data[label],markers[i],label=labels[i])
+        plt.plot(x,data[label],markers[i],label=labels[i],markersize=1,linewidth=1)
+    
+    plt.plot(x,[99]*length,'g-.',label="99% stop criteria",linewidth=1) # stop criteria plot
     
     plt.title(title,fontweight='bold')
     plt.legend(loc=0)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(grid)
-    plt.xticks(x,xticks)
+    plt.xticks(xticks,xticks)
     plt.yticks(yticks,yticks)
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
@@ -293,48 +302,61 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     yticks = np.arange(5)
     yticks = yticks * 5
 
-    for infile in files_list:
+    for enum,infile in enumerate(files_list):
         data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
                              invalid_raise=invalid_raise,skip_header=skip_header,
                              autostrip=autostrip,usecols=usecols)
         
         file_lenght = len(data)
-        print("File: " + infile, "Epochs:", (file_lenght-1)*5)
+
+        print("[INFO] File: " + infile, "Epochs:", (file_lenght-1)*5)
         # -1 : final evaluation line (header line is automatically removeds)
         # *5 : each csv write was done after 5 epochs
-        counter[file_lenght-1] += 1
-        tr_accs[index] = data[file_lenght-1][0]     # get the first value of the tuple  
-        va_accs[index] = data[file_lenght-1][1]     # get the second value of the tuple
+        #counter[file_lenght-1] += 1
+        counter[enum]  = (file_lenght-1)*5
+        tr_accs[index] = data[file_lenght-1][0]     # get the first value of the tuple (training) 
+        va_accs[index] = data[file_lenght-1][1]     # get the second value of the tuple (validation)
 
         index += 1
 
+    dataset_id = "Fabric"
+    boxprops = dict(linewidth=1)
+
     ax = plt.subplot(111)
-    inds = np.arange(epoch_ticks)
-    inds = [x*5 for x in inds]
-    ax.bar(inds,counter,1)
-    ax.set_title("Number of epochs needed to finish training on fabric dataset",fontweight='bold')
-    plt.xlabel("Epochs")
-    plt.ylabel("Counts")
-    plt.xticks(inds,inds)
-    plt.yticks(yticks,yticks)
-    if(xlim): plt.xlim(xlim)
+    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    #inds = np.arange(epoch_ticks)
+    #inds = [x*5 for x in inds]
+    #ax.bar(inds,counter,1)
+    ax.boxplot(counter,boxprops=boxprops)
+
+    ax.set_title("Number of epochs needed to finish \n training on %s dataset" % dataset_id,fontweight='bold',fontsize=title_fontsize)
+    #plt.xlabel("Epochs")
+    plt.ylabel("Epochs",fontsize=label_fontsize)
+    ax.set_xticklabels(['training'])
+    #plt.xticks(inds,inds)
+    #plt.yticks(yticks,yticks)
+    #if(xlim): plt.xlim(xlim)
     plt.grid(grid)
     plt.tight_layout()
-
     plt.savefig('%s_nepochs.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
+    # ---------------------------------------------------------
     #ax = plt.subplot(212)
     ax = plt.subplot(111)
+    ax.tick_params(axis='both', which='major', labelsize=15)
     ax.ticklabel_format(useOffset=False)
-    plt.hist(tr_accs,alpha=0.7,color='r',label='training')
-    plt.hist(va_accs,alpha=0.5,color='g',label='validation')
-    ax.set_title("Accuracy's values distribution on fabric dataset",fontweight='bold')
-    plt.xlabel("Accuracy (%)")
-    plt.ylabel("Counts")
+    #plt.hist(tr_accs,alpha=0.7,color='r',label='training')
+    #plt.hist(va_accs,alpha=0.5,color='g',label='validation')
+    merged_data = [tr_accs,va_accs]
+    plt.boxplot(merged_data,boxprops=boxprops)
+    
+    ax.set_title("Accuracy's values distribution \n on %s dataset" % dataset_id,fontweight='bold',fontsize=title_fontsize)
+    plt.ylabel("Accuracy (%)",fontsize=label_fontsize)
+    ax.set_xticklabels(['training','validation'],fontsize=label_fontsize)
     plt.grid(grid)
     plt.tight_layout()
-    plt.legend()
+    plt.ylim(ylim)
 
     plt.savefig('%s_accuracy_distribution.pdf' % title,format='pdf',dpi=300)
     plt.show()
@@ -350,7 +372,7 @@ def generate_cmatrix(files_dir,title="Title"):
     """
 
     data = np.genfromtxt(files_dir,delimiter=delimiter,comments=comments,names=names,
-                         invalid_raise=invalid_raise,skip_header=skip_header,
+                         invalid_raise=invalid_raise,skip_header=0,
                          autostrip=autostrip,usecols=(0,1))
     
     nclasses = 7 # NOTE: defined manually
@@ -366,8 +388,17 @@ def generate_cmatrix(files_dir,title="Title"):
     fig = plt.figure()
     
     ax = fig.add_subplot(111)
-    cax = ax.matshow(matrix)
+    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    #cax = ax.matshow(matrix)
+    cax = ax.imshow(matrix,cmap=plt.cm.jet,interpolation='nearest')
     fig.colorbar(cax)
+
+    # add values to matrix
+    for x in range(nclasses):
+        for y in range(nclasses):
+            ax.annotate(str(int(matrix[x][y])), xy=(y, x), 
+                        horizontalalignment='center',
+                        verticalalignment='center')
 
     labels = [str(elem) for elem in np.arange(nclasses)]
     #labels = ["canvas","cushion","linseeds","sand","seat","stone"] # NOTE: defined manually
@@ -377,16 +408,16 @@ def generate_cmatrix(files_dir,title="Title"):
     #ax.set_yticks(ticks)
     #print(ticks)
     
-    ax.set_xticklabels([''] + labels,rotation=45)
+    ax.set_xticklabels([''] + labels,rotation=45,fontsize=label_fontsize)
     #ax.xaxis.set_label_position('bottom')
 
     ax.xaxis.tick_bottom()
 
     ax.set_yticklabels([''] + labels)
     
-    plt.title(title,fontweight='bold')
-    plt.ylabel('Predicted')
-    plt.xlabel('Actual')
+    plt.title(title,fontweight='bold',fontsize=title_fontsize)
+    plt.ylabel('Predicted',fontsize=label_fontsize)
+    plt.xlabel('Actual',fontsize=label_fontsize)
     plt.tight_layout()
 
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
