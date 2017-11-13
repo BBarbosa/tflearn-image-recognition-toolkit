@@ -21,9 +21,6 @@ from termcolor import colored
 # init colored print
 init()
 
-# clears screen and shows OS
-classifier.clear_screen()
-
 # argument parser
 parser = argparse.ArgumentParser(description="Hihg level Tensorflow training script.",
                                  prefix_chars='-') 
@@ -43,6 +40,7 @@ parser.add_argument("--snap", help="evaluate training frequency", default=5,type
 
 # parse arguments
 args = parser.parse_args()
+
 print(args,"\n")
 
 # images properties
@@ -50,10 +48,9 @@ HEIGHT = args.height
 WIDTH  = args.width
 
 # load dataset and get image dimensions
-"""
 if(args.val_set and True):
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,validation=args.val_set,
-                                                                               mean=False,gray=args.gray,save_dd=True)
+                                                                               mean=False,gray=args.gray,save_dd=False)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
@@ -61,14 +58,14 @@ if(args.val_set and True):
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
     Xv = Yv = []
-"""
+""" """
 
 # to load CIFAR-10 dataset and MNIST
-if(True):
+if(False):
     print("[INFO] Loading dataset (from directory)...")
 
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=args.train_dir)
-    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=args.train_dir)
+    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=args.train_dir)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=args.train_dir)
 
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
@@ -91,23 +88,25 @@ if(args.test_dir is not None):
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
-img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
+#img_prep.add_samplewise_zero_center(per_channel=True)   # per sample (featurewise is a global value)
+img_prep.add_samplewise_zero_center()
 img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
 #img_prep.add_zca_whitening()
+#img_prep.add_featurewise_zero_center()
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
-img_aug.add_random_flip_leftright()
-img_aug.add_random_flip_updown()
+#img_aug.add_random_flip_leftright()
+#img_aug.add_random_flip_updown()
 img_aug.add_random_rotation(max_angle=10.)
 
 # computational resources definition (made changes on TFLearn's config.py)
-tflearn.init_graph(num_cores=4,allow_growth=True)
+tflearn.init_graph(num_cores=8,allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
                      data_preprocessing=img_prep,              # NOTE: always check PP
-                     data_augmentation=None)                   # NOTE: always check DA
+                     data_augmentation=img_aug)                # NOTE: always check DA
 
 # build network architecture
 network,_ = architectures.build_network(args.architecture,network,CLASSES)
@@ -125,6 +124,7 @@ use_criteria = True             # use stop criteria
 eval_criteria = 0.80            # evaluation criteria (confidence)
 
 best_val_acc = 0                # best validation accuracy 
+best_test_acc = 0               # best test accuracy
 no_progress = 0                 # counter of how many snapshots without learning process
 iteration_time = 0              # time between each snapshot
 total_training_time = 0         # total training time
@@ -184,7 +184,7 @@ try:
                               min_acc=min_acc,time=total_training_time,ctime=ftime)
 
         # NOTE: stop criteria check - accuracy AND no progress
-        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,99,no_progress,10)): break
+        if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,100,no_progress,10)): break
         
         # repeats the training operation until it reaches one stop criteria
         iteration_time = time.time()

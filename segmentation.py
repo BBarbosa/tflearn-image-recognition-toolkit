@@ -36,15 +36,6 @@ CHANNELS = 3
 # init colored print
 init()
 
-# clears screen and shows OS
-OS = platform.system() 
-
-if(OS == 'Windows'):
-    os.system('cls')
-else:
-    os.system('clear')
-print("Operating System: %s\n" % OS)
-
 # argument parser
 parser = argparse.ArgumentParser(description="Automatic image segmentation using Deep Learning.",
                                  prefix_chars='-') 
@@ -61,6 +52,17 @@ parser.add_argument("--freeze",help="flag to freeze model (boolean)",default=Fal
 
 # parse arguments
 args = parser.parse_args()
+
+# clears screen and shows OS
+OS = platform.system() 
+
+if(OS == 'Windows'):
+    os.system('cls')
+else:
+    os.system('clear')
+print("Operating System: %s\n" % OS)
+
+# print args
 print(args,"\n")
 
 # load dataset and get image dimensions

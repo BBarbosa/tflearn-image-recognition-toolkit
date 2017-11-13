@@ -272,7 +272,7 @@ try:
 except:
     load = False
     print(colored("[WARNING] Image not mentioned!","yellow"))
-    plt.waitforbuttonpress()
+    plt.waitforbuttonpress(timeout=-1)
 
 # if loaded image correctly
 if(load):

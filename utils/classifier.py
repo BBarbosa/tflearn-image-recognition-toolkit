@@ -501,7 +501,8 @@ def test_model_accuracy(model,image_set,label_set,eval_criteria,show_image=True,
             bp += 1
             
             if(show_image):
-                print("Predicted: {0}, Actual: {1}, Confidence: {2:3.2f}, Second guess: {3}".format(guesses[0], true_label,confidence,guesses[1]))
+                print("Predicted: {0:2d}, Actual: {1:2d}, Confidence: {2:3.3f}, Second guess: {3:2d}".format(int(guesses[0]), true_label, confidence, int(guesses[1])))
+                cv2.putText(image, str(guesses[0]), (20, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
                 cv2.imshow("Test image", image)
                 key = cv2.waitKey(0)
                 if(key == 27):

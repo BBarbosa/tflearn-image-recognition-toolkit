@@ -16,7 +16,8 @@ parser.add_argument("folder",help="images folder")
 # optional arguments
 parser.add_argument("--flip",help="flip up/down (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--flop",help="flop left/right (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--rotates",help="rotation (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--rotate",help="rotate ROTATE and -ROTATE angle (int)",type=int)
+parser.add_argument("--rotates",help="90, 180 and 270 rotations (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--transpose",help="transpose (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--all",help="make all transformations (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--extension",help="images extension",default="*")
@@ -51,6 +52,10 @@ for i,image_name in enumerate(images_list):
         image.transpose(PIL.Image.ROTATE_90).save(out_name + "_r90" + ext)
         image.transpose(PIL.Image.ROTATE_180).save(out_name + "_r180" + ext)
         image.transpose(PIL.Image.ROTATE_270).save(out_name + "_r270" + ext) 
+
+    if(args.rotate is not None or args.all):
+        image.rotate(args.rotate).save(out_name + "_r" + str(args.rotate) + ext)
+        image.rotate(-args.rotate).save(out_name + "_r-" + str(args.rotate) + ext)
 
     if(args.transpose or args.all):
         image.transpose(PIL.Image.TRANSPOSE).save(out_name + "_transpose" + ext)

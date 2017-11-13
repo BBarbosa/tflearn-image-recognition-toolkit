@@ -22,9 +22,6 @@ if (len(sys.argv) < 4):
     print(colored("Call: $ python testing.py {dataset} {architecture} {model_path} [testdir]","red"))
     sys.exit(colored("ERROR: Not enough arguments!","red"))
 
-# clears screen and shows OS
-classifier.clear_screen()
-
 # NOTE: change if you want a specific size
 HEIGHT = 64
 WIDTH  = 64
@@ -40,7 +37,7 @@ except:
     testdir = None
 
 vs = 1    # percentage of data for validation (set manually)
-"""
+
 # load dataset and get image dimensions
 if(vs and True):
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,mean_xtr,mean_xv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,
@@ -51,7 +48,7 @@ if(vs and True):
     classifier.CHANNELS = CHANNELS
 else:
     CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
-"""  
+""" """
 
 # to load CIFAR-10 dataset and MNIST
 if(False):
@@ -79,17 +76,18 @@ Xt,filenames = dataset.load_image_set_from_folder(testdir,resize=(WIDTH,HEIGHT),
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
-img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
+#img_prep.add_samplewise_zero_center(per_channel=True)   # per sample (featurewise is a global value)
+img_prep.add_samplewise_zero_center()
 img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
-img_aug.add_random_flip_leftright()
-img_aug.add_random_flip_updown()
+#img_aug.add_random_flip_leftright()
+#img_aug.add_random_flip_updown()
 img_aug.add_random_rotation(max_angle=10.)
 
 # computational resources definition (made changes on TFLearn's config.py)
-tflearn.init_graph(num_cores=4,gpu_memory_fraction=0.4,allow_growth=True)
+tflearn.init_graph(num_cores=8,allow_growth=True)
 #tflearn.init_graph(num_cores=4)
 
 # network definition
@@ -105,19 +103,20 @@ model = tflearn.DNN(network, checkpoint_path=None, tensorboard_dir='logs/',
                     best_checkpoint_path=None)  
 
 eval_criteria = 0.80        # evaluation criteria (confidence)
-print("Eval crit.:", eval_criteria)
-print("Validation:", vs*100 , "%\n")
+print("[INFO] Eval crit.:", eval_criteria)
+print("[INFO] Validation:", vs*100 , "%\n")
 
 # load model to figure out if there is something wrong 
-print("Loading trained model...")  
+print("[INFO] Loading trained model...")  
 model.load(model_path)
-print("\tModel: ",model_path)
-print("Trained model loaded!\n")    
+print("[INFO] Model: ",model_path)
+print("[INFO] Trained model loaded!\n")    
 
 # final evaluation with the best model
 stime = time.time()
 #train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
-val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
+val_acc  = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
+val_acc2 = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
 if(testdir and Xt is not None and Yt is not None): 
     _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria)
 
@@ -125,7 +124,8 @@ ftime = time.time() - stime
 
 print(colored("===== Final Evaluation ======","green"))
 #print("     Train:", train_acc, "%")
-print("Validation:", val_acc, "%")
+print("Validation:", val_acc, "%", "(Confidence > %.2f)" % eval_criteria)
+print("Validation:", val_acc2, "%")
 if(testdir and Xt is not None and Yt is not None):
     print("      Test:", test_acc, "%")
     print("       Min:", min_acc, "%") 
@@ -147,10 +147,10 @@ bp = 0                      # badly predicted counter
 wp = 0                      # well predicted counter  
 separate = False            # separates images with help of a trained model
 show_image = True           # flag to (not) show tested images
-cmatrix = "mnist_mnist_r6" # NOTE: manually set by user
+cmatrix = None # NOTE: manually set by user
 
 if(cmatrix is not None):
-    fcsv = open(cmatrix + "_cmatrix.txt","w+")
+    fcsv = open(cmatrix + "_test_cmatrix.txt","w+")
     fcsv.write("predicted,label\n")
 
 #for i in np.random.choice(np.arange(0, len_is), size=(20,)):
@@ -169,7 +169,7 @@ for i in np.arange(0,len_is):
     true_label = np.argmax(Yv[i])
 
     if(cmatrix is not None):
-        fcsv = open(cmatrix + "_cmatrix.txt","a+")
+        fcsv = open(cmatrix + "_test_cmatrix.txt","a+")
         fcsv.write("%d,%d\n" % (guesses[0],true_label))
 
     # resize the image to 128 x 128
@@ -222,9 +222,12 @@ for i in np.arange(0,len_is):
             bp += 1
 
             if(show_image):
-                print("Predicted: {0}, Actual: {1}, Confidence: {2:3.3f}, Second guess: {3}".format(guesses[0], np.argmax(Yv[i]), confidence, guesses[1]))
+                print("Predicted: {0:2d}, Actual: {1:2d}, Confidence: {2:3.3f}, Second guess: {3:2d}".format(int(guesses[0]), np.argmax(Yv[i]), confidence, int(guesses[1])))
                 rgb = np.fliplr(image.reshape(-1,CHANNELS)).reshape(image.shape)
                 rgb = cv2.resize(rgb, (WIDTH*4,HEIGHT*4), interpolation=cv2.INTER_CUBIC)
+
+                cv2.putText(rgb, str(guesses[0]), (5, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
+
                 cv2.imshow("Test image", rgb)
                 key = cv2.waitKey(0)
 

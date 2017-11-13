@@ -24,11 +24,11 @@ delimiter      = ","
 comments       = '#'
 names          = True
 invalid_raise  = False
-skip_header    = 0
+skip_header    = 10
 autostrip      = True,
 usecols        = (0,1,2) 
-label_fontsize = 20
-title_fontsize = 25
+label_fontsize = 15
+title_fontsize = 23
 ########################################
 
 # NOTE
@@ -53,7 +53,9 @@ marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
 colors = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
           ('paleturquoise','c'),('gold','goldenrod'),('salmon','red'),('silver','gray')]
 
-markers = [['rs-','ro--','r*-'],['gs-','go--','g*-'],['bs-','bo-','b*-'],['ys-']]
+markers = [['rs-','ro--','r*--'],['gs-','go--','g*--'],['bs-','bo-','b*--'],['ys-']]
+
+line_width = [1.0,2.0,2.0]
 
 # files ids
 ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
@@ -126,8 +128,8 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
 
     xticks = [8,16,32,48,64,80,96,128]      # a-axis values
     xticks = x
-    xticks = np.arange(min(x), max(x)+1, 30)
     xticks = list(np.arange(0,10+1,5)) + list(np.arange(40,max(x)+1,30))
+    xticks = np.arange(min(x), max(x)+1, 50)
 
     print("xticks",xticks)
     
@@ -137,14 +139,14 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     #criteria = [97.5] * length
     #plt.style.use('default')
     
-    labels = ['training (confidence >=75%)','validation (confidence >=75%)','validation (normal)']
+    labels = ['training (confidence >=75%)','validation (confidence >=75%)','validation']
     markers = ['r-','r--','b--']
 
     #plt.plot(x,criteria,'r--',label="stop_criteria")
     for i,label in enumerate(data.dtype.names):
         plt.plot(x,data[label],markers[i],label=labels[i],markersize=1,linewidth=1)
     
-    plt.plot(x,[99]*length,'g-.',label="99% stop criteria",linewidth=1) # stop criteria plot
+    #plt.plot(x,[99]*length,'g-.',label="99% stop criteria",linewidth=1) # stop criteria plot
     
     plt.title(title,fontweight='bold')
     plt.legend(loc=0)
@@ -224,16 +226,18 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     x = []
     
     print("Files in folder:\n",files)
-    labels = ['training (conf. >=75%)','validation (conf. >=75%)','validation (normal)']
+    labels = ['training (confidence >=75%)','validation (confidece >=75%)','validation']
     ids = ['no criteria', 'w/ criteria']
 
-    j=0
+    markers = [['r-','r-','r:'],['g-','g-','g:']]
+
+    i=0
     for infile,color,rid in zip(files,colors,ids):
         print("Parsing file: " + infile)
         
         data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
                              invalid_raise=invalid_raise,skip_header=skip_header,
-                             autostrip=autostrip,usecols=usecols)
+                             autostrip=autostrip,usecols=(0,1,2))
         
         data_length = len(data)
         #x.append(data_length*5) 
@@ -244,8 +248,9 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
 
         ax = plt.subplot(111)
 
-        for i,label in enumerate(data.dtype.names):
-            plt.plot(x,data[label],markers[j][i],label=ids[j]+ " " + labels[i])
+        for j,label in enumerate(data.dtype.names):
+            # markevery=5 markers[j][i]
+            plt.plot(x,data[label],markers[i][j],label=ids[i]+ " " + labels[j],lw=line_width[j])
 
         #plt.plot(x,data[0],symbols[0],label=labels[0]) # training
         #plt.plot(x,data[1],symbols[1],label=labels[1]) # validation >80
@@ -258,12 +263,16 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
         #ax.bar(data_length*5+bar_width/2, data[data.dtype.names[1]][data_length-1], 
         #       width=bar_width,color=color[1],align='center',label=rid+data.dtype.names[1]) # test_acc
 
-        j += 1
-        
-    plt.title(title,fontweight='bold')
+        i += 1
+
+    ax = plt.subplot(111)
+    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.ticklabel_format(useOffset=False)
+
+    plt.title("Impact of using stop criteria\non %s dataset" % title,fontweight='bold',fontsize=title_fontsize)
     plt.legend(loc=0)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.xlabel(xlabel,fontsize=label_fontsize)#,fontweight='bold')
+    plt.ylabel(ylabel,fontsize=label_fontsize)#,fontweight='bold')
     plt.grid(grid)
     #plt.xticks(x,x)
     
@@ -344,7 +353,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     # ---------------------------------------------------------
     #ax = plt.subplot(212)
     ax = plt.subplot(111)
-    ax.tick_params(axis='both', which='major', labelsize=15)
+    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
     ax.ticklabel_format(useOffset=False)
     #plt.hist(tr_accs,alpha=0.7,color='r',label='training')
     #plt.hist(va_accs,alpha=0.5,color='g',label='validation')
@@ -400,21 +409,26 @@ def generate_cmatrix(files_dir,title="Title"):
                         horizontalalignment='center',
                         verticalalignment='center')
 
-    labels = [str(elem) for elem in np.arange(nclasses)]
+    labels = [str(elem+1) for elem in np.arange(nclasses)]
     #labels = ["canvas","cushion","linseeds","sand","seat","stone"] # NOTE: defined manually
+    labels = ['0','1','2','3','4','5','6','7','8','9','10']
+    labels = ['1','2','3','4','5','6','7']
     
-    #ticks = [int(elem) for elem in labels]
-    #ax.set_xticks(ticks)
-    #ax.set_yticks(ticks)
+    ticks = [int(elem)-1 for elem in labels]
+    #ticks = [0,1,2,3,4,5,6,7,8,9,10]
+    ax.set_xticks(ticks)
+    ax.set_yticks(ticks)
     #print(ticks)
     
     ax.set_xticklabels([''] + labels,rotation=45,fontsize=label_fontsize)
+    ax.set_xticklabels(labels,rotation=45,fontsize=label_fontsize)
     #ax.xaxis.set_label_position('bottom')
 
     ax.xaxis.tick_bottom()
 
-    ax.set_yticklabels([''] + labels)
-    
+    ax.set_yticklabels([''] + labels,fontsize=label_fontsize)
+    ax.set_yticklabels(labels)
+
     plt.title(title,fontweight='bold',fontsize=title_fontsize)
     plt.ylabel('Predicted',fontsize=label_fontsize)
     plt.xlabel('Actual',fontsize=label_fontsize)

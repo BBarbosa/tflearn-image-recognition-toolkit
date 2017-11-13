@@ -449,6 +449,7 @@ def load_mnist_dataset(data_dir=None):
     CLASSES  = 10
 
     X, Y, Xv, Yv = mnist.load_data(data_dir=data_dir,one_hot=True)
+    X, Y = shuffle(X, Y)
     X = X.reshape([-1, 28, 28, 1])
     Xv = Xv.reshape([-1, 28, 28, 1])
 
