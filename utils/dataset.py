@@ -108,14 +108,14 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
         X,Y = build_image_dataset_from_dir(train_path, resize=(width,height), convert_gray=gray, dataset_file=train_path, 
                                            filetypes=[".bmp",".ppm",".jpg",".png"], shuffle_data=False, categorical_Y=True)
     try:
-        width,height,ch = X[0].shape            # get images dimensions
+        height,width,ch = X[0].shape            # get images dimensions
     except:
-        width,height = X[0].shape
+        height,width = X[0].shape
         ch = 1
     
     nimages,classes = Y.shape               # get number of images and classes    
 
-    #------------------------------ validation split ------------------------------------------------
+    # /////////////////////////////////// validation split ////////////////////////////////////////////
     if(validation > 0 and validation <= 1):  # validation = [0,1] float
         counts  = [0] * classes             # create an array to store the number of images per class
 
@@ -168,7 +168,7 @@ def load_dataset_windows(train_path,height=None,width=None,test=None,shuffled=Fa
             Xte += X[split:split+to_test]
             Yte = np.concatenate([Yte, Y[split:split+to_test]]) if len(Yte)>0 else Y[split:split+to_test]
 
-    #----------------------------------------------------------------------------------------------
+    # /////////////////////////////////////////////////////////////////////////////////////////////////////
     else:
         Xtr = X
         Ytr = Y
@@ -441,7 +441,6 @@ def load_cifar10_dataset(data_dir=None):
 # funtion to load MNIST dataset
 def load_mnist_dataset(data_dir=None):
     import tflearn.datasets.mnist as mnist
-    from tflearn.data_utils import to_categorical
 
     HEIGHT   = 28 
     WIDTH    = 28

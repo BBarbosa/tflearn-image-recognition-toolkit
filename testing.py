@@ -4,65 +4,71 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
 import tensorflow as tf
 from tflearn.layers.estimator import regression
-from tflearn.layers.core import input_data, dropout, fully_connected,flatten
-from tflearn.data_utils import shuffle,featurewise_zero_center,featurewise_std_normalization
+from tflearn.layers.core import input_data, dropout, fully_connected, flatten
+from tflearn.data_utils import shuffle, featurewise_zero_center, featurewise_std_normalization
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 import winsound as ws
 import numpy as np
 import time,cv2,glob,shutil,argparse
-from utils import architectures,dataset,classifier
+from utils import architectures, dataset, classifier
 from colorama import init
 from termcolor import colored
 
 # init colored print
 init()
 
-if (len(sys.argv) < 4):
-    print(colored("Call: $ python testing.py {dataset} {architecture} {model_path} [testdir]","red"))
-    sys.exit(colored("ERROR: Not enough arguments!","red"))
+# argument parser
+parser = argparse.ArgumentParser(description="Testing script for CNNs.",
+                                 prefix_chars='-') 
+# required arguments
+parser.add_argument("--data_dir", required=True, help="directory to the training data", type=str)
+parser.add_argument("--arch", required=True, help="architecture name", type=str)
+parser.add_argument("--model", required=True, help="run identifier (id) / model's path", type=str)
+# optional arguments
+parser.add_argument("--test_dir", required=False, help="path to test images", type=str)
+parser.add_argument("--height", required=False, help="images height (default=64)", default=64, type=int)
+parser.add_argument("--width", required=False, help="images width (default=64)", default=64, type=int)
+parser.add_argument("--video", required=False, help="use video capture device/video")
+parser.add_argument("--save", required=False, help="save output image (boolean)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+# parse arguments
+args = parser.parse_args()
+# print args
+print(args,"\n")
 
-# NOTE: change if you want a specific size
-HEIGHT = 64
-WIDTH  = 64
+# images properties
+HEIGHT = args.height
+WIDTH  = args.width
 
-# get command line arguments
-traindir   = sys.argv[1]         # path/to/cropped/images
-arch       = sys.argv[2]         # name of architecture
-model_path = sys.argv[3]         # name for output model
-
-try: 
-    testdir = sys.argv[4]      # test images directory
-except:
-    testdir = None
+HEIGHT = 34
+WIDTH  = 128
 
 vs = 1    # percentage of data for validation (set manually)
 
 # load dataset and get image dimensions
 if(vs and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,mean_xtr,mean_xv = dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True,
-                                                                                            validation=vs,mean=False,gray=False)
+    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True,
+                                                                                        validation=vs,mean=False,gray=False)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(traindir,HEIGHT,WIDTH,shuffled=True)
-""" """
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True)
 
-# to load CIFAR-10 dataset and MNIST
+# to load CIFAR-10 or MNIST dataset
 if(False):
     print("Loading dataset (from directory)...")
 
-    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=traindir)
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=traindir)
+    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=args.data_dir)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=args.data_dir)
 
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 
-    print("\t         Path:",traindir)
+    print("\t         Path:",args.data_dir)
     print("\tShape (train):",X.shape,Y.shape)
     print("\tShape   (val):",Xv.shape,Yv.shape)
     print("Data loaded!\n")
@@ -70,9 +76,11 @@ if(False):
 
 # load test images
 Xt = Yt = None
-#Xt,Yt,mean_xte = dataset.load_test_images(testdir,resize=None,mean=False)
-#Xt,Yt = dataset.load_test_images_from_index_file(testdir,"./dataset/signals/test/imgs_classes.txt")
-Xt,filenames = dataset.load_image_set_from_folder(testdir,resize=(WIDTH,HEIGHT),extension="*.png")
+#Xt,Yt,mean_xte = dataset.load_test_images(args.test_dir,resize=None,mean=False)
+#Xt,Yt = dataset.load_test_images_from_index_file(args.test_dir,"./dataset/signals/test/imgs_classes.txt")
+#Xt,filenames = dataset.load_image_set_from_folder(args.test_dir,resize=(WIDTH,HEIGHT),extension="*.png")
+#_, Xt, Yt, _, _, _ , _, _, _, _ = dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True,
+#                                                               validation=0,mean=False,gray=False)
 
 # Real-time data preprocessing
 img_prep = ImagePreprocessing()
@@ -95,7 +103,7 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMA
                      data_preprocessing=img_prep,              # NOTE: always check PP
                      data_augmentation=None)                   # NOTE: always check DA
 
-network,_ = architectures.build_network(arch,network,CLASSES)
+network,_ = architectures.build_network(args.arch,network,CLASSES)
 
 # model definition
 model = tflearn.DNN(network, checkpoint_path=None, tensorboard_dir='logs/',
@@ -108,8 +116,8 @@ print("[INFO] Validation:", vs*100 , "%\n")
 
 # load model to figure out if there is something wrong 
 print("[INFO] Loading trained model...")  
-model.load(model_path)
-print("[INFO] Model: ",model_path)
+model.load(args.model)
+print("[INFO] Model: ",args.model)
 print("[INFO] Trained model loaded!\n")    
 
 # final evaluation with the best model
@@ -117,16 +125,13 @@ stime = time.time()
 #train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
 val_acc  = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
 val_acc2 = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
-if(testdir and Xt is not None and Yt is not None): 
-    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=run_id,printout=False,criteria=eval_criteria)
-
 ftime = time.time() - stime
 
 print(colored("===== Final Evaluation ======","green"))
 #print("     Train:", train_acc, "%")
 print("Validation:", val_acc, "%", "(Confidence > %.2f)" % eval_criteria)
 print("Validation:", val_acc2, "%")
-if(testdir and Xt is not None and Yt is not None):
+if(args.test_dir and Xt is not None and Yt is not None):
     print("      Test:", test_acc, "%")
     print("       Min:", min_acc, "%") 
 print(colored("=============================","green"))
@@ -177,7 +182,7 @@ for i in np.arange(0,len_is):
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = cv2.resize(image, (HEIGHT, WIDTH))
 
-    # NOTE: exceptional case -----------------------------------------------
+    # ///////////////// to separate images by its classes ///////////////// 
     if(separate):
         print("Predicted: {0}, Confidence: {1:3.2f}, Second guess: {2} ({3}/{4})".format(guesses[0],confidence,guesses[1],i+1,len_is))
         # NOTE: Expecting something like "./samples\\0.jpg"
@@ -217,14 +222,14 @@ for i in np.arange(0,len_is):
             shutil.copy(src,dest)
     
     else:
-        # show badly predicted images --------------------------------------
+        # ///////////////// show badly predicted images /////////////////
         if(guesses[0] != true_label):
             bp += 1
 
             if(show_image):
                 print("Predicted: {0:2d}, Actual: {1:2d}, Confidence: {2:3.3f}, Second guess: {3:2d}".format(int(guesses[0]), np.argmax(Yv[i]), confidence, int(guesses[1])))
                 rgb = np.fliplr(image.reshape(-1,CHANNELS)).reshape(image.shape)
-                rgb = cv2.resize(rgb, (WIDTH*4,HEIGHT*4), interpolation=cv2.INTER_CUBIC)
+                rgb = cv2.resize(rgb, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
 
                 cv2.putText(rgb, str(guesses[0]), (5, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
 

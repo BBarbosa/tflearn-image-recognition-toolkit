@@ -1404,10 +1404,12 @@ def build_densenet(network,classes):
     network = tflearn.global_avg_pool(network)
 
     # Regression
-    network = tflearn.fully_connected(network, 10, activation='softmax')
+    network = tflearn.fully_connected(network, classes, activation='softmax')
     opt = tflearn.optimizers.Nesterov(0.1, lr_decay=0.1, decay_step=32000, staircase=True)
     network = tflearn.regression(network, optimizer=opt,
                                  loss='categorical_crossentropy')
+    
+    return network
 
 # dlib (used on mnist)
 def build_dlib(network,classes):

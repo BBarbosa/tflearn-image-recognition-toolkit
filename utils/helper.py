@@ -7,9 +7,7 @@ from termcolor import colored
 
 init()
 
-#-------------------------------------------------------------------------------
-# print functions
-#-------------------------------------------------------------------------------
+# ///////////////////////////// print functions /////////////////////////////
 # function to print accuracy's values
 def print_accuracy(name="Accuracies",train_acc=None,val_acc=None,test_acc=None,
                    min_acc=None,time=None,ctime=None, color="yellow"):
@@ -58,9 +56,8 @@ def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None
     if(eval_criteria is not None): print("Eval crit.:", eval_criteria)
     print("-------------------\n")
 
-#-------------------------------------------------------------------------------
-# functions to deal with .csv files
-#-------------------------------------------------------------------------------
+
+# /////////////////////// functions to deal with .csv files //////////////////////
 # function that creates a csv accuracy file
 def create_accuracy_csv_file(filename="accuracy.txt",testdir=None,traindir=None,vs=None,
                              height=None,width=None,arch=None,bs=None,epochs=None,ec=None):
@@ -118,9 +115,8 @@ def write_accuracy_on_csv(filename="accuracy.txt",train_acc=None,val_acc=None,
             fcsv.write("%.2f,%.2f,%.2f\n" % (train_acc,val_acc,time))
     fcsv.close()
 
-#-------------------------------------------------------------------------------
-# other auxiliary functions
-#-------------------------------------------------------------------------------
+
+# ////////////////////////// other auxiliary functions /////////////////////////
 # function to check stop criteria
 def check_stop_criteria(train_acc,val_acc,test_acc,maximum,no_progress,limit):
     """

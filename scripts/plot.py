@@ -127,9 +127,9 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     x = x*5
 
     xticks = [8,16,32,48,64,80,96,128]      # a-axis values
-    xticks = x
     xticks = list(np.arange(0,10+1,5)) + list(np.arange(40,max(x)+1,30))
     xticks = np.arange(min(x), max(x)+1, 50)
+    xticks = x
 
     print("xticks",xticks)
     
@@ -149,6 +149,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     #plt.plot(x,[99]*length,'g-.',label="99% stop criteria",linewidth=1) # stop criteria plot
     
     plt.title(title,fontweight='bold')
+    plt.title("Parking lot classification with a \n32 layer Residual Neural Network",fontweight='bold')
     plt.legend(loc=0)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

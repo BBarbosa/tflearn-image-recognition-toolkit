@@ -22,21 +22,21 @@ from termcolor import colored
 init()
 
 # argument parser
-parser = argparse.ArgumentParser(description="Hihg level Tensorflow training script.",
-                                 prefix_chars='-') 
+parser = argparse.ArgumentParser(description="High level Tensorflow + TFLearn training script.",
+                                 prefix_chars='-')
 # required arguments
-parser.add_argument("train_dir",help="directory to the training data",type=str)
-parser.add_argument("architecture",help="architecture name",type=str)
-parser.add_argument("batch_size",help="batch size",type=int)
-parser.add_argument("run_id",help="model's path",type=str)
+parser.add_argument("--data_dir", required=True, help="directory to the training data",type=str)
+parser.add_argument("--arch", required=True, help="architecture name",type=str)
+parser.add_argument("--bsize", required=True, help="batch size",type=int)
+parser.add_argument("--run_id", required=True, help="model's path",type=str)
 # optional arguments
-parser.add_argument("--test_dir",help="directory to the training data",type=str)
-parser.add_argument("--height",help="images height (default 32)",default=64,type=int)
-parser.add_argument("--width", help="images width (default 32)", default=64,type=int)
-parser.add_argument("--val_set",help="percentage of training data to validation (default 0.3)",default=0.3,type=float)
-parser.add_argument("--gray",help="convert images to grayscale",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--freeze",help="freeze graph (not for retraining)",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--snap", help="evaluate training frequency", default=5,type=int)
+parser.add_argument("--test_dir", required=False, help="directory to the testing data", type=str)
+parser.add_argument("--height", required=False, help="images height (default=64)", default=64, type=int)
+parser.add_argument("--width", required=False, help="images width (default=64)", default=64, type=int)
+parser.add_argument("--val_set", required=False, help="percentage of training data to validation (default=0.3)", default=0.3, type=float)
+parser.add_argument("--gray", required=False, help="convert images to grayscale (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--freeze", required=False, help="freeze graph (not for retraining) (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--snap", required=False, help="evaluate training frequency (default=5)", default=5, type=int)
 
 # parse arguments
 args = parser.parse_args()
@@ -49,14 +49,14 @@ WIDTH  = args.width
 
 # load dataset and get image dimensions
 if(args.val_set and True):
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,validation=args.val_set,
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv,_,_ = dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True,validation=args.val_set,
                                                                                mean=False,gray=args.gray,save_dd=False)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.train_dir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True,save_dd=False)
     Xv = Yv = []
 """ """
 
@@ -64,15 +64,15 @@ else:
 if(False):
     print("[INFO] Loading dataset (from directory)...")
 
-    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=args.train_dir)
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=args.train_dir)
+    #CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_cifar10_dataset(data_dir=args.data_dir)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,Xv,Yv = dataset.load_mnist_dataset(data_dir=args.data_dir)
 
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 
-    print("[INFO] \t         Path:",args.train_dir)
+    print("[INFO] \t         Path:",args.data_dir)
     print("[INFO] \tShape (train):",X.shape,Y.shape)
     print("[INFO] \tShape   (val):",Xv.shape,Yv.shape)
     print("[INFO] Data loaded!\n")
@@ -101,82 +101,76 @@ img_aug = ImageAugmentation()
 img_aug.add_random_rotation(max_angle=10.)
 
 # computational resources definition (made changes on TFLearn's config.py)
-tflearn.init_graph(num_cores=8,allow_growth=True)
+tflearn.init_graph(num_cores=8, allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
-                     data_preprocessing=img_prep,              # NOTE: always check PP
-                     data_augmentation=img_aug)                # NOTE: always check DA
+                     data_preprocessing=None,              # NOTE: always check PP
+                     data_augmentation=None)                # NOTE: always check DA
 
 # build network architecture
-network,_ = architectures.build_network(args.architecture,network,CLASSES)
+network,_ = architectures.build_network(args.arch,network,CLASSES)
 
 # model definition
 model = tflearn.DNN(network,checkpoint_path="models/%s" % args.run_id,tensorboard_dir="logs/",
                     max_checkpoints=None,tensorboard_verbose=0,best_val_accuracy=0.95,
-                    best_checkpoint_path=None)  
+                    best_checkpoint_path=None)
 
 # training parameters
-EPOCHS = 500                    # maximum number of epochs 
+EPOCHS = 500                    # maximum number of epochs
 SNAP = args.snap                # evaluates network progress at each SNAP epochs
-iterations = EPOCHS // SNAP     # number of iterations (or evaluations) 
+iterations = EPOCHS // SNAP     # number of iterations (or evaluations)
 use_criteria = True             # use stop criteria
 eval_criteria = 0.80            # evaluation criteria (confidence)
 
-best_val_acc = 0                # best validation accuracy 
+best_val_acc = 0                # best validation accuracy
 best_test_acc = 0               # best test accuracy
 no_progress = 0                 # counter of how many snapshots without learning process
 iteration_time = 0              # time between each snapshot
 total_training_time = 0         # total training time
 
 # print networks parameters on screen
-helper.print_net_parameters(bs=args.batch_size,vs=args.val_set,epochs=EPOCHS,snap=SNAP,eval_criteria=eval_criteria,
+helper.print_net_parameters(bs=args.bsize,vs=args.val_set,epochs=EPOCHS,snap=SNAP,eval_criteria=eval_criteria,
                             use_criteria=use_criteria)
 
 # creates a new accuracies file.csv
 csv_filename = "%s_accuracies.txt" % args.run_id
-helper.create_accuracy_csv_file(filename=csv_filename,testdir=args.test_dir,traindir=args.train_dir,vs=args.val_set,
-                                height=HEIGHT,width=WIDTH,arch=args.architecture,bs=args.batch_size,epochs=EPOCHS,ec=eval_criteria)
+helper.create_accuracy_csv_file(filename=csv_filename,testdir=args.test_dir,traindir=args.data_dir,vs=args.val_set,
+                                height=HEIGHT,width=WIDTH,arch=args.arch,bs=args.bsize,epochs=EPOCHS,ec=eval_criteria)
 
 # training operation: can stop by reaching the max number of iterations OR Ctrl+C OR by not evolving
-it = 0      
+it = 0
 try:
     while(it < iterations):
         stime = time.time()
-        
-        train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.batch_size,criteria=eval_criteria)
-        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=eval_criteria)
-        test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=0.1)
+        train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.bsize,criteria=eval_criteria)
+        val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.bsize,criteria=eval_criteria)
+        test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.bsize,criteria=0.1)
         min_acc = None
-        #test_acc = min_acc = None
-        #if(args.test_dir is not None): 
-        #    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
-        #                                                              printout=False,criteria=eval_criteria)
-        
-        
         ftime = time.time() - stime
 
         # save best model if there is a better validation accuracy
-        if(val_acc > best_val_acc):
+        if(val_acc > best_val_acc or test_acc > best_test_acc):
             no_progress = 0
-            best_val_acc = val_acc
+            if val_acc > best_val_acc: best_val_acc = val_acc   
+            if test_acc > best_test_acc: best_test_acc = test_acc
             # Save best model to file
             if(args.freeze):
                 # NOTE: use it for freezing model
-                del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:] 
-            
+                del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
+
             print(colored("\n[INFO] New best model!","yellow"))
             print(colored("[INFO] Saving best trained model soo far...","yellow"))
             modelname = "models/%s.tflearn" % args.run_id
             print(colored("[INFO] Model: %s" % modelname,"yellow"))
             model.save(modelname)
             print(colored("[INFO] Best trained model saved!\n","yellow"))
-            new_best = True    
+            new_best = True
         else:
             no_progress += 1
             new_best = False
 
-        # write to a .csv file the evaluation accuracy 
+        # write to a .csv file the evaluation accuracy
         helper.write_accuracy_on_csv(filename=csv_filename,train_acc=train_acc,val_acc=val_acc,test_acc=test_acc,
                                      min_acc=min_acc,time=total_training_time,best=new_best)
         # write accuracy's values on file
@@ -185,12 +179,12 @@ try:
 
         # NOTE: stop criteria check - accuracy AND no progress
         if(use_criteria and helper.check_stop_criteria(train_acc,val_acc,test_acc,100,no_progress,10)): break
-        
+
         # repeats the training operation until it reaches one stop criteria
         iteration_time = time.time()
-        model.fit(X,Y,n_epoch=SNAP,shuffle=True,show_metric=True,batch_size=args.batch_size,snapshot_step=False, 
+        model.fit(X,Y,n_epoch=SNAP,shuffle=True,show_metric=True,batch_size=args.bsize,snapshot_step=False,
                   snapshot_epoch=False,run_id=args.run_id,validation_set=(Xv,Yv),callbacks=None)
-        
+
         iteration_time = time.time() - iteration_time
         total_training_time += iteration_time
 
@@ -198,19 +192,14 @@ try:
 # to stop the training at any moment by pressing Ctrl+C
 except KeyboardInterrupt:
     # intermediate evaluation to check which is the best model once Ctrl+C was pressed
-    train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.batch_size,criteria=eval_criteria)
-    val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=eval_criteria)
-    test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=0.1)
+    train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.bsize,criteria=eval_criteria)
+    val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.bsize,criteria=eval_criteria)
+    test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.bsize,criteria=0.1)
     min_acc = None
-    #test_acc = min_acc = None
-    #if(args.test_dir is not None): 
-    #    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
-    #                                                              printout=False,criteria=eval_criteria)
-    
 
 # load best model (need this check if Ctr+C was pressed)
-if(best_val_acc > val_acc):
-    print(colored("[INFO] Loading best trained model...","yellow"))  
+if(best_val_acc > val_acc or best_test_acc > test_acc):
+    print(colored("[INFO] Loading best trained model...","yellow"))
     model.load("models/%s.tflearn" % args.run_id)
     print(colored("[INFO] Model: models/%s.tflearn" % args.run_id,"yellow"))
     print(colored("[INFO] Restored the best model!","yellow"))
@@ -224,23 +213,16 @@ else:
     modelname = "models/%s.tflearn" % args.run_id
     print(colored("[INFO] Model: %s" % modelname,"yellow"))
     model.save(modelname)
-    print(colored("[INFO] Trained model saved!\n","yellow"))    
+    print(colored("[INFO] Trained model saved!\n","yellow"))
 
 # final evaluation with the best model
 stime = time.time()
-
-train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.batch_size,criteria=eval_criteria)
-val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=eval_criteria)
-test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.batch_size,criteria=0.1)
+train_acc = classifier.my_evaluate(model,X,Y,batch_size=args.bsize,criteria=eval_criteria)
+val_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.bsize,criteria=eval_criteria)
+test_acc = classifier.my_evaluate(model,Xv,Yv,batch_size=args.bsize,criteria=0.1)
 min_acc = None
-#test_acc = min_acc = None
-#if(args.test_dir is not None): 
-#    _,test_acc,_,min_acc = classifier.classify_sliding_window(model,Xt,Yt,CLASSES,runid=args.run_id,
-#                                                              printout=False,criteria=eval_criteria)
-
-
 ftime = time.time() - stime
-                             
+
 # write to a .csv file the evaluation accuracy
 helper.write_accuracy_on_csv(filename=csv_filename,train_acc=train_acc,val_acc=val_acc,
                              test_acc=test_acc,min_acc=min_acc,time=total_training_time)
@@ -254,5 +236,5 @@ classifier.test_model_accuracy(model=model,image_set=Xv,label_set=Yv,eval_criter
 
 # sound a beep to notify that the training ended
 freq = 1000
-dur  = 1500 
-ws.Beep(freq,dur)   
+dur  = 1500
+ws.Beep(freq,dur)

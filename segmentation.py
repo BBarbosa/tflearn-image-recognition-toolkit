@@ -3,10 +3,10 @@ import sys, os, platform, time, cv2, argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
 import tensorflow as tf
-from tflearn.layers.core import input_data,dropout,fully_connected,flatten
-from tflearn.layers.conv import conv_2d,max_pool_2d,highway_conv_2d,avg_pool_2d,upsample_2d,upscore_layer,conv_2d_transpose
+from tflearn.layers.core import input_data,dropout, fully_connected,flatten
+from tflearn.layers.conv import conv_2d,max_pool_2d, highway_conv_2d, avg_pool_2d, upsample_2d, upscore_layer, conv_2d_transpose
 from tflearn.layers.estimator import regression
-from tflearn.layers.normalization import local_response_normalization,batch_normalization
+from tflearn.layers.normalization import local_response_normalization, batch_normalization
 from tflearn.layers.merge_ops import merge
 from tflearn.data_utils import image_dirs_to_samples
 from tflearn.data_preprocessing import ImagePreprocessing
@@ -28,8 +28,8 @@ WIDTH  = 608
 HEIGHT = 96 
 WIDTH  = 320
 
-#HEIGHT = 160 
-#WIDTH  = 320
+HEIGHT = 160 
+WIDTH  = 320
 
 CHANNELS = 3
 
@@ -40,37 +40,28 @@ init()
 parser = argparse.ArgumentParser(description="Automatic image segmentation using Deep Learning.",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("--train_dir",required=False,help="directory to the training data",type=str)
-parser.add_argument("--architecture",required=True,help="architecture name",type=str)
-parser.add_argument("--batch_size",required=False,help="training batch size",type=int)
-parser.add_argument("--run_id",required=True,help="run identifier (id) / model's path",type=str)
+parser.add_argument("--arch", required=True, help="architecture name", type=str)
+parser.add_argument("--run_id", required=True, help="run identifier (id) / model's path", type=str)
 # optional arguments
-parser.add_argument("--test_dir",help="path to test images",type=str)
-parser.add_argument("--video",help="use video capture device/video")
-parser.add_argument("--save",help="save output image (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--freeze",help="flag to freeze model (boolean)",default=False,type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--data_dir", required=False, help="directory to the training data", type=str)
+parser.add_argument("--bsize", required=False, default=2, help="training batch size (default=2)", type=int)
+parser.add_argument("--test_dir", required=False, help="path to test images", type=str)
+parser.add_argument("--video", required=False, help="use video capture device/video")
+parser.add_argument("--save", required=False, help="save output image (boolean)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--freeze", required=False, help="flag to freeze model (boolean)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 
 # parse arguments
 args = parser.parse_args()
-
-# clears screen and shows OS
-OS = platform.system() 
-
-if(OS == 'Windows'):
-    os.system('cls')
-else:
-    os.system('clear')
-print("Operating System: %s\n" % OS)
 
 # print args
 print(args,"\n")
 
 # load dataset and get image dimensions
-if(args.train_dir is not None and args.batch_size is not None):
-    X,_ = image_dirs_to_samples(args.train_dir, resize=(WIDTH,HEIGHT), convert_gray=False, 
+if(args.data_dir is not None and args.bsize is not None):
+    X,_ = image_dirs_to_samples(args.data_dir, resize=(WIDTH,HEIGHT), convert_gray=False, 
                                 filetypes=[".png",".jpg",".bmp"])
     
-    #Xgt,_ = image_dirs_to_samples(args.train_dir, resize=(WIDTH,HEIGHT), convert_gray=False, 
+    #Xgt,_ = image_dirs_to_samples(args.data_dir, resize=(WIDTH,HEIGHT), convert_gray=False, 
     #                            filetypes=[".png",".jpg",".bmp"])
 
     # images / ground truth split
@@ -109,7 +100,7 @@ def my_loss(y_pred, y_true):
 def my_metric(y_pred,t_true):
     return tflearn.metrics.top_k_op(y_pred,t_true,k=3)
 
-# ---
+# ////////////////////////////////////////////////////
 # autoencoder example
 def build_autoencoder(network): 
     # encoder 
@@ -159,6 +150,7 @@ def build_autoencoder(network):
                         ) 
 
     return network
+
 # fully-convolutional network
 def build_fcn_all(network):
     #Pool1
@@ -290,14 +282,67 @@ def build_segnet_half(network):
     network = tflearn.regression(decoder, optimizer='adam', loss='mean_square') 
     
     return network
-# ---
 
-if(args.architecture == "autoencoder"):
+# u-net adapted network 
+def build_unet(network):
+    Ni=8
+    #Pool1
+    network_1 = conv_2d(network, Ni, 3, activation='relu') 
+    network_1 = conv_2d(network_1, Ni, 3, activation='relu') 
+    pool1 = max_pool_2d(network_1,2)                             # downsampling 2x  
+    #Pool2
+    network_2 = conv_2d(pool1, 2*Ni, 3, activation='relu') 
+    network_2 = conv_2d(network_2, 2*Ni, 3, activation='relu') 
+    pool2 = max_pool_2d(network_2, 2)                            # downsampling 4x 
+    #Pool3
+    network_3 = conv_2d(pool2, 4*Ni, 3, activation='relu') 
+    network_3 = conv_2d(network_3, 4*Ni, 3, activation='relu') 
+    pool3 = max_pool_2d(network_3, 2)                            # downsampling 8x 
+    #Pool4
+    network_4 = conv_2d(pool3, 8*Ni, 3, activation='relu') 
+    network_4 = conv_2d(network_4, 8*Ni, 3, activation='relu') 
+    pool4 = max_pool_2d(network_4, 2)                            # downsampling 16x 
+
+    #Pool5
+    network_5 = conv_2d(pool4, 16*Ni, 3, activation='relu') 
+    network_5 = conv_2d(network_5, 16*Ni, 3, activation='relu') 
+
+    Unpool1 = conv_2d_transpose(network_5, 8*Ni, 3, strides=2, output_shape=[HEIGHT // 8, WIDTH // 8, 8*Ni]) 
+    
+    merge1=merge([Unpool1, network_4], mode='concat', axis=3) # merge 
+    merge1 = conv_2d(merge1, 8*Ni, 3, activation='relu')
+    merge1 = conv_2d(merge1, 8*Ni, 3, activation='relu')
+
+    Unpool2 = conv_2d_transpose(merge1, 4*Ni, 3, strides=2, output_shape=[HEIGHT // 4, WIDTH // 4, 4*Ni]) 
+    merge1=merge([Unpool2, network_3], mode='concat', axis=3) # merge 
+    merge1 = conv_2d(merge1, 4*Ni, 3, activation='relu')
+    merge1 = conv_2d(merge1, 4*Ni, 3, activation='relu')
+
+    Unpool3 = conv_2d_transpose(merge1, 2*Ni, 3, strides=2, output_shape=[HEIGHT // 2, WIDTH // 2, 2*Ni]) 
+    merge1=merge([Unpool3, network_2], mode='concat', axis=3) # merge 
+    merge1 = conv_2d(merge1, 2*Ni, 3, activation='relu')
+    merge1 = conv_2d(merge1, 2*Ni, 3, activation='relu')
+        
+    Unpool4 = conv_2d_transpose(merge1, Ni, 3, strides=2, output_shape=[HEIGHT, WIDTH, Ni])
+    merge1=merge([Unpool4, network_1], mode='concat', axis=3) # merge 
+    merge1 = conv_2d(merge1, Ni, 3, activation='relu')
+    merge1 = conv_2d(merge1, Ni, 3, activation='relu')
+   
+    merge1 = conv_2d(merge1, 3, 1, activation='relu')
+
+    network = tflearn.regression(merge1, optimizer='adam', loss='mean_square') 
+    
+    return network
+
+# ////////////////////////////////////////////////////
+if(args.arch == "autoencoder"):
     network = build_autoencoder(network)
-elif(args.architecture == "fcn"):
+elif(args.arch == "fcn"):
     network = build_fcn_all(network)
-elif(args.architecture == "segnet_half"):
+elif(args.arch == "segnet_half"):
     network = build_segnet_half(network)
+elif(args.arch == "unet"):
+    network = build_unet(network)
 else:
     network = build_segnet(network)
 
@@ -308,13 +353,14 @@ model = tflearn.DNN(network, checkpoint_path="models/%s" % args.run_id, tensorbo
 
 # callback monitor
 class MonitorCallback(tflearn.callbacks.Callback):
-    def __init__(self,frequency=None):
+    def __init__(self,frequency=5):
         self.train_losses = []
         self.snapshot_every = frequency # saves checkpoint every 5 epochs
         pass
     
     def on_epoch_end(self, training_state, snapshot=False):
-        if(self.snapshot_every is not None and training_state.epoch > 0 and training_state.epoch % self.snapshot_every == 0):
+        if(self.snapshot_every is not None and training_state.epoch > 0 and 
+           training_state.epoch % self.snapshot_every == 0):
             print("[INFO] Saving checkpoint model...")
             ckptname = "models/%s-epoch%d" % (args.run_id,training_state.epoch)
             print("[INFO] Checkpoint: ",ckptname)
@@ -324,18 +370,18 @@ class MonitorCallback(tflearn.callbacks.Callback):
 saverMonitor = MonitorCallback(frequency=100)
 
 # training operation
-if(args.train_dir is not None):
+if(args.data_dir is not None):
     # training parameters
     EPOCHS = 1000 # maximum number of epochs
 
-    print("[INFO] Batch size:", args.batch_size)
+    print("[INFO] Batch size:", args.bsize)
     print("[INFO] Epochs:", EPOCHS) 
 
     try:
         # repeats the training operation until it reaches one stop criteria
         model.fit(Xim, Xgt, n_epoch=EPOCHS, shuffle=True, show_metric=True, 
-                  batch_size=args.batch_size, snapshot_step=None, snapshot_epoch=False, 
-                  run_id=args.run_id, validation_set=0.1, callbacks=saverMonitor)
+                  batch_size=args.bsize, snapshot_step=None, snapshot_epoch=False, 
+                  run_id=args.run_id, validation_set=0, callbacks=saverMonitor)
 
     # to stop the training at any moment by pressing Ctrl+C
     except KeyboardInterrupt:
@@ -362,14 +408,13 @@ else:
         try:
             Xim,_ = image_dirs_to_samples(args.test_dir, resize=(WIDTH,HEIGHT), convert_gray=False, 
                                           filetypes=[".png",".jpg",".JPG",".bmp"]) 
-            print("")
-            print("Images: ", len(Xim), Xim[0].shape, "\n")
+
+            print("\n[INFO] Images: ", len(Xim), Xim[0].shape, "\n")
         except:
             print("[INFO] Couldn't load test images!")
             pass  
 
-##############################
-#----------- CAMERA ----------
+# ///////////// CAMERA /////////////
 #if(args.video):
 #    delay = 1
 #    nimages = -1
@@ -400,25 +445,24 @@ else:
 #    test_image = test_image / 255.
 #    #test_image2 = test_image2 / 255.
 #
-################################
+# /////////////////////////////////
 
-
-################################
-#-------- IMAGES FOLDER --------
+# ///////// IMAGES FOLDER ////////
 nimages = len(Xim)
 delay = 0
 for i in range(nimages):
     stime = time.time()
-################################ 
 
-    test_image = np.reshape(Xim[i],(1, HEIGHT, WIDTH, CHANNELS)) 
+# /////////////////////////// 
+
+    test_image = np.reshape(Xim[i],(1, HEIGHT, WIDTH, CHANNELS)) # load from folder
     #test_image = np.reshape(test_image,(1, HEIGHT, WIDTH, 3)) # video capture
     
     predicts = model.predict(test_image)
     pred_image = np.reshape(predicts[0], (HEIGHT, WIDTH, CHANNELS))
     
     ### original image --------------------------------------------
-    original = cv2.cvtColor(Xim[i],cv2.COLOR_RGB2BGR)
+    original = cv2.cvtColor(Xim[i],cv2.COLOR_RGB2BGR) # load from folder
     
     #original = test_image2                                 # video capture
     #original = cv2.cvtColor(test_image2,cv2.COLOR_RGB2BGR) # video capture
@@ -433,7 +477,7 @@ for i in range(nimages):
     cv2.imshow("Predicted Mask",predicted)
 
     ### ground truth
-    if(args.train_dir is not None):
+    if(args.data_dir is not None):
         gtruth = cv2.cvtColor(Xgt[i],cv2.COLOR_RGB2BGR)
         #cv2.imshow("Ground truth",gtruth)
 
@@ -445,7 +489,7 @@ for i in range(nimages):
     cv2.imshow("Predicted",overlay)
 
     if(args.save):
-        cv2.imwrite(".\\out\\%d.png" % i,overlay)
+        cv2.imwrite("./out/%d.png" % i,overlay)
     
     ftime = time.time() - stime
 
