@@ -1,16 +1,17 @@
+"""
+Testing script
+"""
+
 from __future__ import division, print_function, absolute_import
-import sys, os, platform
+
+import sys, os, platform, time, cv2, glob, shutil, argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
-import tensorflow as tf
-from tflearn.layers.estimator import regression
-from tflearn.layers.core import input_data, dropout, fully_connected, flatten
-from tflearn.data_utils import shuffle, featurewise_zero_center, featurewise_std_normalization
+from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 import winsound as ws
 import numpy as np
-import time,cv2,glob,shutil,argparse
 from utils import architectures, dataset, classifier
 from colorama import init
 from termcolor import colored
@@ -29,6 +30,7 @@ parser.add_argument("--model", required=True, help="run identifier (id) / model'
 parser.add_argument("--test_dir", required=False, help="path to test images", type=str)
 parser.add_argument("--height", required=False, help="images height (default=64)", default=64, type=int)
 parser.add_argument("--width", required=False, help="images width (default=64)", default=64, type=int)
+parser.add_argument("--gray", required=False, help="convert images to grayscale (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--video", required=False, help="use video capture device/video")
 parser.add_argument("--save", required=False, help="save output image (boolean)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 # parse arguments
@@ -40,21 +42,18 @@ print(args,"\n")
 HEIGHT = args.height
 WIDTH  = args.width
 
-HEIGHT = 34
-WIDTH  = 128
-
 vs = 1    # percentage of data for validation (set manually)
 
 # load dataset and get image dimensions
-if(vs and True):
+if(vs):
     CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True,
-                                                                                        validation=vs,mean=False,gray=False)
+                                                                                        validation=vs,mean=False,gray=args.gray)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True, gray=args.gray)
 
 # to load CIFAR-10 or MNIST dataset
 if(False):
