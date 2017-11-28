@@ -112,7 +112,7 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMA
 network,_ = architectures.build_network(args.arch,network,CLASSES)
 
 # model definition
-model = tflearn.DNN(network,checkpoint_path="models/%s" % args.run_id,tensorboard_dir="logs/",
+model = tflearn.DNN(network,checkpoint_path="./models/%s" % args.run_id,tensorboard_dir="./logs/",
                     max_checkpoints=None,tensorboard_verbose=0,best_val_accuracy=0.95,
                     best_checkpoint_path=None)
 
