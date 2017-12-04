@@ -104,7 +104,7 @@ def classify_set_of_images(model, images_list, runid, batch_size=128, labels_lis
 
     if(labels_list):
         if(len(labels_list) != length):
-            sys.exit(colored("ERROR! Images and labels lists must have the same lenght!", "red"))
+            sys.exit(colored("[ERROR] Images and labels lists must have the same lenght!", "red"))
 
     for image in images_list:
         image = np.reshape(image, (1, HEIGHT, WIDTH, 3))
@@ -164,7 +164,7 @@ def my_evaluate(model, images_list, labels_list, batch_size=128, criteria=0.75, 
 
     # images and labels lists must have the same lenght
     if(len(labels_list) != length): 
-        sys.exit(colored("ERROR! Images and labels lists must have the same length!", "red"))
+        sys.exit(colored("[ERROR] Images and labels lists must have the same length!", "red"))
 
     ctime = time.time()
     for its in range(iterations):
@@ -180,7 +180,7 @@ def my_evaluate(model, images_list, labels_list, batch_size=128, criteria=0.75, 
 
         # probabilities array and labels batch must have the same length
         if(len(probs) != len(sub_labels_list)):
-            sys.exit(colored("ERROR! Probs and sub labels lists must have the same length!", "red"))
+            sys.exit(colored("[ERROR] Probs and sub labels lists must have the same length!", "red"))
 
         for vals, classid in zip(probs, sub_labels_list):
             index = np.argmax(vals)     # get the index of the most probable class
@@ -193,7 +193,7 @@ def my_evaluate(model, images_list, labels_list, batch_size=128, criteria=0.75, 
     ctime = time.time() - ctime
     
     if(counter != length):
-        sys.exit(colored("ERROR! Counter and length must be equal!", "red"))
+        sys.exit(colored("[ERROR] Counter and length must be equal!", "red"))
     
     acc = wp / length * 100
     return np.round(acc, 2)
@@ -224,8 +224,7 @@ def classify_sliding_window(model, images_list, labels_list, nclasses, runid=Non
         sys.stdout = open(os.devnull, 'w')
 
     if(len(images_list) != len(labels_list)):
-        sys.exit()
-        sys.exit(colored("ERROR: Image and labels list must have the same lenght!", "red"))
+        sys.exit(colored("[ERROR] Image and labels list must have the same lenght!", "red"))
     
     accuracies  = []
     confidences = []
@@ -433,10 +432,10 @@ def classify_local_server(model, ip, port, runid, nclasses):
         try:
             # tries to load image
             background = Image.open(filename)
-            print(colored("SUCCESS: Loaded %s successfully!" % filename, "green"))
+            print(colored("[SUCCESS] Loaded %s successfully!" % filename, "green"))
         except:
             # if it fails go to next iteration
-            print(colored("ERROR: Couldn't open %s!" % filename, "red"))
+            print(colored("[ERROR] Couldn't open %s!" % filename, "red"))
             continue
         
         classify_sliding_window(model, background, classid, nclasses, runid=runid, printout=True, criteria=0.8)

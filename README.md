@@ -14,15 +14,15 @@ Deep learning image classifier toolkit supported by **TFLearn** on top of **Tens
 * dataset/           - directory contains raw images ready to be cropped so they fit on CNNs
   * dataset-name/    - designation for a specific dataset
      * training/     - sub-directory containing images used for training
-        * class-0    
-        * class-1    
+        * class-0/    
+        * class-1/    
         * ...
-        * class-N 
+        * class-N/ 
      * testing/      - sub-directory that contains testing images
-        * class-0    
-        * class-1    
+        * class-0/    
+        * class-1/    
         * ...
-        * class-N
+        * class-N/
 
 ## Windows installation
 1. Download and install Python 3.5.x x64 version (confirm Pip option).
@@ -59,7 +59,7 @@ Deep learning image classifier toolkit supported by **TFLearn** on top of **Tens
    - TensorFlow version <= 1.2.1 -> CuDNN v5.1
    - TensorFlow version >  1.3.0 -> CuDNN v6
 
-   **TensorFlow dependencies**
+   _**TensorFlow dependencies**_
    
    5.1 Make sure that Visual C++ Redistributable 2015 (or 2017) x64 is installed. 
        [MS Visual C++ Redistributable 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48145)

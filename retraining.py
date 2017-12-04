@@ -1,5 +1,5 @@
 """
-Re-Training script written in Tensorflow + TFLearn
+Training script written in Tensorflow + TFLearn
 For image classification
 """
 
@@ -12,7 +12,6 @@ import tensorflow as tf
 from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import winsound as ws
 from utils import architectures, dataset, classifier, helper
 from colorama import init
 from termcolor import colored
@@ -26,7 +25,6 @@ parser = argparse.ArgumentParser(description="High level Tensorflow + TFLearn tr
 # required arguments
 parser.add_argument("--data_dir", required=True, help="directory to the training data", type=str)
 parser.add_argument("--arch", required=True, help="architecture name", type=str)
-parser.add_argument("--model", required=True, help="path to trained model",type=str)
 parser.add_argument("--bsize", required=True, help="batch size", type=int)
 parser.add_argument("--run_id", required=True, help="model's path", type=str)
 # optional arguments
@@ -48,7 +46,7 @@ HEIGHT = args.height
 WIDTH  = args.width
 
 # load dataset and get image dimensions
-if(args.val_set and True):
+if(args.val_set):
     CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, shuffled=True, 
                                                                                         validation=args.val_set, mean=False, 
                                                                                         gray=args.gray, save_dd=False)
@@ -62,7 +60,7 @@ else:
     Xv = Yv = []
 """ """
 
-# to load CIFAR-10 dataset and MNIST
+# to load CIFAR-10 dataset or MNIST
 if(False):
     print("[INFO] Loading dataset (from directory)...")
 
@@ -82,33 +80,28 @@ if(False):
 # load test images
 # NOTE: Use dataset.load_test_images or dataset.load_dataset_windows like on X, Y, Xv and Yv
 if(args.test_dir is not None):
-    _, Xt, Yt, _, _, _, _, _, _, _ = dataset.load_dataset_windows(args.test_dir, HEIGHT, WIDTH, shuffled=True, mean=False, gray=args.gray, save_dd=True)
-    #Xt, Yt, _ = dataset.load_test_images(args.test_dir, resize=(WIDTH, HEIGHT), mean=False, to_array=False, gray=False)
-    #Xt, Yt = dataset.load_test_images_from_index_file(args.test_dir, "./dataset/signals/test/imgs_classes.txt")
-    #X = dataset.convert_images_colorspace(images_array=X, fromc=None, convert_to=args.test_dir)
-    #Xv = dataset.convert_images_colorspace(images_array=Xv, fromc=None, convert_to=args.test_dir)
+    _, Xt, Yt, _, _, _, _, _, _, _ = dataset.load_dataset_windows(args.test_dir, HEIGHT, WIDTH, shuffled=True, 
+                                                                  mean=False, gray=args.gray, save_dd=True)
 
-# Real-time data preprocessing
+# Real-time data preprocessing (samplewise or featurewise)
 img_prep = ImagePreprocessing()
-#img_prep.add_samplewise_zero_center(per_channel=True)   # per sample (featurewise is a global value)
 img_prep.add_samplewise_zero_center()
-img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
-#img_prep.add_zca_whitening()
-#img_prep.add_featurewise_zero_center()
+img_prep.add_zca_whitening()
+img_prep.add_samplewise_stdnorm()      
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
-#img_aug.add_random_flip_leftright()
-#img_aug.add_random_flip_updown()
-img_aug.add_random_rotation(max_angle=10.)
+img_aug.add_random_flip_leftright()
+img_aug.add_random_flip_updown()
+img_aug.add_random_rotation(max_angle=5.)
 
 # computational resources definition (made changes on TFLearn's config.py)
 tflearn.init_graph(num_cores=8, allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None, IMAGE, IMAGE] for RNN
-                     data_preprocessing=None,              # NOTE: always check PP
-                     data_augmentation=None)                # NOTE: always check DA
+                     data_preprocessing=None,                  # NOTE: always check PP
+                     data_augmentation=None)                   # NOTE: always check DA
 
 # build network architecture
 network, _ = architectures.build_network(args.arch, network, CLASSES)
@@ -132,8 +125,8 @@ iteration_time = 0              # time between each snapshot
 total_training_time = 0         # total training time
 
 # print networks parameters on screen
-helper.print_net_parameters(bs=args.bsize, vs=args.val_set, epochs=EPOCHS, snap=SNAP, eval_criteria=eval_criteria, 
-                            use_criteria=use_criteria)
+helper.print_net_parameters(bs=args.bsize, vs=args.val_set, epochs=EPOCHS, snap=SNAP, 
+                            eval_criteria=eval_criteria, use_criteria=use_criteria)
 
 # creates a new accuracies file.csv
 csv_filename = "%s_accuracies.txt" % args.run_id
@@ -166,10 +159,10 @@ try:
             if(args.freeze):
                 # NOTE: use it for freezing model
                 del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
+                model.save("./models/%s_frozen.tflearn" % args.run_id)
 
-            print(colored("\n[INFO] New best model!", "yellow"))
-            print(colored("[INFO] Saving best trained model soo far...", "yellow"))
-            modelname = "models/%s.tflearn" % args.run_id
+            print(colored("[INFO] Saving new best trained model soo far...", "yellow"))
+            modelname = "./models/%s.tflearn" % args.run_id
             print(colored("[INFO] Model: %s" % modelname, "yellow"))
             model.save(modelname)
             print(colored("[INFO] Best trained model saved!\n", "yellow"))
@@ -184,7 +177,6 @@ try:
         # write accuracy's values on file
         helper.print_accuracy(name="Evaluation", train_acc=train_acc, val_acc=val_acc, test_acc=test_acc, 
                               min_acc=min_acc, time=total_training_time, ctime=ftime)
-
         # NOTE: stop criteria check - accuracy AND no progress
         if(use_criteria and helper.check_stop_criteria(train_acc, val_acc, test_acc, 100, no_progress, 10)): break
 
@@ -192,7 +184,6 @@ try:
         iteration_time = time.time()
         model.fit(X, Y, n_epoch=SNAP, shuffle=True, show_metric=True, batch_size=args.bsize, snapshot_step=False, 
                   snapshot_epoch=False, run_id=args.run_id, validation_set=(Xv, Yv), callbacks=None)
-
         iteration_time = time.time() - iteration_time
         total_training_time += iteration_time
 
@@ -208,7 +199,7 @@ except KeyboardInterrupt:
 # load best model (need this check if Ctr+C was pressed)
 if(best_val_acc > val_acc or best_test_acc > test_acc):
     print(colored("[INFO] Loading best trained model...", "yellow"))
-    model.load("models/%s.tflearn" % args.run_id)
+    model.load("./models/%s.tflearn" % args.run_id)
     print(colored("[INFO] Model: models/%s.tflearn" % args.run_id, "yellow"))
     print(colored("[INFO] Restored the best model!", "yellow"))
 else:
@@ -216,9 +207,10 @@ else:
     if(args.freeze):
         # NOTE: use it for freezing model
         del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
+        model.save("./models/%s_frozen.tflearn" % args.run_id)
 
     print(colored("[INFO] Saving trained model...", "yellow"))
-    modelname = "models/%s.tflearn" % args.run_id
+    modelname = "./models/%s.tflearn" % args.run_id
     print(colored("[INFO] Model: %s" % modelname, "yellow"))
     model.save(modelname)
     print(colored("[INFO] Trained model saved!\n", "yellow"))
@@ -237,12 +229,9 @@ helper.write_accuracy_on_csv(filename=csv_filename, train_acc=train_acc, val_acc
 # write accuracy's values on file
 helper.print_accuracy(name="Final Eval", train_acc=train_acc, val_acc=val_acc, test_acc=test_acc, 
                       min_acc=min_acc, time=None, ctime=ftime, color="green")
-
-# NOTE: Turn show_image to false when scheduling many trainings
+# NOTE: Turn show_image to False when scheduling many trainings
 classifier.test_model_accuracy(model=model, image_set=Xv, label_set=Yv, eval_criteria=eval_criteria, 
                                show_image=False, cmatrix=args.run_id)
 
 # sound a beep to notify that the training ended
-freq = 1000
-dur  = 1500
-ws.Beep(freq, dur)
+print(colored("[INFO] Training complete!\a","green"))

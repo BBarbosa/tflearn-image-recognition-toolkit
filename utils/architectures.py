@@ -1728,11 +1728,10 @@ def build_segnet(network):
     network_3 = conv_2d(pool2, 64, 3, activation='relu') #output 8x_downsampled
     network_3 = conv_2d(network_3, 64, 3, activation='relu') #output 8x_downsampled
     pool3 = max_pool_2d(network_3, 2)
-
     #Pool4
-    network_3 = conv_2d(pool3, 128, 3, activation='relu') #output 16x_downsampled
-    network_3 = conv_2d(network_3, 128, 3, activation='relu') #output 16x_downsampled
-    pool4 = max_pool_2d(network_3, 2)
+    network_4 = conv_2d(pool3, 128, 3, activation='relu') #output 16x_downsampled
+    network_4 = conv_2d(network_4, 128, 3, activation='relu') #output 16x_downsampled
+    pool4 = max_pool_2d(network_4, 2)
 
     # ----- decoder ----- 
     decoder = conv_2d_transpose(pool4, 128, 3, strides=4, output_shape=[HEIGHT//4, WIDTH//4, 128]) #  16x downsample to 4x downsample

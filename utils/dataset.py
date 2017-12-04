@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 import tflearn
 import sys, math, time, os, scipy.ndimage, PIL, re, glob, cv2
 import numpy as np
-from tflearn.data_utils import shuffle, build_image_dataset_from_dir          
+from tflearn.data_utils import shuffle, build_image_dataset_from_dir, image_preloader         
 from PIL import Image, ImageStat
 from colorama import init
 from termcolor import colored
@@ -42,7 +42,7 @@ def create_dataset(train_path, height, width, output_path, test_path=None, mode=
         #build_hdf5_image_dataset(train_path, image_shape=(height, width), mode=mode, output_path=train_output_path, categorical_labels=True, normalize=True, grayscale=False)
         print("\tTrain: ", train_output_path)
     else:
-        sys.exit("ERROR: Path to train dataset not set!")
+        sys.exit("[ERROR] Path to train dataset not set!")
     
     if(test_path):
         test_output_path = "%s%s" % (output_path, "_test.h5")
@@ -53,7 +53,7 @@ def create_dataset(train_path, height, width, output_path, test_path=None, mode=
     return train_output_path, test_output_path
 
 # load dataset on format HDF5
-def load_dataset(train, height, width, test=None):
+def load_dataset_hdf5(train, height, width, test=None):
     classes = X = Y = Xt = Yt = None
 
     print("Loading dataset (hdf5)...")
@@ -67,7 +67,7 @@ def load_dataset(train, height, width, test=None):
         print("\tShape (train): ", X.shape, Y.shape)
         classes = Y.shape[1]
     else:
-        sys.exit("ERROR: Path to train dataset not set!")
+        sys.exit("[ERROR] Path to train dataset not set!")
     
     if(test):
         h5f2 = h5py.File(test, 'r')
@@ -90,7 +90,7 @@ def load_dataset_ipl(train_path, height, width, test_path=None, mode='folder'):
         #X, Y = image_preloader(train_path, image_shape=(width, height), mode=mode, categorical_labels=True, normalize=True)
         classes = Y.shape[1]
     else:
-        sys.exit("ERROR: Path to train dataset not set!")
+        sys.exit("[ERROR] Path to train dataset not set!")
 
     print("Data loaded!\n")    
     return classes, X, Y, Xt, Yt 
@@ -99,25 +99,30 @@ def load_dataset_ipl(train_path, height, width, test_path=None, mode='folder'):
 def load_dataset_windows(train_path, height=None, width=None, test=None, shuffled=False, 
                          validation=0, mean=False, gray=False, save_dd=False, dataset_file=None):
     """ 
-    Given a folder containing images separated by folders (classes) returns training and testing
+    Given a folder containing images separated by sub-folders (classes) returns training and testing
     data, if specified.
     """
     classes = X = Y = Xtr = Ytr = Xte = Yte = means_xtr = means_xte = None
 
     print("[INFO] Loading dataset (from directory)...")
     if(width and height):
-        X, Y = build_image_dataset_from_dir(train_path, resize=(width, height), convert_gray=gray, dataset_file=train_path, 
-                                            filetypes=[".bmp", ".ppm", ".jpg", ".png"], shuffle_data=False, categorical_Y=True)
+        X, Y = build_image_dataset_from_dir(train_path, resize=(width, height), convert_gray=gray, 
+                                            dataset_file=train_path, filetypes=[".bmp", ".ppm", ".jpg", ".png"], 
+                                            shuffle_data=False, categorical_Y=True)
     else:
-        X, Y = build_image_dataset_from_dir(train_path, resize=(width, height), convert_gray=gray, dataset_file=train_path, 
-                                            filetypes=[".bmp", ".ppm", ".jpg", ".png"], shuffle_data=False, categorical_Y=True)
+        X, Y = build_image_dataset_from_dir(train_path, resize=(width, height), convert_gray=gray, 
+                                            dataset_file=train_path, filetypes=[".bmp", ".ppm", ".jpg", ".png"], 
+                                            shuffle_data=False, categorical_Y=True)
+    
+    # get images dimensions automatically
     try:
-        height, width, ch = X[0].shape            # get images dimensions
+        height, width, ch = X[0].shape            
     except:
         height, width = X[0].shape
         ch = 1
     
-    nimages, classes = Y.shape               # get number of images and classes    
+    # get number of images and classes automatically
+    nimages, classes = Y.shape              
 
     # /////////////////////////////////// validation split ////////////////////////////////////////////
     if(validation > 0 and validation <= 1):  # validation = [0, 1] float
@@ -126,9 +131,9 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
         for i in range(0, nimages):
             counts[np.argmax(Y[i])] += 1    # counts the number of images per every class
         
-        print("\t       Images: ", nimages)
-        print("\t       Counts: ", counts)
-        print("\t      Classes: ", classes)
+        print("[INFO]        Images:", nimages)
+        print("[INFO]        Counts:", counts)
+        print("[INFO]       Classes:", classes)
 
         # show data distribution
         if(save_dd):
@@ -213,10 +218,10 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
     Xtr = np.reshape(Xtr, (-1, height, width, ch))      # reshape array to fit on network format
     if(Xte is not None): Xte = np.reshape(Xte, (-1, height, width, ch))      # reshape array to fit on network format
 
-    print("\t         Path: ", train_path)
-    print("\tShape (train): ", Xtr.shape, Ytr.shape)
-    if(validation > 0): print("\tShape   (val): ", Xte.shape, Yte.shape)
-    if(mean):           print("\t        Means: ", means_xtr.shape, means_xte.shape)
+    print("[INFO]          Path:", train_path)
+    print("[INFO] Shape (train):", Xtr.shape, Ytr.shape)
+    if(validation > 0): print("[INFO] Shape   (val):", Xte.shape, Yte.shape)
+    if(mean):           print("[INFO]         Means:", means_xtr.shape, means_xte.shape)
     print("[INFO] Data loaded!\n")
 
     return classes, Xtr, Ytr, height, width, ch, Xte, Yte, means_xtr, means_xte
@@ -237,7 +242,7 @@ def load_test_images(testdir=None, resize=None, mean=False, gray=False, to_array
         channels = 1
     
     if(testdir is not None):
-        print("Loading test images...")
+        print("[INFO] Loading test images...")
         # get all directories from testdir 
         dirs = sorted(os.walk(testdir).__next__()[1], key=numericalSort)
         
@@ -289,9 +294,9 @@ def load_test_images(testdir=None, resize=None, mean=False, gray=False, to_array
             means_xte = np.reshape(means_xte, (-1, 1))
             print("\t Mean: ", means_xte.shape)
         
-        print("Test images loaded...\n")
+        print("[INFO] Test images loaded...\n")
     else:
-        print(colored("WARNING: Path to test image is not set\n", "yellow"))
+        sys.exit(colored("[WARNING] Path to test image is not set\n", "yellow"))
     
     # NOTE: if needed change to return lists
     if(to_array and resize is not None):
@@ -310,14 +315,13 @@ def load_test_images_from_index_file(testdir=None, infile=None):
     index = 0
     
     if(testdir):
-        print("Loading test images from index file...")
+        print("[INFO] Loading test images from index file...")
 
         try:
             data = np.genfromtxt(infile, delimiter=", ", comments='#', names=True, 
                                 skip_header=0, autostrip=True)
         except:
-            print(colored("WARNING: Index file to test images is not set", "yellow"))
-            sys.exit(1)
+            sys.exit(colored("[WARNING:] Index file to test images is not set", "yellow"))
         
         column = data.dtype.names[1] # 'ClassId'
 
@@ -338,7 +342,7 @@ def load_test_images_from_index_file(testdir=None, infile=None):
         
         # NOTE: make it general
         lil = len(image_list) # lenght of image's list
-        new_image_list = np.empty((lil, 32, 32, 3), dtype=np.float32)
+        new_image_list = np.empty((lil, 32, 32, 3), dtype=np.float32) # NOTE: set manually
         for i in range(lil):
             new_image_list[i] = np.array(image_list[i].getdata()).reshape(32, 32, 3)
 
@@ -350,7 +354,7 @@ def load_test_images_from_index_file(testdir=None, infile=None):
         print("\tLabels: ", len(label_list))
         print("Test images loaded...\n")
     else:
-        print(colored("WARNING: Path to test images is not set", "yellow"))
+        print(colored("[WARNING] Path to test images is not set", "yellow"))
         
     return new_image_list, label_list
 
@@ -359,12 +363,11 @@ def load_test_images_from_index_file(testdir=None, infile=None):
 def load_image_set_from_folder(datadir=None, resize=None, extension="*.jpg"):
     images_list = []
 
-    print("Loading test images from folder...")
+    print("[INFO] Loading test images from folder...")
     try:
         filenames = sorted(glob.glob(datadir + extension), key=numericalSort)
     except:
-        print(colored("WARNING: Couldn't load test images\n", "yellow"))
-        return None, None
+        sys.exit(colored("[WARNING] Couldn't load test images\n", "yellow"))
 
     for infile in filenames:
         img = Image.open(infile).convert("RGB")
@@ -375,14 +378,14 @@ def load_image_set_from_folder(datadir=None, resize=None, extension="*.jpg"):
     # lenght of image's list
     lil = len(images_list)      
     # NOTE: make it general
-    new_images_list = np.empty((lil, 64, 64, 3), dtype=np.float32)
+    new_images_list = np.empty((lil, 64, 64, 3), dtype=np.float32) # NOTE: set manually
     for i in range(lil):
         # NOTE: make it general
         new_images_list[i] = np.array(images_list[i].getdata()).reshape(64, 64, 3)
     
     print("\t  Path: ", datadir)
     print("\tImages: ", new_images_list.shape)
-    print("Test images loaded...\n")
+    print("[INFO] Test images loaded...\n")
     
     return new_images_list, filenames
 
@@ -412,16 +415,16 @@ def convert_images_colorspace(images_array=None, fromc=None, convert_to=None):
         elif(convert_to == 'YUV'):
             ccode = cv2.COLOR_RGB2YUV
         else:
-            print(colored("WARNING: Unknown colorspace %s! Returned original images." % convert_to, "yellow"))
+            print(colored("[WARNING] Unknown colorspace %s! Returned original images." % convert_to, "yellow"))
             return images_array
         
         lia = len(new_images_array) # length of images array
         for i in range(lia):
             new_images_array[i] = cv2.cvtColor(images_array[i], ccode)
 
-        print(colored("INFO: Converted images to colorspace %s" % convert_to, "yellow"))
+        print(colored("[INFO] Converted images to colorspace %s" % convert_to, "yellow"))
     else:
-        print(colored("WARNING: No colorspace selected! Returned original images.", "yellow"))
+        print(colored("[WARNING] No colorspace selected! Returned original images.", "yellow"))
 
     return new_images_array
 

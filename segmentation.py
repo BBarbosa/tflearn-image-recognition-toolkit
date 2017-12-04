@@ -17,7 +17,6 @@ from tflearn.layers.merge_ops import merge
 from tflearn.data_utils import image_dirs_to_samples
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import winsound as ws
 import numpy as np
 from colorama import init
 from termcolor import colored
@@ -345,7 +344,7 @@ else:
     network = build_segnet(network)
 
 # model definition
-model = tflearn.DNN(network, checkpoint_path="models/%s" % args.run_id, tensorboard_dir='logs/', 
+model = tflearn.DNN(network, checkpoint_path="./models/%s" % args.run_id, tensorboard_dir='logs/', 
                     max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95, 
                     best_checkpoint_path=None)  
 
@@ -360,7 +359,7 @@ class MonitorCallback(tflearn.callbacks.Callback):
         if(self.snapshot_every is not None and training_state.epoch > 0 and 
            training_state.epoch % self.snapshot_every == 0):
             print("[INFO] Saving checkpoint model...")
-            ckptname = "models/%s-epoch%d" % (args.run_id, training_state.epoch)
+            ckptname = "./models/%s-epoch%d" % (args.run_id, training_state.epoch)
             print("[INFO] Checkpoint: ", ckptname)
             model.save(ckptname)
             print("[INFO] Checkpoint saved!\n")
@@ -389,9 +388,10 @@ if(args.data_dir is not None):
     if(args.freeze):
         # NOTE: use it for freezing model
         del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
+        model.save("./models/%s_frozen.tflearn" % args.run_id)
 
     print("[INFO] Saving trained model...")
-    modelname = "models/%s.tflearn" % args.run_id
+    modelname = "./models/%s.tflearn" % args.run_id
     print("[INFO] Model: ", modelname)
     model.save(modelname)
     print("[INFO] Trained model saved!\n")
@@ -502,4 +502,4 @@ for i in range(nimages):
         print("")
         break
 
-print("\n[INFO] All done!")
+print("\n[INFO] All done!\a")

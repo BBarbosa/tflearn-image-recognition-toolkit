@@ -77,7 +77,7 @@ def create_accuracy_csv_file(filename="accuracy.txt",testdir=None,traindir=None,
     fcsv.write("# Width         | %d\n"   % width)
     fcsv.write("# Architecure   | %s\n"   % arch)
     fcsv.write("# Bacth Size    | %d\n"   % bs)
-    fcsv.write("# Epochs        | %d\n"   % epochs)
+    fcsv.write("# Max epochs    | %d\n"   % epochs)
     fcsv.write("# Eval Criteria | %.2f\n" % ec)
     fcsv.write("##################################################\n")
     
@@ -130,10 +130,8 @@ def check_stop_criteria(train_acc,val_acc,test_acc,maximum,no_progress,limit):
         `limit` - stop criteria for no progress 
     """
     if(test_acc is not None):
-        if((train_acc > maximum and val_acc > maximum and test_acc > maximum) or no_progress >= limit):
-            return True
+        return ((train_acc > maximum and val_acc > maximum and test_acc > maximum) or no_progress >= limit)
     else:
-        if((train_acc > maximum and val_acc > maximum) or no_progress > limit):
-            return True
+        return ((train_acc > maximum and val_acc > maximum) or no_progress > limit)
     
     return False

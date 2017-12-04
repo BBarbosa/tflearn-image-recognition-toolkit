@@ -10,7 +10,6 @@ import tflearn
 from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import winsound as ws
 import numpy as np
 from utils import architectures, dataset, classifier
 from colorama import init
@@ -72,42 +71,33 @@ if(False):
     print("\tShape   (val):",Xv.shape,Yv.shape)
     print("Data loaded!\n")
 
-
 # load test images
 Xt = Yt = None
-#Xt,Yt,mean_xte = dataset.load_test_images(args.test_dir,resize=None,mean=False)
-#Xt,Yt = dataset.load_test_images_from_index_file(args.test_dir,"./dataset/signals/test/imgs_classes.txt")
-#Xt,filenames = dataset.load_image_set_from_folder(args.test_dir,resize=(WIDTH,HEIGHT),extension="*.png")
-#_, Xt, Yt, _, _, _ , _, _, _, _ = dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True,
-#                                                               validation=0,mean=False,gray=False)
 
-# Real-time data preprocessing
+# Real-time data preprocessing (samplewise or featurewise)
 img_prep = ImagePreprocessing()
-#img_prep.add_samplewise_zero_center(per_channel=True)   # per sample (featurewise is a global value)
 img_prep.add_samplewise_zero_center()
-img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
+img_prep.add_zca_whitening()
+img_prep.add_samplewise_stdnorm()      
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
-#img_aug.add_random_flip_leftright()
-#img_aug.add_random_flip_updown()
-img_aug.add_random_rotation(max_angle=10.)
+img_aug.add_random_flip_leftright()
+img_aug.add_random_flip_updown()
+img_aug.add_random_rotation(max_angle=5.)
 
 # computational resources definition (made changes on TFLearn's config.py)
 tflearn.init_graph(num_cores=8,allow_growth=True)
-#tflearn.init_graph(num_cores=4)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
-                     data_preprocessing=img_prep,              # NOTE: always check PP
+                     data_preprocessing=None,                  # NOTE: always check PP
                      data_augmentation=None)                   # NOTE: always check DA
 
 network,_ = architectures.build_network(args.arch,network,CLASSES)
 
 # model definition
-model = tflearn.DNN(network, checkpoint_path=None, tensorboard_dir='logs/',
-                    max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95,
-                    best_checkpoint_path=None)  
+model = tflearn.DNN(network)  
 
 eval_criteria = 0.80        # evaluation criteria (confidence)
 print("[INFO] Eval crit.:", eval_criteria)
@@ -147,11 +137,11 @@ len_is = len(image_set)     # lenght of test set
 if(len_is < 1):
     sys.exit(colored("[INFO] Test set has no images!","yellow"))
 
-bp = 0                      # badly predicted counter
-wp = 0                      # well predicted counter  
-separate = False            # separates images with help of a trained model
-show_image = True           # flag to (not) show tested images
-cmatrix = None # NOTE: manually set by user
+bp = 0                # badly predicted counter
+wp = 0                # well predicted counter  
+separate = False      # separates images with help of a trained model
+show_image = True     # flag to (not) show tested images
+cmatrix = None        # NOTE: manually set by user
 
 if(cmatrix is not None):
     fcsv = open(cmatrix + "_test_cmatrix.txt","w+")
@@ -162,20 +152,17 @@ for i in np.arange(0,len_is):
     # classify the digit
     probs = model.predict(image_set[np.newaxis, i])
     probs = np.asarray(probs)
-
     # sorted indexes by confidences 
     predictions = np.argsort(-probs,axis=1)[0]
     guesses = predictions[0:2]
-
+    # get best classification confidence
     ci = int(guesses[0])
     confidence = probs[0][ci]
-
     true_label = np.argmax(Yv[i])
-
+    # write on test confusion matrix
     if(cmatrix is not None):
         fcsv = open(cmatrix + "_test_cmatrix.txt","a+")
         fcsv.write("%d,%d\n" % (guesses[0],true_label))
-
     # resize the image to 128 x 128
     image = image_set[i]
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -221,17 +208,17 @@ for i in np.arange(0,len_is):
             shutil.copy(src,dest)
     
     else:
-        # ///////////////// show badly predicted images /////////////////
+        # ///////////////// shows badly predicted images /////////////////
         if(guesses[0] != true_label):
             bp += 1
-
+            # shows images if flag is true 
             if(show_image):
                 print("Predicted: {0:2d}, Actual: {1:2d}, Confidence: {2:3.3f}, Second guess: {3:2d}".format(int(guesses[0]), np.argmax(Yv[i]), confidence, int(guesses[1])))
                 rgb = np.fliplr(image.reshape(-1,CHANNELS)).reshape(image.shape)
                 rgb = cv2.resize(rgb, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
-
+                # add predicted label to the image
                 cv2.putText(rgb, str(guesses[0]), (5, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
-
+                # shows image
                 cv2.imshow("Test image", rgb)
                 key = cv2.waitKey(0)
 
@@ -239,7 +226,6 @@ for i in np.arange(0,len_is):
                 # pressed Esc
                 cv2.destroyWindow("Test image") 
                 show_image = False
-        
         else:
             if(confidence > eval_criteria):
                 wp += 1
@@ -250,7 +236,5 @@ if(cmatrix is not None):
 print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.4f)" % (bp,len_is,bp/len_is),"yellow"))
 print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d (Acc. %.4f)" % (wp,eval_criteria,len_is,wp/len_is),"yellow"))
 
-# sound a beep
-freq = 1000
-dur  = 1500 
-ws.Beep(freq,dur)   
+# sound an ending beep
+print(colored("[INFO] Training complete!\a","green"))
