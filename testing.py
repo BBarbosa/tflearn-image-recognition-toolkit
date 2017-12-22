@@ -11,7 +11,7 @@ from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 import numpy as np
-from utils import architectures, dataset, classifier
+from utils import architectures, dataset, classifier, helper
 from colorama import init
 from termcolor import colored
 
@@ -30,8 +30,10 @@ parser.add_argument("--test_dir", required=False, help="path to test images", ty
 parser.add_argument("--height", required=False, help="images height (default=64)", default=64, type=int)
 parser.add_argument("--width", required=False, help="images width (default=64)", default=64, type=int)
 parser.add_argument("--gray", required=False, help="convert images to grayscale (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--video", required=False, help="use video capture device/video")
-parser.add_argument("--save", required=False, help="save output image (boolean)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+# TODO
+parser.add_argument("--video", required=False, help="use video capture device/video (default=0)", default=0)
+parser.add_argument("--save", required=False, help="save output image (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+
 # parse arguments
 args = parser.parse_args()
 # print args
@@ -45,14 +47,16 @@ vs = 1    # percentage of data for validation (set manually)
 
 # load dataset and get image dimensions
 if(vs):
-    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True,
-                                                                                        validation=vs,mean=False,gray=args.gray)
+    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH,
+                                                                                        shuffled=True, validation=vs,
+                                                                                        mean=False, gray=args.gray)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir,HEIGHT,WIDTH,shuffled=True, gray=args.gray)
+    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, 
+                                                                            shuffled=True, gray=args.gray)
 
 # to load CIFAR-10 or MNIST dataset
 if(False):
@@ -77,8 +81,8 @@ Xt = Yt = None
 # Real-time data preprocessing (samplewise or featurewise)
 img_prep = ImagePreprocessing()
 img_prep.add_samplewise_zero_center()
-img_prep.add_zca_whitening()
 img_prep.add_samplewise_stdnorm()      
+#img_prep.add_zca_whitening()
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
@@ -91,7 +95,7 @@ tflearn.init_graph(num_cores=8,allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None,IMAGE, IMAGE] for RNN
-                     data_preprocessing=None,                  # NOTE: always check PP
+                     data_preprocessing=None,              # NOTE: always check PP
                      data_augmentation=None)                   # NOTE: always check DA
 
 network,_ = architectures.build_network(args.arch,network,CLASSES)
@@ -106,7 +110,7 @@ print("[INFO] Validation:", vs*100 , "%\n")
 # load model to figure out if there is something wrong 
 print("[INFO] Loading trained model...")  
 model.load(args.model)
-print("[INFO] Model: ",args.model)
+print("[INFO] Model:", args.model)
 print("[INFO] Trained model loaded!\n")    
 
 # final evaluation with the best model
@@ -116,19 +120,13 @@ val_acc  = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_crite
 val_acc2 = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
 ftime = time.time() - stime
 
-print(colored("===== Final Evaluation ======","green"))
-#print("     Train:", train_acc, "%")
-print("Validation:", val_acc, "%", "(Confidence > %.2f)" % eval_criteria)
-print("Validation:", val_acc2, "%")
-if(args.test_dir and Xt is not None and Yt is not None):
-    print("      Test:", test_acc, "%")
-    print("       Min:", min_acc, "%") 
-print(colored("=============================","green"))
-print(colored("Time: %.3f seconds\n" % ftime,"green"))
+# write accuracy's values on screen
+helper.print_accuracy(name="Final Eval", train_acc=None, val_acc=val_acc, test_acc=val_acc2, 
+                      min_acc=None, time=None, ctime=ftime, color="green")
 
 # shows image and predicted class
 # NOTE: Turn to false when scheduling many trainings
-print(colored("[INFO] Showing dataset performance","yellow"))
+print(colored("[INFO] Showing dataset performance", "yellow"))
 
 # NOTE: Choose image set
 image_set = Xv
@@ -217,7 +215,7 @@ for i in np.arange(0,len_is):
                 rgb = np.fliplr(image.reshape(-1,CHANNELS)).reshape(image.shape)
                 rgb = cv2.resize(rgb, (WIDTH,HEIGHT), interpolation=cv2.INTER_CUBIC)
                 # add predicted label to the image
-                cv2.putText(rgb, str(guesses[0]), (5, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
+                cv2.putText(rgb, str(guesses[0]), (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
                 # shows image
                 cv2.imshow("Test image", rgb)
                 key = cv2.waitKey(0)
@@ -237,4 +235,4 @@ print(colored("[INFO] %d badly predicted images in a total of %d (Error rate %.4
 print(colored("[INFO] %d well predicted images (confidence > %.2f) in a total of %d (Acc. %.4f)" % (wp,eval_criteria,len_is,wp/len_is),"yellow"))
 
 # sound an ending beep
-print(colored("[INFO] Training complete!\a","green"))
+print(colored("[INFO] Testing complete!\a","green"))

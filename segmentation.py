@@ -51,7 +51,7 @@ print(args, "\n")
 # images properties
 HEIGHT = args.height
 WIDTH  = args.width
-if(args.gray): CHANNELS=3 else CHANNELS=1
+if(args.gray): CHANNELS=1 else CHANNELS=3
 
 # load dataset and get image dimensions
 if(args.data_dir is not None and args.bsize is not None):
@@ -97,6 +97,17 @@ def my_loss(y_pred, y_true):
 def my_metric(y_pred, t_true):
     return tflearn.metrics.top_k_op(y_pred, t_true, k=3)
 
+def compute_iou(y_pred_batch, y_true_batch):
+    iterator = range(len(y_true_batch))
+    return np.mean(np.asarray([pixel_accuracy(y_pred_batch[i], y_true_batch[i]) for i in iterator])) 
+
+def pixel_accuracy(y_pred, y_true):
+    y_pred = np.reshape(y_pred,[CHANNELS,img_rows,img_cols])
+    y_true = np.reshape(y_true,[CHANNELS,img_rows,img_cols])
+    y_pred = y_pred * (y_true>0)
+
+    return 1.0 * np.sum((y_pred == y_true) * (y_true > 0)) /  np.sum(y_true > 0)
+
 # ////////////////////////////////////////////////////
 # autoencoder example
 def build_autoencoder(network): 
@@ -127,7 +138,7 @@ def build_autoencoder(network):
     decoder = conv_2d(decoder, 16, 7, activation='relu')
     
     # decoder = upsample_2d(decoder, 2)
-    decoder = conv_2d(decoder, 3, 1)
+    decoder = conv_2d(decoder, CHANNELS, 1)
 
     def my_loss(y_pred, y_true):
         return tflearn.objectives.weak_cross_entropy_2d(y_pred, y_true, num_classes=3)
@@ -189,7 +200,7 @@ def build_fcn_all(network):
     fcn_8s = conv_2d(fcn_8s, 3, 1, activation='relu')
     ##end FCN-8s -----------------------------------
     
-    out = conv_2d(fcn_8s, 3, 1, activation='relu')
+    out = conv_2d(fcn_8s, CHANNELS, 1, activation='relu')
     out = upsample_2d(out, 8)
     #network_8 = upscore_layer(network_8, num_classes=3, kernel_size=2, strides=8, shape=[384, 1216, 3])
     
@@ -235,7 +246,7 @@ def build_segnet(network):
     decoder = conv_2d(decoder, 32, 3, activation='relu')
     pool6 = conv_2d(decoder, 32, 3, activation='relu')
    
-    decoder = conv_2d(pool6, 3, 1)
+    decoder = conv_2d(pool6, CHANNELS, 1)
     network = tflearn.regression(decoder, optimizer='adam', loss='mean_square') 
     
     return network
@@ -275,7 +286,7 @@ def build_segnet_half(network):
     decoder = conv_2d(decoder, 16, 3, activation='relu')
     pool6 = conv_2d(decoder, 16, 3, activation='relu')
    
-    decoder = conv_2d(pool6, 3, 1)
+    decoder = conv_2d(pool6, CHANNELS, 1)
     network = tflearn.regression(decoder, optimizer='adam', loss='mean_square') 
     
     return network
@@ -325,7 +336,7 @@ def build_unet(network):
     merge1 = conv_2d(merge1, Ni, 3, activation='relu')
     merge1 = conv_2d(merge1, Ni, 3, activation='relu')
    
-    merge1 = conv_2d(merge1, 3, 1, activation='relu')
+    merge1 = conv_2d(merge1, CHANNELS, 1, activation='relu')
 
     network = tflearn.regression(merge1, optimizer='adam', loss='mean_square') 
     

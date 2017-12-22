@@ -25,9 +25,9 @@ parser = argparse.ArgumentParser(description="High level Tensorflow + TFLearn tr
 # required arguments
 parser.add_argument("--data_dir", required=True, help="directory to the training data", type=str)
 parser.add_argument("--arch", required=True, help="architecture name", type=str)
-parser.add_argument("--bsize", required=True, help="batch size", type=int)
 parser.add_argument("--run_id", required=True, help="model's path", type=str)
 # optional arguments
+parser.add_argument("--bsize", required=False, help="batch size (default=16)", default=16, type=int)
 parser.add_argument("--test_dir", required=False, help="directory to the testing data", type=str)
 parser.add_argument("--height", required=False, help="images height (default=64)", default=64, type=int)
 parser.add_argument("--width", required=False, help="images width (default=64)", default=64, type=int)
@@ -86,8 +86,8 @@ if(args.test_dir is not None):
 # Real-time data preprocessing (samplewise or featurewise)
 img_prep = ImagePreprocessing()
 img_prep.add_samplewise_zero_center()
-img_prep.add_zca_whitening()
 img_prep.add_samplewise_stdnorm()      
+#img_prep.add_zca_whitening()
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
@@ -100,7 +100,7 @@ tflearn.init_graph(num_cores=8, allow_growth=True)
 
 # network definition
 network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None, IMAGE, IMAGE] for RNN
-                     data_preprocessing=None,                  # NOTE: always check PP
+                     data_preprocessing=img_prep,              # NOTE: always check PP
                      data_augmentation=None)                   # NOTE: always check DA
 
 # build network architecture

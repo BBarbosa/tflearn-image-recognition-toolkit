@@ -18,16 +18,16 @@ parser.add_argument("--flip",help="flip up/down (boolean)",type=lambda s: s.lowe
 parser.add_argument("--flop",help="flop left/right (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--rotate",help="rotate ROTATE and -ROTATE angle (int)",type=int)
 parser.add_argument("--rotates",help="90, 180 and 270 rotations (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--transpose",help="transpose (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--transp",help="transpose (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--all",help="make all transformations (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--extension",help="images extension",default="*")
+parser.add_argument("--ext",help="images extension",default="*")
 
 # parse arguments
 args = parser.parse_args()
 print(args,"\n")
 
 # loads all types of images
-images_list = glob.glob(args.folder + "*." + args.extension) 
+images_list = glob.glob(args.folder + "*." + args.ext) 
 lil = len(images_list)
 
 print("[INFO] Found %d images" % len(images_list))
@@ -40,7 +40,7 @@ for i,image_name in enumerate(images_list):
 
     # NOTE: file.txt -> (file , .txt)
     out_name, ext = os.path.splitext(image_name)
-    print("Image",i+1,"of",lil,"|",out_name,ext,)
+    print("Image",i+1,"of",lil,"|",out_name,ext)
     
     if(args.flip or args.all):
         image.transpose(PIL.Image.FLIP_TOP_BOTTOM).save(out_name + "_flip" + ext)
@@ -57,5 +57,5 @@ for i,image_name in enumerate(images_list):
         image.rotate(args.rotate).save(out_name + "_r" + str(args.rotate) + ext)
         image.rotate(-args.rotate).save(out_name + "_r-" + str(args.rotate) + ext)
 
-    if(args.transpose or args.all):
+    if(args.transp or args.all):
         image.transpose(PIL.Image.TRANSPOSE).save(out_name + "_transpose" + ext)
