@@ -1,16 +1,26 @@
 """
-Testing script
+Testing script for trained models
+Tensorflow & TFLearn
 """
 
 from __future__ import division, print_function, absolute_import
 
-import sys, os, platform, time, cv2, glob, shutil, argparse
+import sys
+import os
+import platform
+import time
+import cv2
+import glob
+import shutil
+import argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import tflearn
+import numpy as np
+
 from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import numpy as np
 from utils import architectures, dataset, classifier, helper
 from colorama import init
 from termcolor import colored

@@ -4,10 +4,11 @@ Architecture definition module
 
 from __future__ import division, print_function, absolute_import
 
-import tflearn
-import tensorflow as tf
 import sys
+import tflearn
 import numpy as np
+import tensorflow as tf
+
 from tflearn.layers.core import input_data, dropout, fully_connected, flatten
 from tflearn.layers.conv import conv_2d, max_pool_2d, highway_conv_2d, avg_pool_2d, upsample_2d, upscore_layer, conv_2d_transpose
 from tflearn.layers.estimator import regression

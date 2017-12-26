@@ -4,7 +4,10 @@ geometric transformations like flips, flops, transpose
 and transverse.
 """
 
-import argparse,glob,os,PIL
+import argparse
+import glob
+import os
+import PIL
 from PIL import Image
 
 parser = argparse.ArgumentParser(description="Script to artificially generate more images through " 
@@ -12,15 +15,15 @@ parser = argparse.ArgumentParser(description="Script to artificially generate mo
                                              "and rotates.",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("folder",help="images folder")
+parser.add_argument("--folder", required=True, help="images folder")
 # optional arguments
-parser.add_argument("--flip",help="flip up/down (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--flop",help="flop left/right (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--rotate",help="rotate ROTATE and -ROTATE angle (int)",type=int)
-parser.add_argument("--rotates",help="90, 180 and 270 rotations (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--transp",help="transpose (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--all",help="make all transformations (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--ext",help="images extension",default="*")
+parser.add_argument("--flip", required=False, default=False, help="flip up/down (default=False)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--flop", required=False, default=False, help="flop left/right (default=False)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--rotate", required=False, default=0, help="rotate ROTATE and -ROTATE angle (default=0)", type=int)
+parser.add_argument("--rotates", required=False, default=False, help="90, 180 and 270 rotations (default=False)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--transp", required=False, default=False, help="transpose (default=False)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--all", required=False, default=False, help="make all transformations (default=False)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--ext", required=False, default="*", help="images extension (default='*')")
 
 # parse arguments
 args = parser.parse_args()
@@ -53,7 +56,7 @@ for i,image_name in enumerate(images_list):
         image.transpose(PIL.Image.ROTATE_180).save(out_name + "_r180" + ext)
         image.transpose(PIL.Image.ROTATE_270).save(out_name + "_r270" + ext) 
 
-    if(args.rotate is not None or args.all):
+    if(args.rotate or args.all):
         image.rotate(args.rotate).save(out_name + "_r" + str(args.rotate) + ext)
         image.rotate(-args.rotate).save(out_name + "_r-" + str(args.rotate) + ext)
 

@@ -5,10 +5,16 @@ For image classification
 
 from __future__ import division, print_function, absolute_import
 
-import sys, os, platform, time, argparse
+import sys
+import os
+import platform
+import time
+import argparse
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
 import tensorflow as tf
+
 from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation

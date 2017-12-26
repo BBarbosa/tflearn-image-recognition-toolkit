@@ -51,7 +51,10 @@ print(args, "\n")
 # images properties
 HEIGHT = args.height
 WIDTH  = args.width
-if(args.gray): CHANNELS=1 else CHANNELS=3
+if(args.gray): 
+    CHANNELS = 1 
+else: 
+    CHANNELS = 3
 
 # load dataset and get image dimensions
 if(args.data_dir is not None and args.bsize is not None):

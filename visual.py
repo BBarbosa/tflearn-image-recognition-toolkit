@@ -1,13 +1,20 @@
 from __future__ import division, print_function, absolute_import
 
-import sys,os,platform,six,argparse,cv2
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-import tflearn
+import sys
+import os
+import platform
+import six
+import argparse
+import cv2
 import tensorflow as tf
 import numpy as np
-import math,scipy
+import math
+import scipy
 import matplotlib.pyplot as plt
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tflearn
+
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
 from tflearn.layers.core import input_data

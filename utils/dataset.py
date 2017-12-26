@@ -4,9 +4,18 @@ Dataset loader
 
 from __future__ import division, print_function, absolute_import
 
-import tflearn
-import sys, math, time, os, scipy.ndimage, PIL, re, glob, cv2
+import sys
+import math
+import time
+import os
+import scipy.ndimage
+import PIL
+import re
+import glob
+import cv2
 import numpy as np
+import tflearn
+
 from tflearn.data_utils import shuffle, build_image_dataset_from_dir, image_preloader         
 from PIL import Image, ImageStat
 from colorama import init
@@ -321,14 +330,14 @@ def load_test_images_from_index_file(testdir=None, infile=None):
             data = np.genfromtxt(infile, delimiter=", ", comments='#', names=True, 
                                 skip_header=0, autostrip=True)
         except:
-            sys.exit(colored("[WARNING:] Index file to test images is not set", "yellow"))
+            sys.exit(colored("[WARNING] Index file to test images is not set", "yellow"))
         
         column = data.dtype.names[1] # 'ClassId'
 
         # picks every sa
         for root, dirs, files in os.walk(testdir):
             for file in files:
-                if file.endswith((".bmp", ".jpg", ".ppm")):
+                if file.endswith((".bmp", ".jpg", ".ppm", ".png")):
                     image_path = os.path.join(root, file)
                     image      = Image.open(image_path).resize((32, 32))
 
@@ -359,9 +368,8 @@ def load_test_images_from_index_file(testdir=None, infile=None):
     return new_image_list, label_list
 
 # load an image set from a single folder without subfolders and labels
-# TODO: generalize part of reshaping images_list and files extensions
-def load_image_set_from_folder(datadir=None, resize=None, extension="*.jpg"):
-    images_list = []
+def load_image_set_from_folder(datadir=None, resize=None, gray=False, extension="*.*"):
+    images_list = [] 
 
     print("[INFO] Loading test images from folder...")
     try:
@@ -370,21 +378,25 @@ def load_image_set_from_folder(datadir=None, resize=None, extension="*.jpg"):
         sys.exit(colored("[WARNING] Couldn't load test images\n", "yellow"))
 
     for infile in filenames:
-        img = Image.open(infile).convert("RGB")
+        if(gray): 
+            img = Image.open(infile).convert("L")
+            channels = 1
+        else:     
+            img = Image.open(infile).convert("RGB")
+            channels = 3
+        
         if(resize):
             img = img.resize(resize, Image.ANTIALIAS)
         images_list.append(img)
     
     # lenght of image's list
     lil = len(images_list)      
-    # NOTE: make it general
-    new_images_list = np.empty((lil, 64, 64, 3), dtype=np.float32) # NOTE: set manually
+    new_images_list = np.empty((lil, resize[1], resize[0], channels), dtype=np.float32)
     for i in range(lil):
-        # NOTE: make it general
-        new_images_list[i] = np.array(images_list[i].getdata()).reshape(64, 64, 3)
+        new_images_list[i] = np.array(images_list[i].getdata()).reshape(resize[1], resize[0], channels)
     
-    print("\t  Path: ", datadir)
-    print("\tImages: ", new_images_list.shape)
+    print("[INFO]   Path:", datadir)
+    print("[INFO] Images:", new_images_list.shape)
     print("[INFO] Test images loaded...\n")
     
     return new_images_list, filenames

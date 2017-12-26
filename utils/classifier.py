@@ -1,9 +1,19 @@
 from __future__ import division, print_function, absolute_import
 
-import os, sys, time, platform, six, socket
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import tflearn, math, PIL, cv2
+import os
+import sys
+import time
+import platform
+import six
+import socket
+import math
+import PIL
+import cv2
 import numpy as np 
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tflearn
+
 from PIL import Image
 from colorama import init
 from termcolor import colored
