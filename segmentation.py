@@ -1,26 +1,36 @@
 """
-Script for training and testing a convolutional neural network
-For image segmentation
+Stand-alone python script for training and testing a convolutional 
+neural network for image segmentation
+
+Uses Tensorflow and TFLearn
 """
 
 from __future__ import division, print_function, absolute_import
 
-import sys, os, platform, time, cv2, argparse
+import os
+import sys
+import cv2
+import time
+import platform
+import argparse
+import numpy as np
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
 import tensorflow as tf
-from tflearn.layers.core import input_data, dropout, fully_connected, flatten
-from tflearn.layers.conv import conv_2d, max_pool_2d, highway_conv_2d, avg_pool_2d, upsample_2d, upscore_layer, conv_2d_transpose
-from tflearn.layers.estimator import regression
-from tflearn.layers.normalization import local_response_normalization, batch_normalization
+
 from tflearn.layers.merge_ops import merge
+from tflearn.layers.estimator import regression
 from tflearn.data_utils import image_dirs_to_samples
-from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-import numpy as np
+from tflearn.data_preprocessing import ImagePreprocessing
+from tflearn.layers.core import input_data, fully_connected
+from tflearn.layers.normalization import local_response_normalization, batch_normalization
+from tflearn.layers.conv import conv_2d, max_pool_2d, upsample_2d, upscore_layer, conv_2d_transpose
+
+from PIL import Image
 from colorama import init
 from termcolor import colored
-from PIL import Image
 
 # init colored print
 init()
@@ -34,13 +44,14 @@ parser.add_argument("--run_id", required=True, help="run identifier (id) / model
 # optional arguments
 parser.add_argument("--data_dir", required=False, help="directory to the training data", type=str)
 parser.add_argument("--bsize", required=False, default=2, help="training batch size (default=2)", type=int)
-parser.add_argument("--test_dir", required=False, help="path to test images", type=str)
+parser.add_argument("--test_dir", required=False, help="path to testing images", type=str)
 parser.add_argument("--height", required=False, help="images height (default=64)", default=64, type=int)
 parser.add_argument("--width", required=False, help="images width (default=64)", default=64, type=int)
 parser.add_argument("--gray", required=False, help="convert images to grayscale (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--video", required=False, help="use video capture device/video")
-parser.add_argument("--save", required=False, help="save output image (boolean)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--freeze", required=False, help="flag to freeze model (boolean)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--video", required=False, help="use video capture device/video (default=0)", default=0)
+parser.add_argument("--save", required=False, help="save output image (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--freeze", required=False, help="flag to freeze model (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+parser.add_argument("--show", required=False, help="Image show level (0-low; 1-medium; 2-high) (default=0)", default=0, type=int)
 
 # parse arguments
 args = parser.parse_args()
@@ -51,6 +62,7 @@ print(args, "\n")
 # images properties
 HEIGHT = args.height
 WIDTH  = args.width
+
 if(args.gray): 
     CHANNELS = 1 
 else: 
@@ -70,15 +82,16 @@ if(args.data_dir is not None and args.bsize is not None):
     Xgt = X[split:] 
 
     print("")
-    print("Images: ", len(Xim), Xim[0].shape)
-    print("Ground: ", len(Xgt), Xgt[0].shape, "\n")
+    print("[INFO] Images: ", len(Xim), Xim[0].shape)
+    print("[INFO] Ground: ", len(Xgt), Xgt[0].shape, "\n")
 else:
-    print("[INFO] Training images not set\n")
+    print("[INFO] Training images not set")
+    print("[INFO] Going for testing mode\n")
 
 # Real-time data preprocessing  
 img_prep = ImagePreprocessing()
-img_prep.add_samplewise_zero_center()   # per sample (featurewise is a global value)
-img_prep.add_samplewise_stdnorm()       # per sample (featurewise is a global value)
+img_prep.add_samplewise_zero_center()
+img_prep.add_samplewise_stdnorm()    
 
 # Real-time data augmentation
 img_aug = ImageAugmentation()
@@ -381,7 +394,7 @@ class MonitorCallback(tflearn.callbacks.Callback):
 saverMonitor = MonitorCallback(frequency=100)
 
 # training operation
-if(args.data_dir is not None):
+if(args.data_dir is not None and args.bsize is not None):
     # training parameters
     EPOCHS = 1000 # maximum number of epochs
 
@@ -411,109 +424,114 @@ if(args.data_dir is not None):
     print("[INFO] Trained model saved!\n")
 
 else:
+    # testing operation
+    # load trained model
     print("[INFO] Loading trained model...")  
     model.load(args.run_id)
-    print("[INFO] Model: ", args.run_id)
+    print("[INFO] Model:", args.run_id)
     print("[INFO] Trained model loaded!\n")
 
-    if(args.test_dir):
+    # to load images from test dir
+    if(args.test_dir is not None):
+        delay = 0
         try:
+            print("[INFO] Image folder", args.test_dir)
             Xim, _ = image_dirs_to_samples(args.test_dir, resize=(WIDTH, HEIGHT), convert_gray=False, 
-                                          filetypes=[".png", ".jpg", ".JPG", ".bmp"]) 
+                                             filetypes=[".png", ".jpg", ".JPG", ".bmp"]) 
 
-            print("\n[INFO] Images: ", len(Xim), Xim[0].shape, "\n")
+            print("[INFO] Images", len(Xim) // 2, Xim[0].shape, "\n")
+        except Exception as e:
+            print(e)
+            sys.exit("[INFO] Couldn't load test images!") 
+    
+        nimages = len(Xim) // 2
+    
+    else:
+        # load images from video capture device
+        delay = 1
+        nimages = -1
+
+        try:
+            args.video = int(args.video)
         except:
-            print("[INFO] Couldn't load test images!")
-            pass  
+            pass
 
-# ///////////// CAMERA /////////////
-#if(args.video):
-#    delay = 1
-#    nimages = -1
-#
-#i=0
-#try:
-#    args.video = int(args.video)
-#except:
-#    pass
-#
-#print("[INFO] Video:", args.video, "\n")
-#
-#cam = cv2.VideoCapture(args.video)
-#while(not cam.isOpened()):
-#    cam = cv2.VideoCapture(args.video)
-#
-#while True:
-#    ret_val, cam_image = cam.read()
-#    while(not ret_val):
-#        ret_val, cam_image = cam.read()
-#    
-#    stime = time.time()
-#
-#    cam_image = cv2.cvtColor(cam_image, cv2.COLOR_BGR2RGB)
-#    test_image = cv2.resize(cam_image, (WIDTH, HEIGHT), interpolation=cv2.INTER_CUBIC)
-#    test_image2 = cv2.resize(cam_image, (WIDTH, HEIGHT), interpolation=cv2.INTER_CUBIC)
-#
-#    test_image = test_image / 255.
-#    #test_image2 = test_image2 / 255.
-#
-# /////////////////////////////////
+        # print video capture source
+        print("[INFO] Video:", args.video, "\n")
+        # initialize viceo capture variale
+        cam = cv2.VideoCapture(args.video)
 
-# ///////// IMAGES FOLDER ////////
-nimages = len(Xim)
-delay = 0
-for i in range(nimages):
-    stime = time.time()
+# image index
+image_id = 0
 
-# //////////////////////////////// 
-
-    test_image = np.reshape(Xim[i], (1, HEIGHT, WIDTH, CHANNELS)) # load from folder
-    #test_image = np.reshape(test_image, (1, HEIGHT, WIDTH, 3)) # video capture
+# while loop to constantly load images 
+while True:
+    # start measuring time
+    ctime = time.time()
     
-    predicts = model.predict(test_image)
-    pred_image = np.reshape(predicts[0], (HEIGHT, WIDTH, CHANNELS))
+    if(args.test_dir is not None and image_id < nimages):
+        # load image from folder
+        frame = Xim[image_id]
+    elif(args.video is not None and args.test_dir is None):
+        # load image from video capture source
+        ret_val, frame = cam.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    else:
+        break
     
-    ### original image --------------------------------------------
-    original = cv2.cvtColor(Xim[i], cv2.COLOR_RGB2BGR) # load from folder
-    
-    #original = test_image2                                 # video capture
-    #original = cv2.cvtColor(test_image2, cv2.COLOR_RGB2BGR) # video capture
-    #original = original / 255.                             # video capture
-    
-    #cv2.imshow("Original", original)
+    # reshape test image to NHWC tensor format
+    test_image = cv2.resize(frame, (WIDTH, HEIGHT), interpolation=cv2.INTER_CUBIC)
+    # NOTE: exceptional treatment when using video capture
+    if(args.video is not None and args.test_dir is None):
+        test_image = test_image / 255.
 
-    ### predicted segmentation ------------------------------------
-    pred_image = np.absolute(pred_image)
-    predicted = cv2.cvtColor(pred_image, cv2.COLOR_RGB2BGR)
-    
-    cv2.imshow("Predicted Mask", predicted)
+    copy_test_image = cv2.resize(frame, (WIDTH, HEIGHT), interpolation=cv2.INTER_CUBIC)
+    test_image = np.reshape(test_image, (1, HEIGHT, WIDTH, CHANNELS)) 
 
-    ### ground truth
+    # output mask prediction
+    prediction = model.predict(test_image)
+    prediction = np.reshape(prediction[0], (HEIGHT, WIDTH, CHANNELS))
+    
+    # original image 
+    original_bgr = cv2.cvtColor(copy_test_image, cv2.COLOR_RGB2BGR)
+    # NOTE: exceptional treatment when using video capture
+    if(args.video is not None and args.test_dir is None):
+        original_bgr = original_bgr / 255.
+    
+    if(args.show >= 2):
+        cv2.imshow("Original", original_bgr)
+
+    # predicted segmentation 
+    prediction_bgr = np.absolute(prediction)
+    prediction_bgr = cv2.cvtColor(prediction, cv2.COLOR_RGB2BGR)
+    
+    if(args.show >= 1):
+        cv2.imshow("Predicted Mask", prediction_bgr)
+
+    # ground truth
     if(args.data_dir is not None):
-        gtruth = cv2.cvtColor(Xgt[i], cv2.COLOR_RGB2BGR)
-        #cv2.imshow("Ground truth", gtruth)
-
-        annotations = 0.5 * original + 0.5 * gtruth
+        gtruth = cv2.cvtColor(Xgt[image_id], cv2.COLOR_RGB2BGR)
+        annotations = 0.5 * original_bgr + 0.5 * gtruth
         cv2.imshow("Ground Truth", annotations)
 
-    ### prediction overlay 
-    overlay = 0.5 * original + 0.5 * predicted
-    cv2.imshow("Predicted", overlay)
+    # prediction overlay 
+    overlay = 0.5 * original_bgr + 0.5 * prediction_bgr
+    if(args.show >= 0):
+        cv2.imshow("Predicted", overlay)
 
     if(args.save):
-        cv2.imwrite("./out/%d.png" % i, overlay)
+        cv2.imwrite("./out/seg-%d.png" % image_id, overlay)
     
-    ftime = time.time() - stime
+    ctime = time.time() - ctime
 
-    print("\rImage %d of %d | Time %.3f" % (i+1, nimages, ftime), end='')
+    print("\r[INFO] Image %d of %d | Time %.3f" % (image_id+1, nimages, ctime), end='')
     
-    if(args.video is not None):
-        i += 1
+    image_id += 1
     
     key = cv2.waitKey(delay)
     if(key == 27):
         # pressed ESC
-        print("")
+        print("\n[INFO] Pressed ESC")
         break
 
 print("\n[INFO] All done!\a")

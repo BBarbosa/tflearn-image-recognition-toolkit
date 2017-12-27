@@ -377,13 +377,16 @@ def load_image_set_from_folder(datadir=None, resize=None, gray=False, extension=
     except:
         sys.exit(colored("[WARNING] Couldn't load test images\n", "yellow"))
 
+    if(gray): 
+        channels = 1
+    else:     
+        channels = 3
+
     for infile in filenames:
         if(gray): 
             img = Image.open(infile).convert("L")
-            channels = 1
         else:     
             img = Image.open(infile).convert("RGB")
-            channels = 3
         
         if(resize):
             img = img.resize(resize, Image.ANTIALIAS)
