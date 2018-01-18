@@ -169,7 +169,8 @@ def my_evaluate(model, images_list, labels_list, batch_size=128, criteria=0.75, 
     iterations = math.ceil(length/batch_size)               # counter of how many batches will be used
     pointer = 0                                             # batch number pointer
     labels_list = [np.argmax(elem) for elem in labels_list] # convert labels to a simpler representation
-    wp = 0                                                  # counter for well predicted images
+    wp = 0                                                  # counter for well predicted images that respect criteria
+    wp_nc = 0                                               # counter for well predicted images  
     counter = 0                                             # global counter 
 
     # images and labels lists must have the same lenght
@@ -195,8 +196,10 @@ def my_evaluate(model, images_list, labels_list, batch_size=128, criteria=0.75, 
         for vals, classid in zip(probs, sub_labels_list):
             index = np.argmax(vals)     # get the index of the most probable class
             val = vals[index]           # get the confidence of the predicted class
-            if(index == classid and val >= criteria):
-                wp += 1
+            if(index == classid):
+                wp_nc += 1
+                if(val >= criteria):
+                    wp += 1
             counter += 1
       
         pointer += batch_size
@@ -205,8 +208,10 @@ def my_evaluate(model, images_list, labels_list, batch_size=128, criteria=0.75, 
     if(counter != length):
         sys.exit(colored("[ERROR] Counter and length must be equal!", "red"))
     
-    acc = wp / length * 100
-    return np.round(acc, 2)
+    acc    = wp / length * 100
+    acc_nc = wp_nc / length * 100
+    
+    return np.round(acc, 2), np.round(acc_nc, 2) 
 
 # function that classifies a image thorugh a sliding window
 def classify_sliding_window(model, images_list, labels_list, nclasses, runid=None, printout=True, criteria=0.75, X2=None):

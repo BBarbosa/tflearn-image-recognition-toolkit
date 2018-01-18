@@ -29,10 +29,10 @@ init()
 parser = argparse.ArgumentParser(description="High level Tensorflow + TFLearn training script.", 
                                  prefix_chars='-')
 # required arguments
-parser.add_argument("--data_dir", required=True, help="directory to the training data", type=str)
-parser.add_argument("--arch", required=True, help="architecture name", type=str)
-parser.add_argument("--model", required=True, help="architecture name", type=str)
-parser.add_argument("--run_id", required=True, help="model's path", type=str)
+parser.add_argument("--data_dir", required=True, help="<required> directory to the training data", type=str)
+parser.add_argument("--arch", required=True, help="<required> architecture name", type=str)
+parser.add_argument("--model", required=True, help="<required> architecture name", type=str)
+parser.add_argument("--run_id", required=True, help="<required> model's path", type=str)
 # optional arguments
 parser.add_argument("--bsize", required=False, help="batch size (default=16)", default=16, type=int)
 parser.add_argument("--test_dir", required=False, help="directory to the testing data", type=str)

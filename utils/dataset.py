@@ -4,23 +4,28 @@ Dataset loader
 
 from __future__ import division, print_function, absolute_import
 
+import os
+import re
+import cv2
 import sys
+import PIL
 import math
 import time
-import os
-import scipy.ndimage
-import PIL
-import re
 import glob
-import cv2
-import numpy as np
+import random
 import tflearn
+import numpy as np
 
 from tflearn.data_utils import shuffle, build_image_dataset_from_dir, image_preloader         
-from PIL import Image, ImageStat
+from PIL import Image
 from colorama import init
 from termcolor import colored
 from matplotlib import pyplot as plt
+
+try:
+    import scipy.ndimage
+except Exception:
+    print("Scipy not supported!")
 
 # init colored print
 init()
@@ -105,8 +110,8 @@ def load_dataset_ipl(train_path, height, width, test_path=None, mode='folder'):
     return classes, X, Y, Xt, Yt 
 
 # load images directly from images folder (ex: cropped/5/)
-def load_dataset_windows(train_path, height=None, width=None, test=None, shuffled=False, 
-                         validation=0, mean=False, gray=False, save_dd=False, dataset_file=None):
+def load_dataset_windows(train_path, height=None, width=None, test=None, shuffled=False, validation=0, 
+                         mean=False, gray=False, save_dd=False, dataset_file=None, data_aug=[]):
     """ 
     Given a folder containing images separated by sub-folders (classes) returns training and testing
     data, if specified.
@@ -128,10 +133,66 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
         height, width, ch = X[0].shape            
     except:
         height, width = X[0].shape
-        ch = 1
-    
+        ch = 1  
+
     # get number of images and classes automatically
-    nimages, classes = Y.shape              
+    nimages, classes = Y.shape
+
+    print("[INFO]        Images:", nimages)
+
+    # /////////////////////////// data augmentation process //////////////////////////////////
+    if(len(data_aug) > 0):
+
+        max_rotates = 4  
+        max_angle   = 10
+        angle_step  = 90
+
+        # list of angles to rotate
+        angle_list = np.linspace(0, 360, 360//angle_step, endpoint=False)
+        angle_list = random.sample(range(-max_angle, max_angle), max_rotates)                        
+
+        flip = flop = rotate = allt = False # enable/disable rotation data augmentation
+        x_len = len(X) # total number of images
+
+        # assert each 
+        allt = any('all' in op.lower() for op in data_aug)
+        if(not allt):
+            flip   = any('flip' in op.lower() for op in data_aug)
+            flop   = any('flop' in op.lower() for op in data_aug)
+            rotate = any('rot' in op.lower() for op in data_aug)
+
+        print("[INFO] Data augmentation operation...")
+        print("[INFO]        Rotate:", rotate or allt)
+        print("[INFO]          Flop:", flop or allt)
+        print("[INFO]          Flip:", flip or allt)
+        
+
+        for index in range(x_len):
+            if(rotate or allt):
+                for angle in angle_list:
+                    # create rotated image from original image
+                    new_elem = scipy.ndimage.interpolation.rotate(X[index], angle, reshape=False)
+                    # appends new elemnt on both X and Y
+                    X.append(new_elem)
+                    Y = np.concatenate([Y, [Y[index]]])  
+
+            if(flip or allt):
+                new_elem = np.flipud(X[index])
+                # appends new elemnt on both X and Y
+                X.append(new_elem)
+                Y = np.concatenate([Y, [Y[index]]])
+
+            if(flop or allt):
+                new_elem = np.fliplr(X[index])
+                # appends new elemnt on both X and Y
+                X.append(new_elem)
+                Y = np.concatenate([Y, [Y[index]]])
+
+        # get number of images and classes automatically
+        nimages, classes = Y.shape
+
+        print("[INFO] Images w/ aug:", nimages)
+        print("[INFO] Data augmentation operation done...")
 
     # /////////////////////////////////// validation split ////////////////////////////////////////////
     if(validation > 0 and validation <= 1):  # validation = [0, 1] float
@@ -140,7 +201,6 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
         for i in range(0, nimages):
             counts[np.argmax(Y[i])] += 1    # counts the number of images per every class
         
-        print("[INFO]        Images:", nimages)
         print("[INFO]        Counts:", counts)
         print("[INFO]       Classes:", classes)
 
@@ -215,16 +275,16 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
         means_xte = np.array(means_xte)
         means_xte = np.reshape(means_xte, (-1, 1))
 
-    Xtr = np.array(Xtr)     # convert train images list to array
-    Ytr = np.array(Ytr)     # convert train labels list to array
-    if(Xte is not None): Xte = np.array(Xte)     # convert test images list to array
-    if(Yte is not None): Yte = np.array(Yte)     # convert test labels list to array
+    Xtr = np.array(Xtr)                         # convert train images list to array
+    Ytr = np.array(Ytr)                         # convert train labels list to array
+    if(Xte is not None): Xte = np.array(Xte)    # convert test images list to array
+    if(Yte is not None): Yte = np.array(Yte)    # convert test labels list to array
 
     if(shuffled):
-        Xtr, Ytr = shuffle(Xtr, Ytr)      # shuflles training data
-        if(Xte is not None and Yte is not None): Xte, Yte = shuffle(Xte, Yte)      # shuflles validation data
+        Xtr, Ytr = shuffle(Xtr, Ytr)                                            # shuflles training data
+        if(Xte is not None and Yte is not None): Xte, Yte = shuffle(Xte, Yte)   # shuflles validation data
 
-    Xtr = np.reshape(Xtr, (-1, height, width, ch))      # reshape array to fit on network format
+    Xtr = np.reshape(Xtr, (-1, height, width, ch))                           # reshape array to fit on network format
     if(Xte is not None): Xte = np.reshape(Xte, (-1, height, width, ch))      # reshape array to fit on network format
 
     print("[INFO]          Path:", train_path)
@@ -453,12 +513,17 @@ def load_cifar10_dataset(data_dir=None):
     CHANNELS = 3
     CLASSES  = 10
 
-    (X, Y), (Xv, Yv) = cifar10.load_data(dirname=data_dir)
+    (X, Y), (Xv, Yv) = cifar10.load_data(dirname=data_dir, one_hot=True)
     X, Y = shuffle(X, Y)
-    Y = to_categorical(Y, 10)
-    Yv = to_categorical(Yv, 10)
+    Xv, Yv = shuffle(Xv, Yv)
 
-    return CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv
+    Xt = Xv[2000:]
+    Yt = Yv[2000:]
+
+    Xv = Xv[:2000]
+    Yv = Yv[:2000]
+
+    return CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, Xt, Yt
 
 # funtion to load MNIST dataset
 def load_mnist_dataset(data_dir=None):
@@ -471,7 +536,14 @@ def load_mnist_dataset(data_dir=None):
 
     X, Y, Xv, Yv = mnist.load_data(data_dir=data_dir, one_hot=True)
     X, Y = shuffle(X, Y)
+    Xv, Yv = shuffle(Xv, Yv)
     X = X.reshape([-1, 28, 28, 1])
     Xv = Xv.reshape([-1, 28, 28, 1])
 
-    return CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv
+    Xt = Xv[2000:]
+    Yt = Yv[2000:]
+
+    Xv = Xv[:2000]
+    Yv = Yv[:2000]
+
+    return CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, Xt, Yt

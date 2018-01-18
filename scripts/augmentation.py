@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description="Script to artificially generate mo
                                              "and rotates.",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("--folder", required=True, help="images folder")
+parser.add_argument("--folder", required=True, help="<required> images folder")
 # optional arguments
 parser.add_argument("--flip", required=False, default=False, help="flip up/down (default=False)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--flop", required=False, default=False, help="flop left/right (default=False)", type=lambda s: s.lower() in ['true', 't', 'yes', '1'])

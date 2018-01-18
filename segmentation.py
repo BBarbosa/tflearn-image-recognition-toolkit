@@ -1,6 +1,6 @@
 """
 Stand-alone python script for training and testing a convolutional 
-neural network for image segmentation
+neural network for pixel-wise image segmentation
 
 Uses Tensorflow and TFLearn
 """
@@ -39,8 +39,8 @@ init()
 parser = argparse.ArgumentParser(description="Automatic image segmentation using Deep Learning.", 
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("--arch", required=True, help="architecture name", type=str)
-parser.add_argument("--run_id", required=True, help="run identifier (id) / model's path", type=str)
+parser.add_argument("--arch", required=True, help="<required> architecture name", type=str)
+parser.add_argument("--run_id", required=True, help="<required> run identifier (id) / model's path", type=str)
 # optional arguments
 parser.add_argument("--data_dir", required=False, help="directory to the training data", type=str)
 parser.add_argument("--bsize", required=False, default=2, help="training batch size (default=2)", type=int)
@@ -70,6 +70,7 @@ else:
 
 # load dataset and get image dimensions
 if(args.data_dir is not None and args.bsize is not None):
+    print("[INFO] Training image folder:", args.data_dir)
     X, _ = image_dirs_to_samples(args.data_dir, resize=(WIDTH, HEIGHT), convert_gray=args.gray, 
                                 filetypes=[".png", ".jpg", ".bmp"])
     
@@ -409,6 +410,7 @@ if(args.data_dir is not None and args.bsize is not None):
 
     # to stop the training at any moment by pressing Ctrl+C
     except KeyboardInterrupt:
+        print("[INFO] Training interrupted by user")
         pass 
 
     # save trained model
@@ -431,48 +433,53 @@ else:
     print("[INFO] Model:", args.run_id)
     print("[INFO] Trained model loaded!\n")
 
-    # to load images from test dir
-    if(args.test_dir is not None):
-        delay = 0
-        try:
-            print("[INFO] Image folder", args.test_dir)
-            Xim, _ = image_dirs_to_samples(args.test_dir, resize=(WIDTH, HEIGHT), convert_gray=False, 
-                                             filetypes=[".png", ".jpg", ".JPG", ".bmp"]) 
+# testing setup
+# to load images from test dir
+if(args.data_dir is not None or args.test_dir is not None):
+    delay = 0
+    try:
+        print("[INFO] Testing image folder:", args.test_dir)
+        Xim, _ = image_dirs_to_samples(args.test_dir, resize=(WIDTH, HEIGHT), convert_gray=False, 
+                                     filetypes=[".png", ".jpg", ".JPG", ".bmp"])
+        
+        print("[INFO] Images", len(Xim), Xim[0].shape, "\n")
+    except Exception as e:
+        print("[EXCEPTION]", e)
+        print("[INFO] Couldn't load test images!") 
+        print("[INFO] Testing will use trainig data")
 
-            print("[INFO] Images", len(Xim) // 2, Xim[0].shape, "\n")
-        except Exception as e:
-            print(e)
-            sys.exit("[INFO] Couldn't load test images!") 
+    nimages = len(Xim)
+
+else:
+    # load images from video capture device
+    delay = 1
+    nimages = -1
+
+    try:
+        args.video = int(args.video)
+    except:
+        pass
     
-        nimages = len(Xim) // 2
-    
-    else:
-        # load images from video capture device
-        delay = 1
-        nimages = -1
-
-        try:
-            args.video = int(args.video)
-        except:
-            pass
-
-        # print video capture source
-        print("[INFO] Video:", args.video, "\n")
-        # initialize viceo capture variale
-        cam = cv2.VideoCapture(args.video)
+    # print video capture source
+    print("[INFO] Video:", args.video, "\n")
+    # initialize viceo capture variale
+    cam = cv2.VideoCapture(args.video)
 
 # image index
 image_id = 0
+
+# flag to upsample prediction image show
+upsample = True
 
 # while loop to constantly load images 
 while True:
     # start measuring time
     ctime = time.time()
     
-    if(args.test_dir is not None and image_id < nimages):
+    if((args.data_dir is not None or args.test_dir is not None) and image_id < nimages):
         # load image from folder
         frame = Xim[image_id]
-    elif(args.video is not None and args.test_dir is None):
+    elif(args.data_dir is None and args.test_dir is None and args.video is not None):
         # load image from video capture source
         ret_val, frame = cam.read()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -502,21 +509,23 @@ while True:
         cv2.imshow("Original", original_bgr)
 
     # predicted segmentation 
-    prediction_bgr = np.absolute(prediction)
     prediction_bgr = cv2.cvtColor(prediction, cv2.COLOR_RGB2BGR)
+    prediction_bgr = np.absolute(prediction)
     
     if(args.show >= 1):
         cv2.imshow("Predicted Mask", prediction_bgr)
 
     # ground truth
-    if(args.data_dir is not None):
+    if(args.data_dir is not None and args.show >= 0):
         gtruth = cv2.cvtColor(Xgt[image_id], cv2.COLOR_RGB2BGR)
         annotations = 0.5 * original_bgr + 0.5 * gtruth
         cv2.imshow("Ground Truth", annotations)
 
     # prediction overlay 
-    overlay = 0.5 * original_bgr + 0.5 * prediction_bgr
     if(args.show >= 0):
+        overlay = 0.5 * original_bgr + 0.5 * prediction_bgr
+        if(upsample):
+            overlay = cv2.resize(overlay, (WIDTH*2, HEIGHT*2), interpolation=cv2.INTER_CUBIC)
         cv2.imshow("Predicted", overlay)
 
     if(args.save):

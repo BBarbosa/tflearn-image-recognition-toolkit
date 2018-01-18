@@ -1,52 +1,57 @@
-#--------------------------------------------------------------------------
-# NOTE: 
-# * Make sure that there isn't any other instace of TensorFlow running
-#   before calling this script
-# 
-# * Check if test mode on training.py is not activated
-#
-# * When ready set the ready flag to True
-#--------------------------------------------------------------------------
+"""
+NOTE: 
+* Make sure that there isn't any other instace of TensorFlow running
+  before calling this script
 
-import os,sys
-import numpy as np
+* Check if test mode on training.py is not activated
 
-# control flag 
+* When ready set the ready flag to True
+"""
+
+import os
+import sys
+
+# ready control flag 
 try: 
     ready = sys.argv[1].lower() in ['true', 't', 'yes', '1', 'go', 'ready']     
 except:
     ready = False
 
-commands = ["python training_nothing.py","python training_pp.py","python training_da.py","python training_both.py"]
 commands = ["python training.py"]
 
-ids = ["none","pp","da","both"]
+datasets = ["./dataset/parking/pklot/subset_of_mypklot/training/"]
 
-datasets = ["dataset\\parking\\pklot\\subset_of_mypklot\\"]
+testdirs = ["./dataset/parking/pklot/subset_of_mypklot/testing/"] 
 
-testdirs = [""] 
+architectures = ["myvgg"]
 
-architectures = ["mnist"]
+batches = [1024, 512, 256, 128, 64, 32]
 
-batches = [512]
+nruns = 1
 
-nruns = 100
+width = height = 64
 
-for command,idn in zip(commands,ids):
-    for data in datasets:
-        for arch in architectures:
-            for bs in batches:
-                for testdir in testdirs:
-                    for run in range(0,nruns):
-                        # NOTE: adapt runid according with the user's preferences
-                        runid = "digits_sc_" + arch + "_bs" + str(bs) + "_r" + str(run)
-                        new_command = "%s %s %s %d %s %s" % (command,data,arch,bs,runid,testdir)
-                        new_command = "%s %s %s %d %s" % (command,data,arch,bs,runid)
-                        print(new_command)
-                        if(ready): os.system(new_command)
+try:
+    for command in commands:
+        for data in datasets:
+            for arch in architectures:
+                for bs in batches:
+                    for testdir in testdirs:
+                        for run in range(0,nruns):
+                            runid = "sopklot_" + arch + "_bs" + str(bs) + "_r" + str(run)
+                            execute =  "%s --data_dir=%s --arch=%s --bsize=%d --run_id=%s " % (command, data, arch, bs, runid)
+                            execute += "--width=%d --height=%d --test_dir=%s" % (width, height, testdir)
+                            print(execute)
+                            if(ready):
+                                try: 
+                                    os.system(execute)
+                                except:
+                                    continue
+except Exception as e:
+    print(e)
 
 """
-NOTE: Useful methods for generating the run ID
+NOTE: Useful methods for generating the run ID automatically
 
 did = data.split("\\") # data ID
 did.reverse()

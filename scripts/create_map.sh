@@ -2,7 +2,7 @@
 class=0
 
 # removes already existent files
-(rm train_map.txt && rm test_map.txt && train_test_map.txt) || continue
+(rm train_map.txt && rm test_map.txt && rm train_test_map.txt) || continue
 
 for dir in $1/*
 do	

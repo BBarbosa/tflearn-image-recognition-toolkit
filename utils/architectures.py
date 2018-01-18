@@ -94,24 +94,31 @@ def build_vgg16_ft(network, classes):
                                 learning_rate=0.001, restore=False)
     return network
 
-
 # vgg16 (light) 
 def build_myvgg16(network, classes):
+    network = conv_2d(network, 32, 3, activation='relu')
+    network = conv_2d(network, 32, 3, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    network = batch_normalization(network)
+
     network = conv_2d(network, 64, 3, activation='relu')
-    network = max_pool_2d(network, 2)
-    network = conv_2d(network, 128, 3, activation='relu')
-    network = max_pool_2d(network, 2)
-    network = conv_2d(network, 256, 3, activation='relu')
-    network = max_pool_2d(network, 2)
-    network = conv_2d(network, 512, 3, activation='relu')
-    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 64, 3, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    network = batch_normalization(network)
+
+    network = conv_2d(network, 96, 3, activation='relu')
+    network = conv_2d(network, 96, 3, activation='relu')
+    network = conv_2d(network, 96, 3, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    network = batch_normalization(network)
+
     network = fully_connected(network, 512, activation='relu')
     network = dropout(network, 0.5)
     network = fully_connected(network, 512, activation='relu')
     network = dropout(network, 0.5)
     network = fully_connected(network, classes, activation='softmax')
 
-    network = regression(network, optimizer='rmsprop', 
+    network = regression(network, optimizer='adam', 
                         loss='categorical_crossentropy', 
                         learning_rate=0.001)
     return network
@@ -163,10 +170,10 @@ def build_cifar10_mod(network, classes):
     network = max_pool_2d(network, 2)
     network = local_response_normalization(network)
     
-    network = fully_connected(network, 512, activation='relu') # 512
+    network = fully_connected(network, 512, activation='relu') 
     network = dropout(network, 0.5)
-    #network = fully_connected(network, 128, activation='relu') # 512
-    #network = dropout(network, 0.5) 
+    network = fully_connected(network, 256, activation='relu') 
+    network = dropout(network, 0.5) 
     network = fully_connected(network, classes, activation='softmax')
     
     network = regression(network, optimizer='adam', 
@@ -379,7 +386,6 @@ def build_mycifar_v5(network, classes):
                         loss='categorical_crossentropy', # loss='categorical_crossentropy'
                         learning_rate=0.00001)    # 0.0001
     return network
-
 
 # mycifar_v6
 def build_mycifar_v6(network, classes):
@@ -720,12 +726,12 @@ def build_1l_1f_5x5_fc50(network, classes):
                         learning_rate=0.0001)    # 0.00005
     return network
 
-# 2 conv layers network ------------------------------------------------------------------
+# //////////////////// 2 conv layers network ////////////////////
 def build_2l_8f_16f_5x5_fc512(network, classes):
     network = conv_2d(network, 8, 5, activation='relu', strides=2) 
     network = max_pool_2d(network, 2)
     network = conv_2d(network, 16, 5, activation='relu', strides=2)  
-    #network = max_pool_2d(network, 2)
+    network = max_pool_2d(network, 2)
     
     network = fully_connected(network, 512, activation='relu') 
     network = dropout(network, 0.5)
@@ -1262,26 +1268,26 @@ def build_all_cnn(network, classes):
     return network
 
 # alexnet
-def build_alex(network, classes):
-    network = conv_2d(network, 96, 11, strides=4, activation='relu')
-    network = max_pool_2d(network, 3, strides=2)
+def build_alex(network, nclasses):
+    network = conv_2d(network, nb_filters=96, filter_size=11, strides=4, activation='relu', padding='same')
+    network = max_pool_2d(network, kernel_size=3, strides=2)
     network = local_response_normalization(network)
     
-    network = conv_2d(network, 256, 5, activation='relu')
-    network = max_pool_2d(network, 3, strides=2)
+    network = conv_2d(network, nb_filters=256, filter_size=5, strides=1, activation='relu', padding='same')
+    network = max_pool_2d(network, kernel_size=3, strides=2)
     network = local_response_normalization(network)
     
-    network = conv_2d(network, 384, 3, activation='relu')
-    network = conv_2d(network, 384, 3, activation='relu')
-    network = conv_2d(network, 256, 3, activation='relu')
-    network = max_pool_2d(network, 3, strides=2)
+    network = conv_2d(network, nb_filters=384, filter_size=3, strides=1, activation='relu', padding='same')
+    network = conv_2d(network, nb_filters=384, filter_size=3, strides=1, activation='relu', padding='same')
+    network = conv_2d(network, nb_filters=256, filter_size=3, strides=1, activation='relu', padding='same')
+    network = max_pool_2d(network, kernel_size=3, strides=2)
     network = local_response_normalization(network)
     
-    network = fully_connected(network, 4096, activation='tanh')
-    network = dropout(network, 0.5)
-    network = fully_connected(network, 4096, activation='tanh')
-    network = dropout(network, 0.5)
-    network = fully_connected(network, classes, activation='softmax')
+    network = fully_connected(network, n_units=4096, activation='relu')
+    network = dropout(network, keep_prob=0.5)
+    network = fully_connected(network, n_units=4096, activation='relu')
+    network = dropout(network, keep_prob=0.5)
+    network = fully_connected(network, n_units=nclasses, activation='softmax')
     
     network = regression(network, optimizer='momentum', 
                         loss='categorical_crossentropy', 
@@ -1626,6 +1632,7 @@ def build_custom4(network, classes):
 
     network = regression(network, optimizer='adam', learning_rate=0.001, 
                         loss='categorical_crossentropy', name='target')
+    
     return network
 
 # lenet net
@@ -1777,8 +1784,6 @@ def build_upscore(network, classes):
                          learning_rate=0.001)
 
     return network
-
-
 
 # network visualizer
 def build_visualizer(network, classes):

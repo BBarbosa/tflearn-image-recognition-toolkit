@@ -36,7 +36,6 @@ title_fontsize = 23
 # data = [(x1,y1,z1),
 #         (x2,y2,z2),
 #             ...    ]
-
 # NOTE
 # len(data[0]) == number of columns
 # len(data)    == number of lines
@@ -55,7 +54,7 @@ colors = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),
 
 markers = [['rs-','ro--','r*--'],['gs-','go--','g*--'],['bs-','bo-','b*--'],['ys-']]
 
-line_width = [1.0,2.0,2.0]
+line_width = [1.0, 1.0, 2.0]
 
 # files ids
 ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
@@ -223,22 +222,22 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     """
 
     files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
-    bar_width = 2
     x = []
     
     print("Files in folder:\n",files)
-    labels = ['training (confidence >=75%)','validation (confidece >=75%)','validation']
+    
+    labels = ['train','val','test']
     ids = ['no criteria', 'w/ criteria']
+    markers = [['r:','r--','r-'],['g:','g--','g-']]
+    points = ['y*','b*']
+    usecols = [(1,3,5), (0,2,4)]
 
-    markers = [['r-','r-','r:'],['g-','g-','g:']]
-
-    i=0
-    for infile,color,rid in zip(files,colors,ids):
+    for i,infile in enumerate(files):
         print("Parsing file: " + infile)
         
         data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
-                             invalid_raise=invalid_raise,skip_header=skip_header,
-                             autostrip=autostrip,usecols=(0,1,2))
+                             invalid_raise=invalid_raise,skip_header=10,
+                             autostrip=autostrip,usecols=usecols[i])
         
         data_length = len(data)
         #x.append(data_length*5) 
@@ -250,27 +249,20 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
         ax = plt.subplot(111)
 
         for j,label in enumerate(data.dtype.names):
-            # markevery=5 markers[j][i]
-            plt.plot(x,data[label],markers[i][j],label=ids[i]+ " " + labels[j],lw=line_width[j])
+            plt.plot(x, data[label], markers[i][j], label=ids[i]+ " " + labels[j], lw=line_width[j])
+            if(j==2):
+                # testing max
+                max_test_acc = np.max(data[label]) # Find max peak
+                max_test_acc_index = 5*np.argmax(data[label]) # Find its location
+                plt.plot([max_test_acc_index], [max_test_acc], points[i], markersize=15)
 
-        #plt.plot(x,data[0],symbols[0],label=labels[0]) # training
-        #plt.plot(x,data[1],symbols[1],label=labels[1]) # validation >80
-        #plt.plot(x,data[2],symbols[2],label=labels[2]) # validation
-        
-        # bar chart
-        #ax.bar(data_length*5-bar_width/2, data[data.dtype.names[0]][data_length-1], 
-        #       width=bar_width,color=color[0],align='center',label=rid+data.dtype.names[0]) # train_acc
-        #
-        #ax.bar(data_length*5+bar_width/2, data[data.dtype.names[1]][data_length-1], 
-        #       width=bar_width,color=color[1],align='center',label=rid+data.dtype.names[1]) # test_acc
-
-        i += 1
+            
 
     ax = plt.subplot(111)
     ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
     ax.ticklabel_format(useOffset=False)
 
-    plt.title("Impact of using stop criteria\non %s dataset" % title,fontweight='bold',fontsize=title_fontsize)
+    plt.title("Impact of using stop criteria\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
     plt.legend(loc=0)
     plt.xlabel(xlabel,fontsize=label_fontsize)#,fontweight='bold')
     plt.ylabel(ylabel,fontsize=label_fontsize)#,fontweight='bold')
@@ -285,7 +277,7 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     plt.show()
 
 # plot info about the data of several .csv files
-def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=True, xlim=None, ylim=None):
     """
     Function that gathers many accuracy's files and shows how they
 
@@ -294,7 +286,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
         `extension` - files extension to use on glob
     
     Experiences:
-        100 runs experience
+        100 runs experience (learning consistency)
 
     """
     
@@ -329,7 +321,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
 
         index += 1
 
-    dataset_id = "Fabric"
+    dataset_id = "German Traffic Signs"
     boxprops = dict(linewidth=1)
 
     ax = plt.subplot(111)
@@ -346,6 +338,7 @@ def info_from_all_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,
     #plt.xticks(inds,inds)
     #plt.yticks(yticks,yticks)
     #if(xlim): plt.xlim(xlim)
+    plt.ylim((0,200))
     plt.grid(grid)
     plt.tight_layout()
     plt.savefig('%s_nepochs.pdf' % title,format='pdf',dpi=300)
@@ -503,8 +496,8 @@ Script definition
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("--function",required=True,help="plot function to be used (plot/parse/plots/info/acc/cmatrix)")
-parser.add_argument("--file",required=True,help="path to the file/folder")
+parser.add_argument("--function",required=True,help="<REQUIRED> plot function to be used (plot/parse/plots/info/acc/cmatrix)")
+parser.add_argument("--file",required=True,help="<REQUIRED> path to the file/folder")
 # optional arguments
 parser.add_argument("--title",help="plot's title (string)")
 parser.add_argument("--xlabel",help="plot's x-axis label (string)")
@@ -558,4 +551,4 @@ elif(args.function == "cmatrix"):
 
 
 else:
-    print("ERROR: Unknown function!")
+    print("[ERROR] Unknown function!")

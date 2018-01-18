@@ -11,13 +11,11 @@
 # ignore everything
 *
 
-# except the following
+# except ! the following
 
 !README.md
 !.gitignore
-!classify.py
-!classify_sw.py
-!classify_sv.py
+
 !training.py
 !retraining.py
 
@@ -27,16 +25,11 @@
 !scripts/
 !scripts/**
 
-#!logs/
-#!logs/**
-
-#!dataset/
-#!dataset/**
-
 !error/
 !error/**
 
 !visual.py
 !plot.py
+
 !testing.py
 !segmentation.py

@@ -17,9 +17,9 @@ for dirpaths, dirnames, filenames in os.walk(sys.argv[1]):
         
         destination = ""
         if(folder.lower() == "female"):
-            destination = ".\\dataset\\faces\\gender\\female\\"
+            destination = "./dataset/faces/gender/female/"
         elif(folder.lower() == "male"):
-            destination = ".\\dataset\\faces\\gender\\male\\"
+            destination = "./dataset/faces/gender/male/"
 
         for f in random.sample(filenames,3):
             source = os.path.join(dirpaths,f)

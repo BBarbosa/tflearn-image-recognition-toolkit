@@ -1,8 +1,9 @@
 # call example: 
 # $ python vertical_split.py filename.jpg
 # ----------------------------- 
+import os
+import sys
 from PIL import Image
-import sys,os
 
 from colorama import init
 from termcolor import colored
@@ -13,20 +14,20 @@ init()
 if(len(sys.argv) < 2):
     print(colored("Call: $ python scripts\\vertical_split.py {image}","yellow"))
     sys.exit(colored("ERROR: Not enough arguments!","yellow"))
-else:
-    # example: filename.jpg
-    fname        = os.path.splitext(sys.argv[1])[0]    # filename
-    extension    = os.path.splitext(sys.argv[1])[1]    # .jpg
 
-    img          = Image.open(sys.argv[1])               
-    width,height = img.size
+# example: filename.jpg
+fname        = os.path.splitext(sys.argv[1])[0]    # filename
+extension    = os.path.splitext(sys.argv[1])[1]    # .jpg
 
-    Wwidth = width // 2   # half width for vertical split
+img          = Image.open(sys.argv[1])               
+width,height = img.size
 
-    img2     = img.crop((0,0,Wwidth,height))
-    filename = "%s_train%s" % (fname,extension)  
-    img2.save(filename)
+Wwidth = width // 2   # half width for vertical split
 
-    img3     = img.crop((Wwidth,0,width,height))
-    filename = "%s_test%s" % (fname,extension)  
-    img3.save(filename)
+img2     = img.crop((0,0,Wwidth,height))
+filename = "%s_train%s" % (fname,extension)  
+img2.save(filename)
+
+img3     = img.crop((Wwidth,0,width,height))
+filename = "%s_test%s" % (fname,extension)  
+img3.save(filename)

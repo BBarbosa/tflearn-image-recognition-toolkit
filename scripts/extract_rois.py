@@ -2,7 +2,7 @@
 Python script to extract pre-defined polygon ROIs
 
 Author: Bruno Barbosa
-Date: 12-12-207
+Date: 12-12-2017
 
 TODO: add feature to load from camera
 """

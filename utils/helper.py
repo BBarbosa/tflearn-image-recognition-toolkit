@@ -59,8 +59,9 @@ def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None
 
 # /////////////////////// functions to deal with .csv files //////////////////////
 # function that creates a csv accuracy file
-def create_accuracy_csv_file(filename="accuracy.txt",testdir=None,traindir=None,vs=None,
-                             height=None,width=None,arch=None,bs=None,epochs=None,ec=None):
+def create_accuracy_csv_file(filename="accuracy.txt", testdir=None, traindir=None, vs=None,
+                             height=None, width=None, arch=None, bs=None, epochs=None, 
+                             ec=None, snap=None):
     """
     Function to create a accuracy .csv file.
 
@@ -71,25 +72,28 @@ def create_accuracy_csv_file(filename="accuracy.txt",testdir=None,traindir=None,
     fcsv = open(filename,"w+")
                 
     fcsv.write("################ TRAINING REPORT #################\n")
-    fcsv.write("# Images path   | %s\n"   % traindir)
-    fcsv.write("# Validation    | %.2f\n" % vs)
-    fcsv.write("# Height        | %d\n"   % height)
-    fcsv.write("# Width         | %d\n"   % width)
-    fcsv.write("# Architecure   | %s\n"   % arch)
-    fcsv.write("# Bacth Size    | %d\n"   % bs)
-    fcsv.write("# Max epochs    | %d\n"   % epochs)
-    fcsv.write("# Eval Criteria | %.2f\n" % ec)
+    fcsv.write("# Images path   | %s\n"      % traindir)
+    fcsv.write("# Validation    | %.2f\n"    % vs)
+    fcsv.write("# Images size   | (%d,%d)\n" % (height, width))
+    fcsv.write("# Architecure   | %s\n"      % arch)
+    fcsv.write("# Bacth Size    | %d\n"      % bs)
+    fcsv.write("# Snap/Epoch    | %d\n"      % snap)
+    fcsv.write("# Max epochs    | %d\n"      % epochs)
+    fcsv.write("# Eval Criteria | %.2f\n"    % ec)
     fcsv.write("##################################################\n")
     
+    """
     if(testdir is not None or True):
         fcsv.write("train,validation,test,min,time\n")
     else:
         fcsv.write("train,validation,time\n")
+    """
+    
     fcsv.close()
 
 # function to write accuracy on .csv file
-def write_accuracy_on_csv(filename="accuracy.txt",train_acc=None,val_acc=None,
-                          test_acc=None,min_acc=None,time=None,best=False):
+def write_accuracy_on_csv(filename="accuracy.txt", train_acc=None, val_acc=None,
+                          test_acc=None, min_acc=None, time=None, best=False):
     """
     Function to write accuracy values on a .csv formated file.
 
@@ -104,21 +108,34 @@ def write_accuracy_on_csv(filename="accuracy.txt",train_acc=None,val_acc=None,
 
     fcsv = open(filename,"a+")
     if(test_acc is not None):
-        if(best):
-            fcsv.write("%.2f,%.2f,%.2f,%.3f,best\n" % (train_acc,val_acc,test_acc,time))
-        else:
-            fcsv.write("%.2f,%.2f,%.2f,%.3f\n" % (train_acc,val_acc,test_acc,time))
+        fcsv.write("%.2f,%.2f,%.2f,%.3f,%s\n" % (train_acc, val_acc, test_acc, time, str(best)))
     else:
-        if(best):
-            fcsv.write("%.2f,%.2f,%.2f,best\n" % (train_acc,val_acc,time))
-        else:
-            fcsv.write("%.2f,%.2f,%.2f\n" % (train_acc,val_acc,time))
+        fcsv.write("%.2f,%.2f,%.2f,%s\n" % (train_acc, val_acc, time, str(best)))
+    
     fcsv.close()
 
+# function to write a string to a file
+def write_string_on_file(filename="accuracy.txt", line="", first=False):
+    """
+    Function to write a string on a file
+
+    Params:
+        `filename` - name/path to file
+        `line` - string to write on file
+        `first` - enable/disabke first write 
+    """
+
+    if(first):
+        fcsv = open(filename,"w+")
+    else:
+        fcsv = open(filename,"a+")
+
+    fcsv.write(line)
+    fcsv.close()
 
 # ////////////////////////// other auxiliary functions /////////////////////////
 # function to check stop criteria
-def check_stop_criteria(train_acc,val_acc,test_acc,maximum,no_progress,limit):
+def check_stop_criteria(train_acc, val_acc, test_acc, maximum, no_progress, limit):
     """
     Function to check the stop criteria.
 

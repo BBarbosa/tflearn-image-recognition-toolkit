@@ -1,6 +1,6 @@
 """
 Testing script for trained models
-Tensorflow & TFLearn
+Tensorflow and TFLearn
 """
 
 from __future__ import division, print_function, absolute_import
@@ -29,12 +29,14 @@ from termcolor import colored
 init()
 
 # argument parser
+custom_formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position=2000)
 parser = argparse.ArgumentParser(description="Testing script for CNNs.",
+                                 formatter_class=custom_formatter_class,
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("--data_dir", required=True, help="directory to the training data", type=str)
-parser.add_argument("--arch", required=True, help="architecture name", type=str)
-parser.add_argument("--model", required=True, help="run identifier (id) / model's path", type=str)
+parser.add_argument("--data_dir", required=True, help="<REQUIRED> directory to the training data", type=str)
+parser.add_argument("--arch", required=True, help="<REQUIRED> architecture name", type=str)
+parser.add_argument("--model", required=True, help="<REQUIRED> run identifier (id) / model's path", type=str)
 # optional arguments
 parser.add_argument("--test_dir", required=False, help="path to test images", type=str)
 parser.add_argument("--height", required=False, help="images height (default=64)", default=64, type=int)
@@ -50,23 +52,30 @@ args = parser.parse_args()
 print(args,"\n")
 
 # images properties
-HEIGHT = args.height
-WIDTH  = args.width
+HEIGHT   = args.height
+WIDTH    = args.width
 
 vs = 1    # percentage of data for validation (set manually)
 
 # load dataset and get image dimensions
-if(vs):
-    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH,
+try:
+    if(vs):
+        CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH,
                                                                                         shuffled=True, validation=vs,
                                                                                         mean=False, gray=args.gray)
-    classifier.HEIGHT   = HEIGHT
-    classifier.WIDTH    = WIDTH
-    classifier.IMAGE    = HEIGHT
-    classifier.CHANNELS = CHANNELS
-else:
-    CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, 
+        classifier.HEIGHT   = HEIGHT
+        classifier.WIDTH    = WIDTH
+        classifier.IMAGE    = HEIGHT
+        classifier.CHANNELS = CHANNELS
+    else:
+        CLASSES,X,Y,HEIGHT,WIDTH,CHANNELS,_,_,_,_= dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, 
                                                                             shuffled=True, gray=args.gray)
+except:
+    X = Y = Xv = Yv = None
+    CHANNELS = 3
+    CLASSES  = 2
+    print("[INFO] Loading files from index file")
+    pass
 
 # to load CIFAR-10 or MNIST dataset
 if(False):
@@ -124,11 +133,16 @@ print("[INFO] Model:", args.model)
 print("[INFO] Trained model loaded!\n")    
 
 # final evaluation with the best model
-stime = time.time()
-#train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
-val_acc  = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
-val_acc2 = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
-ftime = time.time() - stime
+if(Xv is not None):
+    stime = time.time()
+    #train_acc = classifier.my_evaluate(model,X,Y,batch_size=128,criteria=eval_criteria)
+    val_acc  = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=eval_criteria)
+    val_acc2 = classifier.my_evaluate(model,Xv,Yv,batch_size=128,criteria=0.1)
+    ftime = time.time() - stime
+else:
+    val_acc  = 0
+    val_acc2 = 0
+    ftime = 0
 
 # write accuracy's values on screen
 helper.print_accuracy(name="Final Eval", train_acc=None, val_acc=val_acc, test_acc=val_acc2, 
@@ -138,10 +152,13 @@ helper.print_accuracy(name="Final Eval", train_acc=None, val_acc=val_acc, test_a
 # NOTE: Turn to false when scheduling many trainings
 print(colored("[INFO] Showing dataset performance", "yellow"))
 
-# NOTE: Choose image set
-image_set = Xv
+# NOTE: Choose an image set
+if(Xv is not None):
+    image_set = Xv
+else:
+    image_set = glob.glob(args.data_dir + "*")
 
-len_is = len(image_set)     # lenght of test set
+len_is = len(image_set) # lenght of test set
 if(len_is < 1):
     sys.exit(colored("[INFO] Test set has no images!","yellow"))
 
@@ -157,30 +174,42 @@ if(cmatrix is not None):
 
 #for i in np.random.choice(np.arange(0, len_is), size=(20,)):
 for i in np.arange(0,len_is):
-    # classify the digit
-    probs = model.predict(image_set[np.newaxis, i])
+    # classify the image
+    if(Xv is None):
+        image = cv2.imread(image_set[i])
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, (HEIGHT, WIDTH))
+        image = np.reshape(image, (-1,HEIGHT,WIDTH,CHANNELS))
+        probs = model.predict(image)
+    else:
+        probs = model.predict(image_set[np.newaxis, i])
     probs = np.asarray(probs)
+    
     # sorted indexes by confidences 
     predictions = np.argsort(-probs,axis=1)[0]
     guesses = predictions[0:2]
+    
     # get best classification confidence
     ci = int(guesses[0])
     confidence = probs[0][ci]
-    true_label = np.argmax(Yv[i])
+    if(Yv is not None):
+        true_label = np.argmax(Yv[i])
+    
     # write on test confusion matrix
     if(cmatrix is not None):
         fcsv = open(cmatrix + "_test_cmatrix.txt","a+")
         fcsv.write("%d,%d\n" % (guesses[0],true_label))
+    
     # resize the image to 128 x 128
-    image = image_set[i]
+    #image = image_set[i]
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, (HEIGHT, WIDTH))
+    image = cv2.resize(image_set[i], (HEIGHT, WIDTH))
 
     # ///////////////// to separate images by its classes ///////////////// 
     if(separate):
         print("Predicted: {0}, Confidence: {1:3.2f}, Second guess: {2} ({3}/{4})".format(guesses[0],confidence,guesses[1],i+1,len_is))
         # NOTE: Expecting something like "./samples\\0.jpg"
-        current_image = filenames[i]
+        current_image = image_set[i]
         src = current_image
 
         dest_file = current_image.split("\\")
@@ -188,6 +217,7 @@ for i in np.arange(0,len_is):
         dest_file = dest_file[0]
 
         dest_folder = "./dataset/numbers/augmented_v7/" # NOTE: set manually by user
+        dest_folder = "E:/Testes/Bruno/BrunoTestesDeepLearning/ImagensEboosterParaTestes/Classificado/"
 
         # NOTE: move images by confirming them manually
         if(False):
@@ -212,7 +242,11 @@ for i in np.arange(0,len_is):
                 pass
         else:
             # NOTE: move files automatically
-            dest = dest_folder + str(guesses[0]) + "/_" + dest_file
+            if(confidence >= 0.75):
+                dest = dest_folder + str(guesses[0]) + "/" + dest_file
+            else:
+                dest = dest_folder + "2/" + dest_file
+            
             shutil.copy(src,dest)
     
     else:
