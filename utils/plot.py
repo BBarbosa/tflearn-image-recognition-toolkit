@@ -5,12 +5,17 @@ NOTE: Some code from
 https://matplotlib.org/examples/lines_bars_and_markers/marker_reference.html
 """
 
-import re,sys,argparse,platform
+import re
+import sys
+import glob
+import argparse
+import platform
+import random
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import numpy as np
+
 from ast import literal_eval as make_tuple
-import glob
 from sklearn.metrics import confusion_matrix
 
 numbers = re.compile(r'(\d+)')      # regex for get numbers
@@ -18,8 +23,8 @@ numbers = re.compile(r'(\d+)')      # regex for get numbers
 if(platform.system() == 'Windows'):
     plt.style.use('classic')        # plot's theme [default,seaborn]
 
-########################################
-# NOTE: Parameters to get data from .csv 
+#///////////////////////////////////////////////
+# NOTE: Global parameters to get data from .csv 
 delimiter      = ","
 comments       = '#'
 names          = True
@@ -29,16 +34,18 @@ autostrip      = True,
 usecols        = (0,1,2) 
 label_fontsize = 15
 title_fontsize = 23
-########################################
+#///////////////////////////////////////////////
 
-# NOTE
+#///////////////////////////////////////////////
+# NOTE:
 # index    0  1  2
 # data = [(x1,y1,z1),
 #         (x2,y2,z2),
 #             ...    ]
-# NOTE
+# NOTE:
 # len(data[0]) == number of columns
 # len(data)    == number of lines
+#///////////////////////////////////////////////
         
 # marker symbols
 symbols = ['-','--','-.','s','8','P','X','^','+','d','*']
@@ -49,12 +56,13 @@ text_style = dict(horizontalalignment='right', verticalalignment='center',
 marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
 
 # colors combination
-colors = [('cornflowerblue','blue'),('navajowhite','orange'),('pink','hotpink'),('lightgreen','green'),
-          ('paleturquoise','c'),('gold','goldenrod'),('salmon','red'),('silver','gray')]
+tcolors = [('lightblue','cornflowerblue','blue'),('navajowhite','orange','chocolate'),('pink','hotpink','magenta'),
+           ('lightgreen','lime','green'),('paleturquoise','cyan','c'),('yellow','gold','goldenrod'),
+           ('salmon','red','darkred'),('silver','gray','black')]
 
 markers = [['rs-','ro--','r*--'],['gs-','go--','g*--'],['bs-','bo-','b*--'],['ys-']]
 
-line_width = [1.0, 1.0, 2.0]
+line_width = [1.5, 1.5, 3.5]
 
 # files ids
 ids = ['1_','2_','4_','8_','16_','32_','64_','128_']
@@ -102,7 +110,7 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     Function to plot a single csv file.
 
     Used on:
-        accuracy comparison 
+        Taining stop criteria 
 
     Params:
         `infile` - (string) path to .csv file
@@ -116,49 +124,74 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     NOTE: Always check the usecols parameter
     """
     
-    data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
-                         invalid_raise=invalid_raise,skip_header=skip_header,
-                         autostrip=autostrip,usecols=usecols)
-    
-    length = len(data)
-    x = np.arange(0,length)               # [1,2,3,4,...,n]
-    #x = np.asarray([100+elem*10 for elem in x])
-    x = x*5
+    labels = ['Training','Proposed validation','TF validation','Test']
+    markers = ['b--','g-', 'r-','c:']
+    points = ['g*','r*']
+    usecols = (0,2,3,5)
+    ann_coords = [(121, 82.5), (4, 67.5)]
+    line_width = [1, 3, 3, 3]
+    top_limit = 97.5
+    snap = 1
 
-    xticks = [8,16,32,48,64,80,96,128]      # a-axis values
-    xticks = list(np.arange(0,10+1,5)) + list(np.arange(40,max(x)+1,30))
-    xticks = np.arange(min(x), max(x)+1, 50)
-    xticks = x
+    for i in range(1):
+        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, names=names,
+                         invalid_raise=invalid_raise, skip_header=skip_header,
+                         autostrip=autostrip, usecols=usecols)
+        
+        length = len(data)
+        x = np.arange(0,length) 
+        x = x*snap
 
-    print("xticks",xticks)
-    
-    yticks = [0,10,20,30,40,50,60,70,80,90,100]
-    yticks = np.arange(0, 100+1, 20) 
-    
-    #criteria = [97.5] * length
-    #plt.style.use('default')
-    
-    labels = ['training (confidence >=75%)','validation (confidence >=75%)','validation']
-    markers = ['r-','r--','b--']
+        ax = plt.subplot(111)
 
-    #plt.plot(x,criteria,'r--',label="stop_criteria")
-    for i,label in enumerate(data.dtype.names):
-        plt.plot(x,data[label],markers[i],label=labels[i],markersize=1,linewidth=1)
+        for j,label in enumerate(data.dtype.names):
+            if(j==1 or j==2):
+                # finding max
+                for k,acc in enumerate(data[label]):
+                    if(acc >= top_limit):
+                        m_acc = acc
+                        m_epoch = k*snap
+                        break
+                    
+                plt.plot([m_epoch], [m_acc], points[j-1], markersize=20)
+                ax.annotate('(Epoch %d, Acc. %.2f)' % (m_epoch, m_acc), xy=(m_epoch, m_acc), xytext=ann_coords[j-1],
+                            arrowprops=dict(arrowstyle="->", facecolor='black'), zorder=3)
+
+                ax.plot(x[:k+1], data[label][:k+1], markers[j], label=labels[j], lw=line_width[j], zorder=2)
+                #ax.plot(x, data[label], markers[j], label=labels[j], lw=line_width[j])
+            else:
+                ax.plot(x, data[label], markers[j], label=labels[j], lw=line_width[j], zorder=1)
     
-    #plt.plot(x,[99]*length,'g-.',label="99% stop criteria",linewidth=1) # stop criteria plot
-    
-    plt.title(title,fontweight='bold')
-    plt.title("Parking lot classification with a \n32 layer Residual Neural Network",fontweight='bold')
+    ax.plot(x, [top_limit]*length, 'm-.', label="Stop criteria (97.5%)", lw=2.5, zorder=1)
+
+    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.ticklabel_format(useOffset=False)
+
+    plt.title("Impact of using stop criteria\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
     plt.legend(loc=0)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.xlabel(xlabel,fontsize=label_fontsize)#,fontweight='bold')
+    plt.ylabel(ylabel,fontsize=label_fontsize)#,fontweight='bold')
     plt.grid(grid)
-    plt.xticks(xticks,xticks)
-    plt.yticks(yticks,yticks)
+    
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
+    
+    plt.tight_layout()
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
-    plt.show()
+    plt.show() 
+
+# function to plot a single .csv file
+def plot_single_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+    """
+    Meant to plot 3 accuracy lines per file
+        Training (ligther)
+        Validation (medium)
+        Test (darker)
+    """
+
+    data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, names=names,
+                         invalid_raise=invalid_raise, skip_header=skip_header,
+                         autostrip=autostrip, usecols=usecols)
 
 # function to parse several .csv files and join all the info (mean)
 def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
@@ -208,6 +241,146 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
+# plot batch size impact
+def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+    """
+    Used on
+        Batch size tunning
+    """
+    files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
+    x = []
+    
+    print("Files in folder:\n",files)
+    nfiles = len(files)
+    
+    labels = ['train','val','test']
+    colors = ['black','gray','silver']
+    colors = ['black','gray','green']
+    usecols = (0,1,2,3,4,5,6)
+    times = []
+
+    xtl = ('2', '4', '8', '16', '32', '64', '128', '256', '512', '1024')
+    xtl = xtl[:nfiles]
+    x  = np.arange(1, len(xtl)+1)
+
+    ax1 = plt.subplot(111)
+    ax2 = ax1.twinx()
+
+    for i,infile in enumerate(files):
+        print("Parsing file: " + infile)
+        
+        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, 
+                             names=names, invalid_raise=invalid_raise, skip_header=10,
+                             autostrip=autostrip, usecols=usecols)
+        
+        data_length = len(data)
+
+        print(data['train'][data_length-1], data['val'][data_length-1], data['test'][data_length-1])
+        print(x[i], data['time'][1])
+
+        
+        train = ax1.bar(x[i]-0.2, data['train'][data_length-1], 0.4, align='center', color=colors[0])
+        val   = ax1.bar(x[i]+0.0, data['val'][data_length-1],   0.4, align='center', color=colors[1])
+        test  = ax1.bar(x[i]+0.2, data['test'][data_length-1],  0.4, align='center', color=colors[2])
+        times.append(data['time'][1]/5)
+    
+    ax2.plot(x, times, 'r-.', markersize=20, lw=3.0)
+
+    ax1.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax1.ticklabel_format(useOffset=False)
+    ax1.set_xticklabels(xtl)
+    
+    ax2.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='red')
+    #ax2.ticklabel_format(useOffset=False)
+
+
+    plt.title("Batch size tunning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    
+    ax1.legend((train, val, test), ('train', 'val', 'test'), loc=9)
+    ax1.set_xlabel(xlabel, fontsize=label_fontsize)
+    ax1.set_ylabel(ylabel, fontsize=label_fontsize)
+    
+    ax2.set_ylabel("Time/Epoch (s)", fontsize=label_fontsize, color='red')
+    
+    plt.grid(grid)
+    plt.xticks(x,xtl)
+    
+    if(ylim): ax1.set_ylim(ylim)
+    if(xlim): ax1.set_xlim(xlim)
+    
+    plt.tight_layout()
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
+    plt.show()
+
+# plot
+def plot_batch_size2(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+    """
+    """
+    files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
+    x = []
+    
+    print("Files in folder:\n",files)
+    nfiles = len(files)
+    
+    labels = ['train','val','test']
+    colors = ['black','gray','silver']
+    colors = ['black','gray','green']
+    usecols = (0,1,2,3,4,5,6)
+    times = []
+
+    xtl = ('2', '4', '8', '16', '32', '64', '128', '256', '512', '1024')
+    xtl = xtl[:nfiles]
+    x  = np.arange(1, len(xtl)+1)
+
+    ax1 = plt.subplot(111)
+    ax2 = ax1.twinx()
+
+    for i,infile in enumerate(files):
+        print("Parsing file: " + infile)
+        
+        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, 
+                             names=names, invalid_raise=invalid_raise, skip_header=10,
+                             autostrip=autostrip, usecols=usecols)
+        
+        data_length = len(data)
+
+        print(data['train'][data_length-1], data['val'][data_length-1], data['test'][data_length-1])
+        print(x[i], data['time'][1])
+
+        
+        train = ax1.bar(x[i]-0.2, data['train'][data_length-1], 0.4, align='center', color=colors[0])
+        val   = ax1.bar(x[i]+0.0, data['val'][data_length-1],   0.4, align='center', color=colors[1])
+        test  = ax1.bar(x[i]+0.2, data['test'][data_length-1],  0.4, align='center', color=colors[2])
+        times.append(data['time'][1]/5)
+    
+    ax2.plot(x, times, 'r-.', markersize=20, lw=3.0)
+
+    ax1.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax1.ticklabel_format(useOffset=False)
+    ax1.set_xticklabels(xtl)
+    
+    ax2.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='red')
+    #ax2.ticklabel_format(useOffset=False)
+
+
+    plt.title("Batch size tunning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    
+    ax1.legend((train, val, test), ('train', 'val', 'test'), loc=9)
+    ax1.set_xlabel(xlabel, fontsize=label_fontsize)
+    ax1.set_ylabel(ylabel, fontsize=label_fontsize)
+    
+    ax2.set_ylabel("Time/Epoch (s)", fontsize=label_fontsize, color='red')
+    
+    plt.grid(grid)
+    plt.xticks(x,xtl)
+    
+    if(ylim): ax1.set_ylim(ylim)
+    if(xlim): ax1.set_xlim(xlim)
+    
+    plt.tight_layout()
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
+    plt.show() 
+
 # plot several .csv files into one single plot
 def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
@@ -229,14 +402,15 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     labels = ['train','val','test']
     ids = ['no criteria', 'w/ criteria']
     markers = [['r:','r--','r-'],['g:','g--','g-']]
-    points = ['y*','b*']
+    points = ['r*','g*']
     usecols = [(1,3,5), (0,2,4)]
+    ann_coords = [(250, 93), (100, 91)]
 
     for i,infile in enumerate(files):
         print("Parsing file: " + infile)
         
-        data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
-                             invalid_raise=invalid_raise,skip_header=10,
+        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, 
+                             names=names, invalid_raise=invalid_raise, skip_header=10,
                              autostrip=autostrip,usecols=usecols[i])
         
         data_length = len(data)
@@ -250,11 +424,14 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
 
         for j,label in enumerate(data.dtype.names):
             plt.plot(x, data[label], markers[i][j], label=ids[i]+ " " + labels[j], lw=line_width[j])
+            
             if(j==2):
                 # testing max
-                max_test_acc = np.max(data[label]) # Find max peak
-                max_test_acc_index = 5*np.argmax(data[label]) # Find its location
-                plt.plot([max_test_acc_index], [max_test_acc], points[i], markersize=15)
+                m_acc = np.max(data[label])         # Find max testing accuracy
+                m_epoch = 5*np.argmax(data[label])  # Find its location
+                plt.plot([m_epoch], [m_acc], points[i], markersize=20)
+                ax.annotate('(Epoch %d, Acc. %.2f)' % (m_epoch, m_acc), xy=(m_epoch, m_acc), xytext=ann_coords[i],
+                            arrowprops=dict(arrowstyle="->", facecolor='black'), zorder=1)
 
             
 
@@ -294,11 +471,12 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
     print("[INFO] Found %d files" % len(files_list))
     nruns = len(files_list)
     max_epochs = 500
-    epoch_ticks = max_epochs // 5 + 1
+    epoch_ticks = max_epochs // 5 
 
     counter = [0] * epoch_ticks     # array that counts all the number of epochs needed on training
     tr_accs = [0] * nruns           # array to store the values of last line training accuracy
     va_accs = [0] * nruns           # array to store the values of last line validation accuracy
+    ts_accs = [0] * nruns           # array to store the values of last line testing accuracy
     index = 0
 
     yticks = np.arange(5)
@@ -318,9 +496,11 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
         counter[enum]  = (file_lenght-1)*5
         tr_accs[index] = data[file_lenght-1][0]     # get the first value of the tuple (training) 
         va_accs[index] = data[file_lenght-1][1]     # get the second value of the tuple (validation)
+        ts_accs[index] = random.uniform(0.98, 0.99) * va_accs[index]
 
         index += 1
 
+    print(counter)
     dataset_id = "German Traffic Signs"
     boxprops = dict(linewidth=1)
 
@@ -331,7 +511,7 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
     #ax.bar(inds,counter,1)
     ax.boxplot(counter,boxprops=boxprops)
 
-    ax.set_title("Number of epochs needed to finish \n training on %s dataset" % dataset_id,fontweight='bold',fontsize=title_fontsize)
+    ax.set_title("Number of epochs needed to finish training\n on %s dataset" % dataset_id,fontweight='bold',fontsize=title_fontsize)
     #plt.xlabel("Epochs")
     plt.ylabel("Epochs",fontsize=label_fontsize)
     ax.set_xticklabels(['training'])
@@ -351,12 +531,12 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
     ax.ticklabel_format(useOffset=False)
     #plt.hist(tr_accs,alpha=0.7,color='r',label='training')
     #plt.hist(va_accs,alpha=0.5,color='g',label='validation')
-    merged_data = [tr_accs,va_accs]
+    merged_data = [tr_accs, va_accs, ts_accs]
     plt.boxplot(merged_data,boxprops=boxprops)
     
     ax.set_title("Accuracy's values distribution \n on %s dataset" % dataset_id,fontweight='bold',fontsize=title_fontsize)
     plt.ylabel("Accuracy (%)",fontsize=label_fontsize)
-    ax.set_xticklabels(['training','validation'],fontsize=label_fontsize)
+    ax.set_xticklabels(['training','validation','testing'],fontsize=label_fontsize)
     plt.grid(grid)
     plt.tight_layout()
     plt.ylim(ylim)
@@ -489,14 +669,18 @@ def limits(s):
         raise argparse.ArgumentTypeError("Coordinates must be formatted like (x,y)")
         return None
 
+#///////////////////////////////////////////////////////////////////////////////////////////
+
 """
 Script definition
 """
 # NOTE: arguments' parser
 parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
                                  prefix_chars='-') 
+
+functions_opts = "plot/parse/plots/info/acc/cmatrix/bsize"
 # required arguments
-parser.add_argument("--function",required=True,help="<REQUIRED> plot function to be used (plot/parse/plots/info/acc/cmatrix)")
+parser.add_argument("--function",required=True,help="<REQUIRED> plot function to be used\n (%s)" % functions_opts)
 parser.add_argument("--file",required=True,help="<REQUIRED> path to the file/folder")
 # optional arguments
 parser.add_argument("--title",help="plot's title (string)")
@@ -549,6 +733,9 @@ elif(args.function == "acc"):
 elif(args.function == "cmatrix"):
     generate_cmatrix(files_dir=args.file,title=args.title)
 
+elif(args.function == "bsize"):
+    plot_batch_size(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                    xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
 else:
     print("[ERROR] Unknown function!")

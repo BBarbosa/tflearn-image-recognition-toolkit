@@ -146,9 +146,5 @@ def check_stop_criteria(train_acc, val_acc, test_acc, maximum, no_progress, limi
         `maximum` - maximum accuracy stop criteria
         `limit` - stop criteria for no progress 
     """
-    if(test_acc is not None):
-        return ((train_acc > maximum and val_acc > maximum and test_acc > maximum) or no_progress >= limit)
-    else:
-        return ((train_acc > maximum and val_acc > maximum) or no_progress > limit)
     
-    return False
+    return val_acc >= maximum or no_progress > 100

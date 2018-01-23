@@ -143,16 +143,16 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
     # /////////////////////////// data augmentation process //////////////////////////////////
     if(len(data_aug) > 0):
 
-        max_rotates = 4  
-        max_angle   = 10
-        angle_step  = 90
+        max_rotates = 4     # max number of rotates
+        angle_step  = 90    # step for circular rotates
+        max_angle   = 10    # random rotate max angle
 
         # list of angles to rotate
         angle_list = np.linspace(0, 360, 360//angle_step, endpoint=False)
         angle_list = random.sample(range(-max_angle, max_angle), max_rotates)                        
 
-        flip = flop = rotate = allt = False # enable/disable rotation data augmentation
-        x_len = len(X) # total number of images
+        flip = flop = rotate = allt = False     # enable/disable rotation data augmentation
+        x_len = len(X)                          # total number of images
 
         # assert each 
         allt = any('all' in op.lower() for op in data_aug)
@@ -166,7 +166,7 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
         print("[INFO]          Flop:", flop or allt)
         print("[INFO]          Flip:", flip or allt)
         
-
+        # apply data-augmentation to all images
         for index in range(x_len):
             if(rotate or allt):
                 for angle in angle_list:
@@ -481,6 +481,7 @@ def convert_images_colorspace(images_array=None, fromc=None, convert_to=None):
     TODO: Add option from/to
     """
     new_images_array = images_array
+    nchannels = 3
 
     if(convert_to is not None):
         if(convert_to == 'HSV'):
@@ -489,6 +490,9 @@ def convert_images_colorspace(images_array=None, fromc=None, convert_to=None):
             ccode = cv2.COLOR_RGB2YCrCb
         elif(convert_to == 'YUV'):
             ccode = cv2.COLOR_RGB2YUV
+        elif(convert_to == 'Gray'):
+            ccode = cv2.COLOR_RGB2GRAY
+            nchannels = 1
         else:
             print(colored("[WARNING] Unknown colorspace %s! Returned original images." % convert_to, "yellow"))
             return images_array
@@ -501,7 +505,7 @@ def convert_images_colorspace(images_array=None, fromc=None, convert_to=None):
     else:
         print(colored("[WARNING] No colorspace selected! Returned original images.", "yellow"))
 
-    return new_images_array
+    return new_images_array, nchannels
 
 # funtion to load CIFAR-10 dataset
 def load_cifar10_dataset(data_dir=None):

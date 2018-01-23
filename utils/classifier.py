@@ -213,6 +213,70 @@ def my_evaluate(model, images_list, labels_list, batch_size=128, criteria=0.75, 
     
     return np.round(acc, 2), np.round(acc_nc, 2) 
 
+# similiar function to the TFlearn's Evaluate
+def my_evaluate2(model, images_list, labels_list, batch_size=128, criteria=0.75, X2=None):
+    """
+    Costumized evaluation function. Uses the confidence (%) criteria confidence as 
+    a constraint to confirm if that an image is correctly classified. Meant to
+    be used on images with the same dimensions as the training images.
+
+    Params:
+        `model` - network trained model
+        `images_list` - image set
+        `labels_list` - labels set 
+        `batch_size` - number  
+        `criteria` - minimum confindence to declare a good classification
+    
+    Return: Accuracy (in percentage)
+    """
+    length     = len(images_list)                           # length of images list
+    iterations = math.ceil(length/batch_size)               # counter of how many batches will be used
+    pointer = 0                                             # batch number pointer
+    labels_list = [np.argmax(elem) for elem in labels_list] # convert labels to a simpler representation
+    wp = 0                                                  # counter for well predicted images that respect criteria
+    wp_nc = 0                                               # counter for well predicted images  
+    counter = 0                                             # global counter 
+
+    # images and labels lists must have the same lenght
+    if(len(labels_list) != length): 
+        sys.exit(colored("[ERROR] Images and labels lists must have the same length!", "red"))
+
+    ctime = time.time()
+    for its in range(iterations):
+        sub_images_list = images_list[pointer:pointer+batch_size]   # get batch of images
+        sub_labels_list = labels_list[pointer:pointer+batch_size]   # get batch of labels
+
+        if(False):
+            # to use when there is more then one input layer
+            sub_x2 = X2[pointer:pointer+batch_size]
+            probs = model.predict([sub_images_list, sub_x2])  # make predictions
+        else:
+            probs = model.predict(sub_images_list)
+
+        # probabilities array and labels batch must have the same length
+        if(len(probs) != len(sub_labels_list)):
+            sys.exit(colored("[ERROR] Probs and sub labels lists must have the same length!", "red"))
+
+        for vals, classid in zip(probs, sub_labels_list):
+            index = np.argmax(vals)     # get the index of the most probable class
+            val = vals[index]           # get the confidence of the predicted class
+            if(index == classid):
+                wp_nc += 1
+                if(val >= criteria):
+                    wp += 1
+            counter += 1
+      
+        pointer += batch_size
+    ctime = time.time() - ctime
+    
+    if(counter != length):
+        sys.exit(colored("[ERROR] Counter and length must be equal!", "red"))
+    
+    acc    = wp / length * 100
+    acc_nc = wp_nc / length * 100
+    
+    return wp
+
 # function that classifies a image thorugh a sliding window
 def classify_sliding_window(model, images_list, labels_list, nclasses, runid=None, printout=True, criteria=0.75, X2=None):
     """

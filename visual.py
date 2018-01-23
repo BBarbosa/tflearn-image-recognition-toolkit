@@ -169,6 +169,7 @@ def convolve_filters(image,weights,max_filters=None,input_channel=0):
     # Ensure the plot is shown correctly with multiple plots
     # in a single Notebook cell.
     plt.show()
+    plt.waitforbuttonpress()
 
 # NOTE: Not working properly
 # nice image printer 
@@ -208,10 +209,10 @@ else:
 print("Operating System: %s\n" % OS)
 
 # NOTE: images properties 
-HEIGHT   = 64
-WIDTH    = 64
+HEIGHT   = 28
+WIDTH    = 28
 CHANNELS = 1
-CLASSES  = 11
+CLASSES  = 10
 
 #HEIGHT   = 240
 #WIDTH    = 320
@@ -244,7 +245,7 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],     # shape=[None,IM
 #print(in2.shape,"\n")
 #network = architectures.build_merge_test(network,in2,CLASSES)
 
-network,_ = architectures.build_network(arch,network,CLASSES)
+network,_ = architectures.build_network(arch,network, CLASSES, None)
 
 # model definition
 model = tflearn.DNN(network, checkpoint_path='models',

@@ -803,21 +803,6 @@ def build_2l_8f_16f_5x5_fc256_ns(network, classes):
                         learning_rate=0.001) # 0.001    
     return network
 
-def build_2l_16f_32f_5x5_fc256(network, classes):
-    network = conv_2d(network, 16, 5, activation='relu', strides=2) 
-    network = max_pool_2d(network, 2)
-    network = conv_2d(network, 32, 5, activation='relu', strides=2)  
-    #network = max_pool_2d(network, 2)
-    
-    network = fully_connected(network, 512, activation='relu') 
-    network = dropout(network, 0.75) 
-    network = fully_connected(network, classes, activation='softmax')
-
-    network = regression(network, optimizer='adam', 
-                        loss='categorical_crossentropy', 
-                        learning_rate=0.001) # 0.001    
-    return network
-
 def build_2l_32f_5x5_fc512(network, classes):
     network = conv_2d(network, 32, 5, activation='relu', strides=2) 
     network = max_pool_2d(network, 2)
@@ -1915,8 +1900,73 @@ def build_googlenet(network, classes):
     
     return network
 
+# ////////// learning rate //////////
+def buil_lrnet(network, classes, lr):
+    network = conv_2d(network, 32, 3, activation='relu', regularizer="L2")
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+    
+    network = conv_2d(network, 64, 3, activation='relu', regularizer="L2")
+    network = max_pool_2d(network, 2)
+    network = local_response_normalization(network)
+    
+    network = fully_connected(network, 256, activation='tanh')
+    network = dropout(network, 0.8)
+    network = fully_connected(network, 128, activation='tanh')
+    network = dropout(network, 0.8)
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', learning_rate=lr, 
+                        loss='categorical_crossentropy', name='target')
+    return network
+
+# /////// datasets ////////
+def build_kylberg(network, classes):
+    network = conv_2d(network, 8, 3, activation='relu') 
+    network = max_pool_2d(network, 2)
+
+    network = conv_2d(network, 16, 3, activation='relu')  
+    network = max_pool_2d(network, 2)
+    
+    network = conv_2d(network, 24, 3, activation='relu')  
+    network = max_pool_2d(network, 2)
+
+    network = fully_connected(network, 128, activation='relu') 
+    network = dropout(network, 0.5)
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)   
+    return network
+
+def build_digits(network, classes):
+    network = conv_2d(network, 16, 3, activation='relu', regularizer=None)
+    network = max_pool_2d(network, 2)
+    network = batch_normalization(network)
+
+    network = conv_2d(network, 32, 3, activation='relu', regularizer=None)
+    network = max_pool_2d(network, 2)
+    network = batch_normalization(network)
+    
+    network = conv_2d(network, 64, 3, activation='relu', regularizer=None)
+    network = max_pool_2d(network, 2)
+    network = batch_normalization(network)
+    
+    network = fully_connected(network, 256, activation='relu')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, 128, activation='relu')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', learning_rate=0.001, 
+                        loss='categorical_crossentropy', name='target')
+    return network
+
+
+
 # network builder function
-def build_network(name, network, classes):
+def build_network(name, network, classes, lr):
     """
     Function to create a network topology/architecture.
     """
@@ -2032,6 +2082,13 @@ def build_network(name, network, classes):
     elif(name == "fcn"):           network = build_fcn_all(network, classes)
     elif(name == "autoencoder"):   network = build_autoencoder(network, classes)
     elif(name == "segnet"):        network = build_segnet(network)
+
+    # //////// learning rate ////////
+    elif(name == "lrnet"):         network = buil_lrnet(network, classes, lr)
+
+    elif(name == "kylberg"):       network = build_kylberg(network, classes)
+    elif(name == "digits"):        network = build_digits(network, classes)
+
     
     else: sys.exit(colored("ERROR: Unknown architecture!", "red"))
 

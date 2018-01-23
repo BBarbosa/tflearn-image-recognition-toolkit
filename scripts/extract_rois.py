@@ -27,55 +27,61 @@ def create_rois(file=None):
 
     points = np.ndarray(shape=(NPOLY, 4), dtype=object)
     
-    points[0,0] = (3,180) #
-    points[0,1] = (103,180)
-    points[0,2] = (103,222)
-    points[0,3] = (3,222)
-    points[1,0] = (103,180) #
-    points[1,1] = (203,180)
-    points[1,2] = (203,222)
-    points[1,3] = (103,222)
-    points[2,0] = (203,180) #
-    points[2,1] = (303,180)
-    points[2,2] = (303,222)
-    points[2,3] = (203,222)
-    points[3,0] = (303,180) #
-    points[3,1] = (403,180)
-    points[3,2] = (403,222)
-    points[3,3] = (303,222)
-    points[4,0] = (403,180) #
-    points[4,1] = (503,180)
-    points[4,2] = (503,222)
-    points[4,3] = (403,222)
-    points[5,0] = (503,180) # 
-    points[5,1] = (603,180)
-    points[5,2] = (603,222)
-    points[5,3] = (503,222)
+    points[0][0] = (3,180) #
+    points[0][1] = (103,180)
+    points[0][2] = (103,222)
+    points[0][3] = (3,222)
+    points[1][0] = (103,180) #
+    points[1][1] = (203,180)
+    points[1][2] = (203,222)
+    points[1][3] = (103,222)
+    points[2][0] = (203,180) #
+    points[2][1] = (303,180)
+    points[2][2] = (303,222)
+    points[2][3] = (203,222)
+    points[3][0] = (303,180) #
+    points[3][1] = (403,180)
+    points[3][2] = (403,222)
+    points[3][3] = (303,222)
+    points[4][0] = (403,180) #
+    points[4][1] = (503,180)
+    points[4][2] = (503,222)
+    points[4][3] = (403,222)
+    points[5][0] = (503,180) # 
+    points[5][1] = (603,180)
+    points[5][2] = (603,222)
+    points[5][3] = (503,222)
 
-    points[6][0]  = (points[0][0][0],points[0][0][1]+offset)
-    points[6][1]  = (points[0][1][0],points[0][1][1]+offset)
-    points[6][2]  = (points[0][2][0],points[0][2][1]+offset)
-    points[6][3]  = (points[0][3][0],points[0][3][1]+offset)
-    points[7][0]  = (points[1][0][0],points[1][0][1]+offset)
-    points[7][1]  = (points[1][1][0],points[1][1][1]+offset)
-    points[7][2]  = (points[1][2][0],points[1][2][1]+offset)
-    points[7][3]  = (points[1][3][0],points[1][3][1]+offset)
-    points[8][0]  = (points[2][0][0],points[2][0][1]+offset)
-    points[8][1]  = (points[2][1][0],points[2][1][1]+offset)
-    points[8][2]  = (points[2][2][0],points[2][2][1]+offset)
-    points[8][3]  = (points[2][3][0],points[2][3][1]+offset)
-    points[9][0]  = (points[3][0][0],points[3][0][1]+offset)
-    points[9][1]  = (points[3][1][0],points[3][1][1]+offset)
-    points[9][2]  = (points[3][2][0],points[3][2][1]+offset)
-    points[9][3]  = (points[3][3][0],points[3][3][1]+offset)
-    points[10][0] = (points[4][0][0],points[4][0][1]+offset)
-    points[10][1] = (points[4][1][0],points[4][1][1]+offset)
-    points[10][2] = (points[4][2][0],points[4][2][1]+offset)
-    points[10][3] = (points[4][3][0],points[4][3][1]+offset)
-    points[11][0] = (points[5][0][0],points[5][0][1]+offset)
-    points[11][1] = (points[5][1][0],points[5][1][1]+offset)
-    points[11][2] = (points[5][2][0],points[5][2][1]+offset)
-    points[11][3] = (points[5][3][0],points[5][3][1]+offset)
+    points[6][0]  = (points[0][0][0], points[0][0][1]+offset)
+    points[6][1]  = (points[0][1][0], points[0][1][1]+offset)
+    points[6][2]  = (points[0][2][0], points[0][2][1]+offset)
+    points[6][3]  = (points[0][3][0], points[0][3][1]+offset)
+    points[7][0]  = (points[1][0][0], points[1][0][1]+offset)
+    points[7][1]  = (points[1][1][0], points[1][1][1]+offset)
+    points[7][2]  = (points[1][2][0], points[1][2][1]+offset)
+    points[7][3]  = (points[1][3][0], points[1][3][1]+offset)
+    points[8][0]  = (points[2][0][0], points[2][0][1]+offset)
+    points[8][1]  = (points[2][1][0], points[2][1][1]+offset)
+    points[8][2]  = (points[2][2][0], points[2][2][1]+offset)
+    points[8][3]  = (points[2][3][0], points[2][3][1]+offset)
+    points[9][0]  = (points[3][0][0], points[3][0][1]+offset)
+    points[9][1]  = (points[3][1][0], points[3][1][1]+offset)
+    points[9][2]  = (points[3][2][0], points[3][2][1]+offset)
+    points[9][3]  = (points[3][3][0], points[3][3][1]+offset)
+    points[10][0] = (points[4][0][0], points[4][0][1]+offset)
+    points[10][1] = (points[4][1][0], points[4][1][1]+offset)
+    points[10][2] = (points[4][2][0], points[4][2][1]+offset)
+    points[10][3] = (points[4][3][0], points[4][3][1]+offset)
+    points[11][0] = (points[5][0][0], points[5][0][1]+offset)
+    points[11][1] = (points[5][1][0], points[5][1][1]+offset)
+    points[11][2] = (points[5][2][0], points[5][2][1]+offset)
+    points[11][3] = (points[5][3][0], points[5][3][1]+offset)
+
+    new_offset = 120
+    for i in range(NPOLY):
+        for j in range(4):
+            points[i][j] = (points[i][j][0], (points[i][j][1]) + new_offset)
+
 
     return points
 
@@ -115,7 +121,7 @@ def iterate_over_slots(image, save, imageID, show=False, delay=100):
         
         # save extracted ROI
         if(save):
-            cv2.imwrite('./temp/%d.jpg' % imageID, roi)
+            cv2.imwrite('./temp/%d%d-s%d.jpg' % (imageID,imageID,slot), roi)
 
         # check if key was pressed
         key = cv2.waitKey(delay)
