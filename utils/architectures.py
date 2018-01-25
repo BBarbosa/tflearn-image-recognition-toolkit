@@ -619,9 +619,9 @@ def build_1l_8f_5x5_fc50(network, classes):
     network = dropout(network, 0.75) 
     network = fully_connected(network, classes, activation='softmax')
 
-    network = regression(network, optimizer='adam', # 'adam', 
-                        loss='categorical_crossentropy', # loss='categorical_crossentropy'
-                        learning_rate=0.0001)    # 0.00005
+    network = regression(network, optimizer='adam',  
+                        loss='categorical_crossentropy', 
+                        learning_rate=0.0001)    
     return network
 
 def build_1l_4f_5x5_fc50(network, classes):
@@ -1920,7 +1920,7 @@ def buil_lrnet(network, classes, lr):
                         loss='categorical_crossentropy', name='target')
     return network
 
-# /////// datasets ////////
+# //////////////////// datasets ////////////////////
 def build_kylberg(network, classes):
     network = conv_2d(network, 8, 3, activation='relu') 
     network = max_pool_2d(network, 2)
@@ -1940,6 +1940,7 @@ def build_kylberg(network, classes):
                          learning_rate=0.001)   
     return network
 
+# digits
 def build_digits(network, classes):
     network = conv_2d(network, 16, 3, activation='relu', regularizer=None)
     network = max_pool_2d(network, 2)
@@ -1963,10 +1964,114 @@ def build_digits(network, classes):
                         loss='categorical_crossentropy', name='target')
     return network
 
+# fabric
+def build_fabric(network, classes, lr=0.0001):
+    network = conv_2d(network, 8, 5, activation='relu', strides=4)
+    network = max_pool_2d(network, 2) 
+    
+    network = fully_connected(network, 50, activation='relu') 
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam',  
+                        loss='categorical_crossentropy', 
+                        learning_rate=lr)    
+    return network
+
+# --- GTSD ---
+def build_gtsd(network, classes):
+    network = conv_2d(network, 32, 3, activation='relu') 
+    network = max_pool_2d(network, 2)
+    network = conv_2d(network, 64, 3, activation='relu') 
+    network = conv_2d(network, 64, 3, activation='relu') 
+    network = max_pool_2d(network, 2)
+    
+    network = fully_connected(network, 512, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    return network
+
+def build_gtsd_1layer(network, classes, nfilters):
+    nfilters = int(nfilters)
+    
+    network = conv_2d(network, nfilters, 3, activation='relu')
+    network = max_pool_2d(network, 2) 
+
+    network = fully_connected(network, 256, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    return network
+
+# 2 layer network
+def build_gtsd_2layer(network, classes, nfilters):
+    nfilters = int(nfilters)
+    
+    network = conv_2d(network, nfilters, 3, activation='relu')
+    network = max_pool_2d(network, 2)
+
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = max_pool_2d(network, 2)  
+
+    network = fully_connected(network, 256, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    return network
+
+def build_gtsd_3layer(network, classes, nfilters):
+    nfilters = int(nfilters)
+    
+    network = conv_2d(network, nfilters, 3, activation='relu')
+    network = max_pool_2d(network, 2)
+
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = max_pool_2d(network, 2)  
+
+    network = fully_connected(network, 256, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    return network
+
+def build_gtsd_4layer(network, classes, nfilters):
+    nfilters = int(nfilters)
+    
+    network = conv_2d(network, nfilters, 3, activation='relu')
+    network = conv_2d(network, nfilters, 3, activation='relu')
+    network = max_pool_2d(network, 2)
+
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = max_pool_2d(network, 2)  
+
+    network = fully_connected(network, 256, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    return network
 
 
+# ///////////////////////////////////////////////////////////////////////////////////////////
 # network builder function
-def build_network(name, network, classes, lr):
+def build_network(name, network, classes, param):
     """
     Function to create a network topology/architecture.
     """
@@ -2083,11 +2188,15 @@ def build_network(name, network, classes, lr):
     elif(name == "autoencoder"):   network = build_autoencoder(network, classes)
     elif(name == "segnet"):        network = build_segnet(network)
 
-    # //////// learning rate ////////
-    elif(name == "lrnet"):         network = buil_lrnet(network, classes, lr)
+    # ////////////////////////////// dissertation //////////////////////////////
+    elif(name == "lrnet"):         network = buil_lrnet(network, classes, param)
 
     elif(name == "kylberg"):       network = build_kylberg(network, classes)
     elif(name == "digits"):        network = build_digits(network, classes)
+    elif(name == "fabric"):        network = build_fabric(network, classes, param)
+    elif(name == "gtsd"):          network = build_gtsd(network, classes)
+    elif(name == "gtsd_1l"):       network = build_gtsd_1layer(network, classes, param)
+    elif(name == "gtsd_2l"):       network = build_gtsd_2layer(network, classes, param)
 
     
     else: sys.exit(colored("ERROR: Unknown architecture!", "red"))

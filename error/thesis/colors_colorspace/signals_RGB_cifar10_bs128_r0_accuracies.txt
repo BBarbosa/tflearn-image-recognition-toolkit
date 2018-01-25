@@ -1,0 +1,15 @@
+################ TRAINING REPORT #################
+# Images path   | ./dataset/signals/train/
+# Validation    | 0.30
+# Images size   | (32,32)
+# Architecure   | cifar10
+# Bacth Size    | 128
+# Snap/Epoch    | 5
+# Max epochs    | 1000
+# Eval Criteria | 0.75
+##################################################
+train,trainNC,val,valNC,test,testNC,time,new_best
+0.00,2.46,0.00,2.67,0.00,2.47,0.00,True
+99.91,99.97,95.11,96.86,85.72,88.78,130.40,True
+99.90,99.96,95.55,97.15,86.77,89.31,255.20,True
+99.85,99.94,95.13,96.51,87.40,89.58,380.97,True

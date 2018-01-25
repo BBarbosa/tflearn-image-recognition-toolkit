@@ -15,6 +15,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tflearn
 import tensorflow as tf
 
+import tflearn.helpers.summarizer as s  
 from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
@@ -49,8 +50,8 @@ parser.add_argument("--pproc", required=False, help="enable/disable pre-processi
 parser.add_argument("--aug", required=False, nargs="+", help="enable data augmentation (default=[])", default=[])
 parser.add_argument("--n_epochs", required=False, help="maximum number of training epochs (default=1000)", default=1000, type=int)
 parser.add_argument("--eval_crit", required=False, help="classification confidence threshold (default=0.75)", default=0.75, type=float)
-parser.add_argument("--lr", required=False, help="training learning rate (default=0.001)", default=0.001, type=float)
 parser.add_argument("--cspace", required=False, help="convert images color space (default=None)", default=None, type=str)
+parser.add_argument("--param", required=False, help="versatile extra parameter (default=None)", default=None)
 
 # parse arguments
 args = parser.parse_args()
@@ -106,13 +107,16 @@ if(args.cspace is not None):
     Xv, CHANNELS = dataset.convert_images_colorspace(images_array=Xv, fromc=None, convert_to=args.cspace)
     if(args.test_dir is not None):
         Xt, CHANNELS = dataset.convert_images_colorspace(images_array=Xt, fromc=None, convert_to=args.cspace)
+    
+    classifier.CHANNELS = CHANNELS
 
 # Real-time data preprocessing (samplewise or featurewise)
 img_prep = None
 if(args.pproc):
     img_prep = ImagePreprocessing()
     img_prep.add_samplewise_zero_center()
-    img_prep.add_samplewise_stdnorm()      
+    img_prep.add_samplewise_stdnorm() 
+    img_prep.add_crop_center(shape=(HEIGHT, WIDTH))     
     #img_prep.add_zca_whitening()
 
 # Real-time data augmentation
@@ -130,7 +134,8 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None, IM
                      data_augmentation=None)                   # NOTE: always check DA
 
 # build network architecture
-network, _ = architectures.build_network(args.arch, network, CLASSES, args.lr)
+network, _ = architectures.build_network(name=args.arch, network=network, classes=CLASSES, 
+                                         param=args.param)
 
 # model definition
 model = tflearn.DNN(network, checkpoint_path="./models/%s" % args.run_id, tensorboard_dir="./logs/", 
@@ -138,18 +143,16 @@ model = tflearn.DNN(network, checkpoint_path="./models/%s" % args.run_id, tensor
                     best_checkpoint_path=None)
 
 # training parameters
-iterations = args.n_epochs // args.snap # number of iterations (or evaluations)
-use_criteria = True                     # use stop criteria
+iterations = args.n_epochs // args.snap     # number of iterations (or evaluations)
+use_criteria = True                         # use stop criteria
 
-best_val_acc = 0        # best validation accuracy
-best_val_acc_nc = 0     # best validation accuracy
-best_test_acc = 0       # best test accuracy
-best_test_acc_nc = 0    # best test accuracy
+best_val_acc     = 0    # best validation accuracy (75% confidence)
+best_test_acc    = 0    # best test accuracy (normal)
 
-no_progress = 0         # counter of how many snapshots without learning process
-iteration_time = 0      # time between each snapshot
-total_training_time = 0 # total training time
-top_limit = 97.5
+no_progress         = 0     # counter of how many snapshots without learning process
+iteration_time      = 0     # time between each snapshot
+total_training_time = 0     # total training time
+top_limit           = 97.5  # stop criteria validation accuracy threshold (got to argparse?)
 
 no_criteria_flag = False
 
@@ -199,7 +202,7 @@ try:
             print(colored("[INFO] Best trained model saved!\n", "yellow"))
             new_best = True
         else:
-            no_progress += 1
+            no_progress += args.snap
             new_best = False
 
         # write to a .csv file the evaluation accuracy
@@ -214,8 +217,10 @@ try:
                               min_acc=min_acc, time=total_training_time, ctime=ftime)
         
         # NOTE: stop criteria check - accuracy AND no progress
-        if(use_criteria and helper.check_stop_criteria(train_acc, val_acc, test_acc, 97.5, no_progress, 50//args.snap)): break
+        # NOTE: change to a callback
+        if(use_criteria and helper.check_stop_criteria(val_acc=val_acc, maximum=97.5, no_progress=no_progress, limit=20*args.snap)): break
         if(use_criteria and False):
+            # NOTE: for stop criteria experience
             if(val_acc_nc >= top_limit and not no_criteria_flag):
                 print(colored("[INFO] NO_CRITERIA: Saving new best trained  model soo far...", "yellow"))
                 modelname = "./models/nc_%s.tflearn" % args.run_id

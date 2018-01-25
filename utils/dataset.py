@@ -20,7 +20,7 @@ from tflearn.data_utils import shuffle, build_image_dataset_from_dir, image_prel
 from PIL import Image
 from colorama import init
 from termcolor import colored
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
 try:
     import scipy.ndimage
@@ -205,23 +205,33 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
         print("[INFO]       Classes:", classes)
 
         # show data distribution
-        if(save_dd):
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            indices = np.arange(len(counts))
-            rects = plt.bar(indices, counts)
-            plt.xlabel("Class")
-            plt.xticks(indices)
-            plt.ylabel("Count")
+        if(save_dd or False):
+            ax = plt.subplot(111)
+            indices = range(len(counts))
+            indices_str = [str(ind) for ind in indices]
+            ax.bar(indices, counts, align='center')
+            
             image_title = train_path.split("\\")
             image_title.reverse()
             image_title = image_title[1]
-            plt.title("Images distribution per class (%s)" % train_path, fontweight='bold')
+            plt.title("Images distribution per class %s" % train_path, fontweight='bold')
+            plt.title("Images per class distribution on\n%s" % "German Traffic Signs dataset", fontweight='bold', fontsize=23)
 
             for i, v in enumerate(counts):
-                ax.text(i - 0.25, v+1, str(v))
-    
-            plt.savefig("%s.png" % image_title, dpi=300, format='png')
+                ax.text((i - 0.4), (v+30), str(v), rotation=60)
+
+            plt.xticks(indices, indices_str)
+            plt.grid(True)
+
+            ax.set_xticklabels(indices_str)
+            ax.tick_params(axis='both', which='major', labelsize=10)
+            ax.set_xlabel("Class", fontsize=15)
+            ax.set_ylabel("Counts", fontsize=15)
+
+            plt.tight_layout()
+            plt.savefig("%s.pdf" % image_title, dpi=300, format='pdf')
+            plt.waitforbuttonpress()
+            plt.show()
 
         Xtr = []
         Xte = []

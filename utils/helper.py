@@ -135,7 +135,7 @@ def write_string_on_file(filename="accuracy.txt", line="", first=False):
 
 # ////////////////////////// other auxiliary functions /////////////////////////
 # function to check stop criteria
-def check_stop_criteria(train_acc, val_acc, test_acc, maximum, no_progress, limit):
+def check_stop_criteria(val_acc, no_progress, limit, train_acc=None, test_acc=None, maximum=97.5):
     """
     Function to check the stop criteria.
 
@@ -147,4 +147,4 @@ def check_stop_criteria(train_acc, val_acc, test_acc, maximum, no_progress, limi
         `limit` - stop criteria for no progress 
     """
     
-    return val_acc >= maximum or no_progress > 100
+    return val_acc >= maximum or no_progress > limit

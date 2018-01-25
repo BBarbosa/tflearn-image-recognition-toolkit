@@ -56,9 +56,14 @@ text_style = dict(horizontalalignment='right', verticalalignment='center',
 marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
 
 # colors combination
-tcolors = [('lightblue','cornflowerblue','blue'),('navajowhite','orange','chocolate'),('pink','hotpink','magenta'),
-           ('lightgreen','lime','green'),('paleturquoise','cyan','c'),('yellow','gold','goldenrod'),
-           ('salmon','red','darkred'),('silver','gray','black')]
+three_colors = [('lightblue''cornflowerblue','blue'), ('navajowhite','orange','chocolate'),
+                ('lightgreen','lime','green'),('paleturquoise','cyan','c'),('yellow','gold','goldenrod'),
+                ('salmon','red','darkred'),('silver','gray','black'), ('pink','hotpink','magenta')]
+
+two_colors = [('blue','cornflowerblue'),('darkgoldenrod','gold'),('green','lawngreen'),
+              ('gray','black'),('red','lightsalmon'),('c','paleturquoise'), 
+              ('hotpink', 'pink'), ('darkorange','sandybrown')]
+
 
 markers = [['rs-','ro--','r*--'],['gs-','go--','g*--'],['bs-','bo-','b*--'],['ys-']]
 
@@ -105,7 +110,7 @@ def plot_accuracies(x,y,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,
     plt.show()
 
 # function to plot one .csv file
-def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+def plot_csv_file(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Function to plot a single csv file.
 
@@ -127,16 +132,17 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     labels = ['Training','Proposed validation','TF validation','Test']
     markers = ['b--','g-', 'r-','c:']
     points = ['g*','r*']
-    usecols = (0,2,3,5)
+    usecols = (1,2,3,5)
+    ann_coords = [(40, 93), (30, 91)]
     ann_coords = [(121, 82.5), (4, 67.5)]
     line_width = [1, 3, 3, 3]
     top_limit = 97.5
     snap = 1
 
     for i in range(1):
-        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, names=names,
-                         invalid_raise=invalid_raise, skip_header=skip_header,
-                         autostrip=autostrip, usecols=usecols)
+        data = np.genfromtxt(files_dir, delimiter=delimiter, comments=comments, names=names,
+                             invalid_raise=invalid_raise, skip_header=skip_header,
+                             autostrip=autostrip, usecols=usecols)
         
         length = len(data)
         x = np.arange(0,length) 
@@ -158,7 +164,6 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
                             arrowprops=dict(arrowstyle="->", facecolor='black'), zorder=3)
 
                 ax.plot(x[:k+1], data[label][:k+1], markers[j], label=labels[j], lw=line_width[j], zorder=2)
-                #ax.plot(x, data[label], markers[j], label=labels[j], lw=line_width[j])
             else:
                 ax.plot(x, data[label], markers[j], label=labels[j], lw=line_width[j], zorder=1)
     
@@ -169,8 +174,8 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
 
     plt.title("Impact of using stop criteria\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
     plt.legend(loc=0)
-    plt.xlabel(xlabel,fontsize=label_fontsize)#,fontweight='bold')
-    plt.ylabel(ylabel,fontsize=label_fontsize)#,fontweight='bold')
+    plt.xlabel(xlabel,fontsize=label_fontsize)
+    plt.ylabel(ylabel,fontsize=label_fontsize)
     plt.grid(grid)
     
     if(ylim): plt.ylim(ylim)
@@ -181,17 +186,73 @@ def plot_csv_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None
     plt.show() 
 
 # function to plot a single .csv file
-def plot_single_file(infile,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+def plot_lrate_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     Meant to plot 3 accuracy lines per file
         Training (ligther)
         Validation (medium)
         Test (darker)
+    
+    EDIT
+    Plot validation accuracy line for each file
+
     """
 
-    data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, names=names,
-                         invalid_raise=invalid_raise, skip_header=skip_header,
-                         autostrip=autostrip, usecols=usecols)
+    lrates = [' 0.0001 ',
+              ' 0.001   ',
+              ' 0.01     ',
+              ' 0.1       ',
+              ' 1e-05   ']
+    
+    labels = ['Training''Proposed validation','TF validation','Test']
+    labels = ['Validation','Test']
+    
+    usecols = (1,2,3,5)
+    usecols = (2,5)
+    
+    line_width = [1, 3, 3, 2]
+    line_width = [4, 2.5]
+    
+    top_limit = 97.5
+    snap = 5
+
+    files_list = glob.glob(files_dir + "*.txt")
+    print(files_list)
+    nfiles = len(files_list)
+
+    ax = plt.subplot(111)
+
+    for i,filen in enumerate(files_list):
+        data = np.genfromtxt(filen, delimiter=delimiter, comments=comments, names=names,
+                             invalid_raise=invalid_raise, skip_header=skip_header,
+                             autostrip=autostrip, usecols=usecols)
+    
+        length = len(data)
+        x = np.arange(0,length) 
+        x = x*snap
+
+        for j,label in enumerate(data.dtype.names):
+            ax.plot(x, data[label], color=two_colors[i][j], linestyle='-', label="LR" + lrates[i] + labels[j], lw=line_width[j], zorder=2)
+    
+    
+    ax.plot(x, [top_limit]*length, 'm-.', label="Stop criteria (97.5%)", lw=2.5, zorder=1)
+
+    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.ticklabel_format(useOffset=False)
+
+    plt.title("Learning rate tuning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    plt.legend(loc=0)
+    plt.legend(loc='best')# bbox_to_anchor=(1, 0.5))
+    plt.xlabel(xlabel,fontsize=label_fontsize)
+    plt.ylabel(ylabel,fontsize=label_fontsize)
+    plt.grid(grid)
+    
+    if(ylim): plt.ylim(ylim)
+    if(xlim): plt.xlim(xlim)
+    
+    #plt.tight_layout()
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
+    plt.show()
 
 # function to parse several .csv files and join all the info (mean)
 def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
@@ -293,8 +354,7 @@ def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     ax2.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='red')
     #ax2.ticklabel_format(useOffset=False)
 
-
-    plt.title("Batch size tunning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    plt.title("Batch size tuning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
     
     ax1.legend((train, val, test), ('train', 'val', 'test'), loc=9)
     ax1.set_xlabel(xlabel, fontsize=label_fontsize)
@@ -711,7 +771,7 @@ if(args.title == None):
     
 if(args.function == "plot"):
     #args.title = parts[0].split(".")[0]   # new_title = 'mynet_r0_acc'    
-    plot_csv_file(infile=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+    plot_csv_file(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                   xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
 elif(args.function == "parse"):
@@ -736,6 +796,11 @@ elif(args.function == "cmatrix"):
 elif(args.function == "bsize"):
     plot_batch_size(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+elif(args.function == "lrate"):
+    plot_lrate_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
 
 else:
     print("[ERROR] Unknown function!")

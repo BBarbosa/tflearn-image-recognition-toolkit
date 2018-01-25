@@ -1,7 +1,7 @@
 """
 NOTE: 
-* Make sure that there isn't any other instace of TensorFlow running
-  before calling this script
+* Make sure that there isn't any other instace of TensorFlow 
+  running before calling this script
 
 * Check if test mode on training.py is not activated
 
@@ -23,13 +23,14 @@ datasets = ["./dataset/signals/train/"]
 
 testdirs = ["./dataset/signals/test/"] 
 
-architectures = ["cifar10"]
+architectures = ["gtsd_1l"]
 
 batches = [64]
 
-learning_rates = [0.1]
+params = [128, 64, 32, 16, 8, 4]
 
 cspaces = ["RGB", "HSV", "YCrCb", "Gray"]
+cspaces = [""]
 
 snap = 5
 
@@ -43,18 +44,19 @@ try:
             for arch in architectures:
                 for bs in batches:
                     for testdir in testdirs:
-                        for cs in cspaces:
-                            for run in range(0,nruns):
-                                runid = "signals_" + cs + "_" + arch + "_bs" + str(bs) + "_r" + str(run)
-                                execute =  "%s --data_dir=%s --arch=%s --bsize=%d --run_id=%s " % (command, data, arch, bs, runid)
-                                execute += "--width=%d --height=%d --test_dir=%s --cspace=%s " % (width, height, testdir, cs)
-                                execute += "--snap=%d" % snap
-                                print(execute)
-                                if(ready):
-                                    try: 
-                                        os.system(execute)
-                                    except:
-                                        continue
+                        for p in params:
+                            for cs in cspaces:
+                                for run in range(0,nruns):
+                                    runid = arch + "_" + str(p) + "f_fc256_bs" + str(bs) + "_r" + str(run)
+                                    execute =  "%s --data_dir=%s --arch=%s --bsize=%d --run_id=%s " % (command, data, arch, bs, runid)
+                                    execute += "--width=%d --height=%d --test_dir=%s " % (width, height, testdir)
+                                    execute += "--param=%d" % p
+                                    print(execute)
+                                    if(ready):
+                                        try: 
+                                            os.system(execute)
+                                        except:
+                                            continue
 except Exception as e:
     print(e)
 
