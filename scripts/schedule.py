@@ -23,11 +23,11 @@ datasets = ["./dataset/signals/train/"]
 
 testdirs = ["./dataset/signals/test/"] 
 
-architectures = ["gtsd_1l"]
+architectures = ["gtsd_1l", "gtsd_2l", "gtsd_3l"]
 
 batches = [64]
 
-params = [128, 64, 32, 16, 8, 4]
+params = ['02', '01']
 
 cspaces = ["RGB", "HSV", "YCrCb", "Gray"]
 cspaces = [""]
@@ -50,7 +50,7 @@ try:
                                     runid = arch + "_" + str(p) + "f_fc256_bs" + str(bs) + "_r" + str(run)
                                     execute =  "%s --data_dir=%s --arch=%s --bsize=%d --run_id=%s " % (command, data, arch, bs, runid)
                                     execute += "--width=%d --height=%d --test_dir=%s " % (width, height, testdir)
-                                    execute += "--param=%d" % p
+                                    execute += "--param=%s" % p
                                     print(execute)
                                     if(ready):
                                         try: 

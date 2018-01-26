@@ -60,7 +60,7 @@ def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None
 # /////////////////////// functions to deal with .csv files //////////////////////
 # function that creates a csv accuracy file
 def create_accuracy_csv_file(filename="accuracy.txt", testdir=None, traindir=None, vs=None,
-                             height=None, width=None, arch=None, bs=None, epochs=None, 
+                             height=None, width=None, ch=None, arch=None, bs=None, epochs=None, 
                              ec=None, snap=None):
     """
     Function to create a accuracy .csv file.
@@ -74,7 +74,7 @@ def create_accuracy_csv_file(filename="accuracy.txt", testdir=None, traindir=Non
     fcsv.write("################ TRAINING REPORT #################\n")
     fcsv.write("# Images path   | %s\n"      % traindir)
     fcsv.write("# Validation    | %.2f\n"    % vs)
-    fcsv.write("# Images size   | (%d,%d)\n" % (height, width))
+    fcsv.write("# Images size   | (%d,%d,%d)\n" % (height, width,ch))
     fcsv.write("# Architecure   | %s\n"      % arch)
     fcsv.write("# Bacth Size    | %d\n"      % bs)
     fcsv.write("# Snap/Epoch    | %d\n"      % snap)

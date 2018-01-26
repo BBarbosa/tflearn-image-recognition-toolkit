@@ -14,6 +14,8 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.markers as mk 
+from matplotlib.pyplot import cm 
 
 from ast import literal_eval as make_tuple
 from sklearn.metrics import confusion_matrix
@@ -42,7 +44,7 @@ title_fontsize = 23
 # data = [(x1,y1,z1),
 #         (x2,y2,z2),
 #             ...    ]
-# NOTE:
+#
 # len(data[0]) == number of columns
 # len(data)    == number of lines
 #///////////////////////////////////////////////
@@ -66,6 +68,8 @@ two_colors = [('blue','cornflowerblue'),('darkgoldenrod','gold'),('green','lawng
 
 
 markers = [['rs-','ro--','r*--'],['gs-','go--','g*--'],['bs-','bo-','b*--'],['ys-']]
+
+marks = ['.']
 
 line_width = [1.5, 1.5, 3.5]
 
@@ -115,7 +119,7 @@ def plot_csv_file(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     Function to plot a single csv file.
 
     Used on:
-        Taining stop criteria 
+        * Taining stop criteria 
 
     Params:
         `infile` - (string) path to .csv file
@@ -188,23 +192,23 @@ def plot_csv_file(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
 # function to plot a single .csv file
 def plot_lrate_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
-    Meant to plot 3 accuracy lines per file
-        Training (ligther)
+    Meant to plot 2 accuracy lines per file
         Validation (medium)
         Test (darker)
     
-    EDIT
-    Plot validation accuracy line for each file
+    Plot validation and test accuracy lines for each file
 
+    Used on:
+        * Learning rate tune
     """
 
-    lrates = [' 0.0001 ',
-              ' 0.001   ',
-              ' 0.01     ',
-              ' 0.1       ',
-              ' 1e-05   ']
+    labels_id = [' 0.0001 ',
+                 ' 0.001   ',
+                 ' 0.01     ',
+                 ' 0.1       ',
+                 ' 1e-05   ']
     
-    labels = ['Training''Proposed validation','TF validation','Test']
+    labels = ['Training','Proposed validation','TF validation','Test']
     labels = ['Validation','Test']
     
     usecols = (1,2,3,5)
@@ -219,6 +223,7 @@ def plot_lrate_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xli
     files_list = glob.glob(files_dir + "*.txt")
     print(files_list)
     nfiles = len(files_list)
+    max_length = 0
 
     ax = plt.subplot(111)
 
@@ -228,19 +233,24 @@ def plot_lrate_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xli
                              autostrip=autostrip, usecols=usecols)
     
         length = len(data)
+        if (length > max_length): max_length = length
         x = np.arange(0,length) 
         x = x*snap
 
         for j,label in enumerate(data.dtype.names):
-            ax.plot(x, data[label], color=two_colors[i][j], linestyle='-', label="LR" + lrates[i] + labels[j], lw=line_width[j], zorder=2)
+            current_label = "LR" + labels_id[i] + labels[j]
+            ax.plot(x, data[label], color=two_colors[i][j], linestyle='-', 
+                    label=current_label, lw=line_width[j], zorder=2)
     
-    
-    ax.plot(x, [top_limit]*length, 'm-.', label="Stop criteria (97.5%)", lw=2.5, zorder=1)
+    # stop criteria line
+    x = np.arange(0,max_length) * snap
+    ax.plot(x, [top_limit]*max_length, 'm-.', label="Stop criteria (97.5%)", lw=2.5, zorder=1)
 
     ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
     ax.ticklabel_format(useOffset=False)
 
-    plt.title("Learning rate tuning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    experience = "Learning rate tuning"
+    plt.title("%s\non %s dataset" % (experience,title), fontweight='bold', fontsize=title_fontsize)
     plt.legend(loc=0)
     plt.legend(loc='best')# bbox_to_anchor=(1, 0.5))
     plt.xlabel(xlabel,fontsize=label_fontsize)
@@ -250,7 +260,98 @@ def plot_lrate_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xli
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
     
-    #plt.tight_layout()
+    plt.tight_layout()
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
+    plt.show()
+
+# net tuning
+def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+    """
+    Meant to plot 2 accuracy lines per file
+        Validation (medium)
+        Test (darker)
+    
+    Plot validation and test accuracy lines for each file
+
+    Used on:
+        * Network tunning
+
+    """
+    usecols = (1,2,5)
+    usecols = (5)
+
+    files_list = glob.glob(files_dir + "*.txt")
+    print(files_list)
+    nfiles = len(files_list)
+    max_length = 0
+    x = np.arange(0,nfiles) 
+
+    ax = plt.subplot(111)
+
+    my_marker = ['o', '^', 's', '*', 'p', 'D', 'h']
+
+    list_of_colors = cm.rainbow(np.linspace(0,1,nfiles))
+    
+    for i,filen in enumerate(files_list):
+        data = np.genfromtxt(filen, delimiter=delimiter, comments=comments, names=names,
+                             invalid_raise=invalid_raise, skip_header=skip_header,
+                             autostrip=autostrip, usecols=usecols)
+    
+        length = len(data)
+        if (length > max_length): max_length = length
+
+        # ///////////////////////////////////////////
+        # assuming filen in format '.\path\to\files\gtsd_3l_08f_fc256_bs64_r0_accuraccies.txt'
+        # parts = filen.split('\\') ->  0   1   2              3
+        # parts.reverse() -----> ['gtsd_3l_08f_fc256_bs64_r0_accuraccies.txt', 'files', ...]
+        # parts[0].split('_') ->     0  1   2    3     4
+        parts = filen.split('\\')
+        parts.reverse()
+        parts = parts[0].split('_')
+        nlayers = int(parts[1][:len(parts[1])-1])  # -> 3
+        nfilters = int(parts[2][:len(parts[2])-1]) # -> 8 
+        # ///////////////////////////////////////////
+
+        for j,label in enumerate(data.dtype.names):
+            # finding max
+            current_max = 0
+            for k,acc in enumerate(data[label]):
+                if(acc >= current_max):
+                    m_acc = acc
+            
+            current_label = "%dL %d" % (nlayers, nfilters)
+            for nl in range(nlayers-1):
+                if(nl < nlayers//2 - 1):
+                    current_label += ",%d" % (nfilters)
+                else:
+                    current_label += ",%d" % (nfilters*2)
+            current_label += " F"
+
+            #ax.plot(x[i], m_acc, color=list_of_colors[i], marker='o', zorder=2, 
+            #        label=current_label, markersize=13)
+
+            ax.scatter(x[i], m_acc, c=list_of_colors[i], s=100, label=current_label, 
+                       edgecolors='k', marker=my_marker[j])
+
+            # vertical line
+            if(i % 7 == 0 and i>0):
+                plt.axvline(x=x[i]-0.5, linestyle=":", lw=1.5)
+    
+    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.ticklabel_format(useOffset=False)
+    ax.get_xaxis().set_ticks([])
+
+    experience = "Network tuning"
+    plt.title("%s\non %s dataset" % (experience,title), fontweight='bold', fontsize=title_fontsize)
+    plt.legend(loc="lower center", ncol=4, scatterpoints=1)
+    plt.xlabel(xlabel,fontsize=label_fontsize)
+    plt.ylabel(ylabel,fontsize=label_fontsize)
+    plt.grid(grid)
+    
+    if(ylim): plt.ylim(ylim)
+    if(xlim): plt.xlim(xlim)
+    
+    #plt.tight_layout(pad=1.08)
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
@@ -305,8 +406,8 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
 # plot batch size impact
 def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
-    Used on
-        Batch size tunning
+    Used on:
+        * Batch size tunning
     """
     files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
     x = []
@@ -800,6 +901,10 @@ elif(args.function == "bsize"):
 elif(args.function == "lrate"):
     plot_lrate_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                      xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+elif(args.function == "ntune"):
+    plot_net_tune(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                  xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
 
 else:

@@ -1900,6 +1900,10 @@ def build_googlenet(network, classes):
     
     return network
 
+# /////////////////////////////////////////////////////////////////////////
+# /////////////////////////////////////////////////////////////////////////
+# /////////////////////////////////////////////////////////////////////////
+
 # ////////// learning rate //////////
 def buil_lrnet(network, classes, lr):
     network = conv_2d(network, 32, 3, activation='relu', regularizer="L2")
@@ -2029,6 +2033,7 @@ def build_gtsd_2layer(network, classes, nfilters):
                          learning_rate=0.001)
     return network
 
+# layer network
 def build_gtsd_3layer(network, classes, nfilters):
     nfilters = int(nfilters)
     
@@ -2068,6 +2073,85 @@ def build_gtsd_4layer(network, classes, nfilters):
                          learning_rate=0.001)
     return network
 
+# dynamic network VGG style
+def build_dynamic(network, classes, depth, norm=0):
+    depth = int(depth)
+    
+    fsize = 5
+    nfc_layers = 1
+    fc_units = 512
+
+    b_norm = True 
+    lr_norm = True and not b_norm
+
+    # ////////// feature extraction //////////
+    for i in range(depth):
+        nfilters = 2 ** (i+4) # first = 16
+        for j in range(i+1):
+            network = conv_2d(network, nfilters//2, 1, activation='relu')
+            network = conv_2d(network, nfilters, fsize, activation='relu')
+        
+        if(i < 2):
+            network = max_pool_2d(network, 2)
+        if(b_norm):
+            network = batch_normalization(network)
+        if(lr_norm):
+            network = local_response_normalization(network)
+    
+    # ////////// classification //////////
+    network = flatten(network)
+
+    network = fully_connected(network, fc_units, activation='relu')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, fc_units//2, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    return network
+
+
+def my_inception_module(network, nfilters):
+    # 1x1 inception
+    conv_1x1 = conv_2d(network, nfilters//2, 1, activation='relu')
+    # 3x3 inception
+    conv_3x3 = conv_2d(network, nfilters//2, 1, activation='relu')
+    conv_3x3 = conv_2d(conv_3x3, nfilters, 3, activation='relu')
+    # 5x5 inception
+    conv_5x5 = conv_2d(network, nfilters//2, 1, activation='relu')
+    conv_5x5 = conv_2d(conv_5x5, nfilters, 5, activation='relu')
+    # overlaping max pooling (stride=1 -> no reduction)
+    mp_3x3 = max_pool_2d(network, kernel_size=3, strides=1)
+    mp_3x3 = conv_2d(mp_3x3, nfilters//2, 1, activation='relu')
+    # merge all branches
+    inception = merge([conv_1x1, conv_3x3, conv_5x5, mp_3x3], axis=3, mode='concat')
+
+    return inception
+
+def build_my_inception_net(network, classes, depth):
+    depth = int(depth)
+    filter_sizes = [32, 64, 64]
+    filter_sizes = [32, 64, 96, 128]
+
+    for i in range(depth):
+        network = my_inception_module(network, filter_sizes[i])
+
+        if(i < 2):
+            network = max_pool_2d(network, 2)
+    
+    network = tflearn.global_avg_pool(network)
+    network = dropout(network, 0.5)
+    
+    network = fully_connected(network, classes, activation='softmax')
+    
+    # momentum
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    
+    return network
 
 # ///////////////////////////////////////////////////////////////////////////////////////////
 # network builder function
@@ -2197,6 +2281,11 @@ def build_network(name, network, classes, param):
     elif(name == "gtsd"):          network = build_gtsd(network, classes)
     elif(name == "gtsd_1l"):       network = build_gtsd_1layer(network, classes, param)
     elif(name == "gtsd_2l"):       network = build_gtsd_2layer(network, classes, param)
+    elif(name == "gtsd_3l"):       network = build_gtsd_3layer(network, classes, param)
+    elif(name == "gtsd_4l"):       network = build_gtsd_4layer(network, classes, param)
+
+    elif(name == "dynamic"):       network = build_dynamic(network, classes, param)
+    elif(name == "inception"):     network = build_my_inception_net(network, classes, param)
 
     
     else: sys.exit(colored("ERROR: Unknown architecture!", "red"))

@@ -152,7 +152,7 @@ best_test_acc    = 0    # best test accuracy (normal)
 no_progress         = 0     # counter of how many snapshots without learning process
 iteration_time      = 0     # time between each snapshot
 total_training_time = 0     # total training time
-top_limit           = 97.5  # stop criteria validation accuracy threshold (got to argparse?)
+top_limit           = 98.5  # stop criteria validation accuracy threshold (got to argparse?)
 
 no_criteria_flag = False
 
@@ -218,7 +218,7 @@ try:
         
         # NOTE: stop criteria check - accuracy AND no progress
         # NOTE: change to a callback
-        if(use_criteria and helper.check_stop_criteria(val_acc=val_acc, maximum=97.5, no_progress=no_progress, limit=20*args.snap)): break
+        if(use_criteria and helper.check_stop_criteria(val_acc=val_acc, maximum=98.5, no_progress=no_progress, limit=20*args.snap)): break
         if(use_criteria and False):
             # NOTE: for stop criteria experience
             if(val_acc_nc >= top_limit and not no_criteria_flag):
@@ -302,6 +302,9 @@ helper.print_accuracy(name="Final Eval", train_acc=train_acc, val_acc=val_acc, t
 # NOTE: Turn show_image to FALSE when scheduling many trainings
 classifier.test_model_accuracy(model=model, image_set=Xv, label_set=Yv, eval_criteria=args.eval_crit, 
                                show_image=False, cmatrix=None)
+
+out = model.evaluate(Xt, Yt)
+print(out)
 
 # sound a beep to notify that the training ended
 print(colored("[INFO] Training complete!\a","green"))
