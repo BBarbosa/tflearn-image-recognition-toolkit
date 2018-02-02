@@ -1,0 +1,16 @@
+################ TRAINING REPORT #################
+# Images path   | ./dataset/fabric/side64/training/
+# Validation    | 0.30
+# Images shape  | (64,64,3)
+# Architecure   | gtsd_2l
+# Batch size    | 64
+# Snap/Epoch    | 5
+# Max epochs    | 1000
+# Eval criteria | 0.75
+##################################################
+train,trainNC,val,valNC,test,testNC,time,new_best
+0.00,16.76,0.00,16.02,0.00,17.32,0.00,True
+84.85,88.93,84.70,87.16,83.98,90.04,8.35,True
+98.76,99.94,93.07,99.28,97.40,100.00,15.41,True
+100.00,100.00,99.57,99.86,99.13,100.00,22.36,True
+100.00,100.00,99.57,99.86,99.13,100.00,22.36,True

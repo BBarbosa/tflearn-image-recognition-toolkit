@@ -66,23 +66,22 @@ WIDTH  = args.width
 # load dataset and get image dimensions
 if(args.val_set):
     CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, shuffled=True, 
-                                                                                        validation=args.val_set, mean=False, 
-                                                                                        gray=args.gray, save_dd=False, data_aug=args.aug)
+                                                                                        validation=args.val_set, gray=args.gray,
+                                                                                        save_dd=False, data_aug=args.aug)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, _, _, _, _= dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, 
-                                                                                     shuffled=True, save_dd=False,
-                                                                                     data_aug=args.aug)
+    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, _, _, _, _= dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, shuffled=True,
+                                                                                     save_dd=False, data_aug=args.aug)
     Xv = Yv = []
 
 # load test images
 if(args.test_dir is not None):
     _, Xt, Yt, _, _, _, _, _, _, _ = dataset.load_dataset_windows(args.test_dir, HEIGHT, WIDTH, shuffled=True, mean=False, 
                                                                   gray=args.gray, save_dd=True, data_aug=args.aug)
-""" """
+ 
 
 # to load CIFAR-10 dataset or MNIST
 if(False):
@@ -163,8 +162,8 @@ helper.print_net_parameters(bs=args.bsize, vs=args.val_set, epochs=args.n_epochs
 # creates a new accuracies file.csv
 csv_filename = "%s_accuracies.txt" % args.run_id
 helper.create_accuracy_csv_file(filename=csv_filename, testdir=args.test_dir, traindir=args.data_dir, 
-                                vs=args.val_set, height=HEIGHT, width=WIDTH, arch=args.arch, bs=args.bsize, 
-                                epochs=args.n_epochs, ec=args.eval_crit, snap=args.snap)
+                                vs=args.val_set, height=HEIGHT, width=WIDTH, ch=CHANNELS, arch=args.arch, 
+                                bs=args.bsize, epochs=args.n_epochs, ec=args.eval_crit, snap=args.snap)
 line = "train,trainNC,val,valNC,test,testNC,time,new_best\n"
 helper.write_string_on_file(filename=csv_filename, line=line, first=False)
 
@@ -206,8 +205,6 @@ try:
             new_best = False
 
         # write to a .csv file the evaluation accuracy
-        #helper.write_accuracy_on_csv(filename=csv_filename, train_acc=train_acc, val_acc=val_acc, test_acc=test_acc, 
-        #                             min_acc=min_acc, time=total_training_time, best=new_best)
         line  = "%3.2f,%3.2f,%3.2f,%3.2f," % (train_acc, train_acc_nc, val_acc, val_acc_nc)
         line += "%3.2f,%3.2f,%3.2f," % (test_acc, test_acc_nc, total_training_time) + str(new_best) + "\n"
         helper.write_string_on_file(filename=csv_filename, line=line)
@@ -218,7 +215,7 @@ try:
         
         # NOTE: stop criteria check - accuracy AND no progress
         # NOTE: change to a callback
-        if(use_criteria and helper.check_stop_criteria(val_acc=val_acc, maximum=98.5, no_progress=no_progress, limit=20*args.snap)): break
+        if(use_criteria and helper.check_stop_criteria(val_acc=val_acc, maximum=99.5, no_progress=no_progress, limit=20*args.snap)): break
         if(use_criteria and False):
             # NOTE: for stop criteria experience
             if(val_acc_nc >= top_limit and not no_criteria_flag):
@@ -289,8 +286,6 @@ if(args.test_dir is not None):
 ftime = time.time() - stime
 
 # write to a .csv file the evaluation accuracy
-#helper.write_accuracy_on_csv(filename=csv_filename, train_acc=train_acc, val_acc=val_acc, 
-#                             test_acc=test_acc, min_acc=min_acc, time=total_training_time)
 line  = "%3.2f,%3.2f,%3.2f,%3.2f," % (train_acc, train_acc_nc, val_acc, val_acc_nc)
 line += "%3.2f,%3.2f,%3.2f," % (test_acc, test_acc_nc, total_training_time) + str(new_best) + "\n"
 helper.write_string_on_file(filename=csv_filename, line=line)
@@ -299,12 +294,17 @@ helper.write_string_on_file(filename=csv_filename, line=line)
 helper.print_accuracy(name="Final Eval", train_acc=train_acc, val_acc=val_acc, test_acc=test_acc, 
                       min_acc=min_acc, time=None, ctime=ftime, color="green")
 
+helper.print_memory_usage()
+
 # NOTE: Turn show_image to FALSE when scheduling many trainings
 classifier.test_model_accuracy(model=model, image_set=Xv, label_set=Yv, eval_criteria=args.eval_crit, 
                                show_image=False, cmatrix=None)
 
-out = model.evaluate(Xt, Yt)
-print(out)
+#try:
+#    out = model.evaluate(Xt, Yt)
+#    print(out)
+#except Exception as e:
+#    print(e)
 
 # sound a beep to notify that the training ended
 print(colored("[INFO] Training complete!\a","green"))

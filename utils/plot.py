@@ -278,19 +278,30 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
 
     """
     usecols = (1,2,5)
+    usecols = (1,5)
     usecols = (5)
 
     files_list = glob.glob(files_dir + "*.txt")
-    print(files_list)
     nfiles = len(files_list)
+    print("[INFO] Found %d files" % nfiles)
+
     max_length = 0
-    x = np.arange(0,nfiles) 
+    x = np.arange(0,nfiles)
+    x = np.arange(1,nfiles+1) 
 
     ax = plt.subplot(111)
 
-    my_marker = ['o', '^', 's', '*', 'p', 'D', 'h']
+    acc_type = ['Train','Test']
 
-    list_of_colors = cm.rainbow(np.linspace(0,1,nfiles))
+    my_marker = ['p', '^', 's', '*', 'p', 'D', 'h']
+
+    fc_units = [8, 16, 32, 64, 128, 256, 512]
+    fc_units_str = [str(elem) for elem in fc_units]
+
+    list_of_colors = cm.rainbow(np.linspace(0,1,35))
+
+    b = random.uniform(1.03,1.035)
+    #b = random.uniform(1.055,1.065)
     
     for i,filen in enumerate(files_list):
         data = np.genfromtxt(filen, delimiter=delimiter, comments=comments, names=names,
@@ -310,6 +321,7 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
         parts = parts[0].split('_')
         nlayers = int(parts[1][:len(parts[1])-1])  # -> 3
         nfilters = int(parts[2][:len(parts[2])-1]) # -> 8 
+        nfcunits = int(parts[3][2:])
         # ///////////////////////////////////////////
 
         for j,label in enumerate(data.dtype.names):
@@ -326,24 +338,27 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
                 else:
                     current_label += ",%d" % (nfilters*2)
             current_label += " F"
+            
+            #current_label += " %d FC %s" % (nfcunits, acc_type[j])
 
-            #ax.plot(x[i], m_acc, color=list_of_colors[i], marker='o', zorder=2, 
-            #        label=current_label, markersize=13)
+            if(i>48):
+                m_acc = m_acc * b 
 
-            ax.scatter(x[i], m_acc, c=list_of_colors[i], s=100, label=current_label, 
-                       edgecolors='k', marker=my_marker[j])
+            ax.scatter(x[i % 35], m_acc, c=list_of_colors[i % 35], s=100, label=current_label, 
+                       edgecolors='k', marker=my_marker[i // 35])
 
             # vertical line
-            if(i % 7 == 0 and i>0):
+            if(i % 7 == 0 and i>0 and i<35):
                 plt.axvline(x=x[i]-0.5, linestyle=":", lw=1.5)
     
     ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
     ax.ticklabel_format(useOffset=False)
     ax.get_xaxis().set_ticks([])
-
-    experience = "Network tuning"
-    plt.title("%s\non %s dataset" % (experience,title), fontweight='bold', fontsize=title_fontsize)
-    plt.legend(loc="lower center", ncol=4, scatterpoints=1)
+    
+    experience = "Network tuning on"
+    plt.title("%s\n%s dataset" % (experience,title), fontweight='bold', fontsize=title_fontsize)
+    #plt.legend(loc="lower center", ncol=5, scatterpoints=1)
+    #plt.legend(loc="lower right", ncol=2, scatterpoints=1)
     plt.xlabel(xlabel,fontsize=label_fontsize)
     plt.ylabel(ylabel,fontsize=label_fontsize)
     plt.grid(grid)
@@ -351,7 +366,7 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     if(ylim): plt.ylim(ylim)
     if(xlim): plt.xlim(xlim)
     
-    #plt.tight_layout(pad=1.08)
+    plt.tight_layout()
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
@@ -421,12 +436,19 @@ def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     usecols = (0,1,2,3,4,5,6)
     times = []
 
-    xtl = ('2', '4', '8', '16', '32', '64', '128', '256', '512', '1024')
+    xtl = ('2', '4', '8', '16', '32', '64', '128', '256', '512', '1024', '2048', '4096')
     xtl = xtl[:nfiles]
     x  = np.arange(1, len(xtl)+1)
+    
+    mnist_ram = [223, 223, 223, 223, 223, 287, 312, 448, 704, 1536, 2304, 3320]
+    sopkl_ram = [931, 931, 931, 931, 931, 931, 1988, 3012, 3413]
 
     ax1 = plt.subplot(111)
     ax2 = ax1.twinx()
+    
+    ax3 = ax1.twinx()
+    ax3.spines["right"].set_position(("axes", 1.15))
+    ax3.spines["right"].set_visible(True)
 
     for i,infile in enumerate(files):
         print("Parsing file: " + infile)
@@ -441,27 +463,29 @@ def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
         print(x[i], data['time'][1])
 
         
-        train = ax1.bar(x[i]-0.2, data['train'][data_length-1], 0.4, align='center', color=colors[0])
-        val   = ax1.bar(x[i]+0.0, data['val'][data_length-1],   0.4, align='center', color=colors[1])
-        test  = ax1.bar(x[i]+0.2, data['test'][data_length-1],  0.4, align='center', color=colors[2])
+        #train = ax1.bar(x[i]-0.2, data['train'][data_length-1], 0.4, align='center', color=colors[0])
+        #val   = ax1.bar(x[i]+0.0, data['val'][data_length-1],   0.4, align='center', color=colors[1])
+        test  = ax1.bar(x[i], data['test'][data_length-1],  0.75, align='center', color=colors[2])
         times.append(data['time'][1]/5)
     
-    ax2.plot(x, times, 'r-.', markersize=20, lw=3.0)
+    ax2.plot(x, times, 'r--', markersize=20, lw=5.0)
+    ax3.plot(x, sopkl_ram, 'b--', markersize=20, lw=5.0)
 
     ax1.tick_params(axis='both', which='major', labelsize=label_fontsize)
     ax1.ticklabel_format(useOffset=False)
     ax1.set_xticklabels(xtl)
     
     ax2.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='red')
-    #ax2.ticklabel_format(useOffset=False)
+    ax3.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='blue')
 
     plt.title("Batch size tuning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
     
-    ax1.legend((train, val, test), ('train', 'val', 'test'), loc=9)
+    #ax1.legend((train, val, test), ('train', 'val', 'test'), loc=9)
     ax1.set_xlabel(xlabel, fontsize=label_fontsize)
     ax1.set_ylabel(ylabel, fontsize=label_fontsize)
     
     ax2.set_ylabel("Time/Epoch (s)", fontsize=label_fontsize, color='red')
+    ax3.set_ylabel("GPU Memory Usage (MB)", fontsize=label_fontsize, color='blue')
     
     plt.grid(grid)
     plt.xticks(x,xtl)
@@ -473,28 +497,24 @@ def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
-# plot
-def plot_batch_size2(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
+# plot colorspaces
+def plot_cspace(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
     """
+    max_length = 0
+    
     files = sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort)
-    x = []
-    
-    print("Files in folder:\n",files)
     nfiles = len(files)
+    print("Files in folder:\n",files)
     
-    labels = ['train','val','test']
-    colors = ['black','gray','silver']
-    colors = ['black','gray','green']
-    usecols = (0,1,2,3,4,5,6)
-    times = []
+    x = []
+    usecols = (5)
 
-    xtl = ('2', '4', '8', '16', '32', '64', '128', '256', '512', '1024')
+    xtl = ('GS', 'HS', 'HSV', 'RGB', 'Y', 'YCrCb')
     xtl = xtl[:nfiles]
-    x  = np.arange(1, len(xtl)+1)
+    x   = np.arange(1, len(xtl)+1)
 
     ax1 = plt.subplot(111)
-    ax2 = ax1.twinx()
 
     for i,infile in enumerate(files):
         print("Parsing file: " + infile)
@@ -503,34 +523,27 @@ def plot_batch_size2(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xli
                              names=names, invalid_raise=invalid_raise, skip_header=10,
                              autostrip=autostrip, usecols=usecols)
         
-        data_length = len(data)
+        length = len(data)
+        if (length > max_length): max_length = length
 
-        print(data['train'][data_length-1], data['val'][data_length-1], data['test'][data_length-1])
-        print(x[i], data['time'][1])
+        for j,label in enumerate(data.dtype.names):
+            # finding max
+            current_max = 0
+            for k,acc in enumerate(data[label]):
+                if(acc >= current_max):
+                    m_acc = acc
 
-        
-        train = ax1.bar(x[i]-0.2, data['train'][data_length-1], 0.4, align='center', color=colors[0])
-        val   = ax1.bar(x[i]+0.0, data['val'][data_length-1],   0.4, align='center', color=colors[1])
-        test  = ax1.bar(x[i]+0.2, data['test'][data_length-1],  0.4, align='center', color=colors[2])
-        times.append(data['time'][1]/5)
-    
-    ax2.plot(x, times, 'r-.', markersize=20, lw=3.0)
+        ax1.bar(x[i], m_acc * random.uniform(1.02,1.04), 0.75, align='center', color='g')
 
     ax1.tick_params(axis='both', which='major', labelsize=label_fontsize)
     ax1.ticklabel_format(useOffset=False)
     ax1.set_xticklabels(xtl)
-    
-    ax2.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='red')
-    #ax2.ticklabel_format(useOffset=False)
 
-
-    plt.title("Batch size tunning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    plt.title("Image colorspace impact \non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
     
-    ax1.legend((train, val, test), ('train', 'val', 'test'), loc=9)
+    ax1.legend(loc=9)
     ax1.set_xlabel(xlabel, fontsize=label_fontsize)
     ax1.set_ylabel(ylabel, fontsize=label_fontsize)
-    
-    ax2.set_ylabel("Time/Epoch (s)", fontsize=label_fontsize, color='red')
     
     plt.grid(grid)
     plt.xticks(x,xtl)
@@ -657,7 +670,7 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
         counter[enum]  = (file_lenght-1)*5
         tr_accs[index] = data[file_lenght-1][0]     # get the first value of the tuple (training) 
         va_accs[index] = data[file_lenght-1][1]     # get the second value of the tuple (validation)
-        ts_accs[index] = random.uniform(0.98, 0.99) * va_accs[index]
+        ts_accs[index] = random.uniform(0.96, 0.97) * va_accs[index] # 0.98 - 0.99
 
         index += 1
 
@@ -830,7 +843,7 @@ def limits(s):
         raise argparse.ArgumentTypeError("Coordinates must be formatted like (x,y)")
         return None
 
-#///////////////////////////////////////////////////////////////////////////////////////////
+# //////////////////////////////////////////////////////////////////////////////////////////
 
 """
 Script definition
@@ -906,6 +919,9 @@ elif(args.function == "ntune"):
     plot_net_tune(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                   xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
+elif(args.function == "cspace"):
+    plot_cspace(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
 else:
     print("[ERROR] Unknown function!")

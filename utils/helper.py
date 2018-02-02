@@ -74,12 +74,12 @@ def create_accuracy_csv_file(filename="accuracy.txt", testdir=None, traindir=Non
     fcsv.write("################ TRAINING REPORT #################\n")
     fcsv.write("# Images path   | %s\n"      % traindir)
     fcsv.write("# Validation    | %.2f\n"    % vs)
-    fcsv.write("# Images size   | (%d,%d,%d)\n" % (height, width,ch))
+    fcsv.write("# Images shape  | (%d,%d,%d)\n" % (height, width,ch))
     fcsv.write("# Architecure   | %s\n"      % arch)
-    fcsv.write("# Bacth Size    | %d\n"      % bs)
+    fcsv.write("# Batch size    | %d\n"      % bs)
     fcsv.write("# Snap/Epoch    | %d\n"      % snap)
     fcsv.write("# Max epochs    | %d\n"      % epochs)
-    fcsv.write("# Eval Criteria | %.2f\n"    % ec)
+    fcsv.write("# Eval criteria | %.2f\n"    % ec)
     fcsv.write("##################################################\n")
     
     """
@@ -148,3 +148,18 @@ def check_stop_criteria(val_acc, no_progress, limit, train_acc=None, test_acc=No
     """
     
     return val_acc >= maximum or no_progress > limit
+
+# function to measure the RAM usage
+def print_memory_usage():
+    """ 
+    Code from
+    http://fa.bianp.net/blog/2013/different-ways-to-get-memory-consumption-or-lessons-learned-from-memory_profiler/
+
+        Return: Memory usage in MB
+    """
+    from memory_profiler import memory_usage
+    import os
+
+    mem = memory_usage(os.getpid())[0]
+    print("[INFO] Memory usage %.2f MB" % mem)
+    return mem

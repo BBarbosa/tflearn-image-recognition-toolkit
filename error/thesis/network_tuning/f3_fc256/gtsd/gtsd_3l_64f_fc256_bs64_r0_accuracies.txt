@@ -1,0 +1,17 @@
+################ TRAINING REPORT #################
+# Images path   | ./dataset/signals/train/
+# Validation    | 0.30
+# Images size   | (32,32)
+# Architecure   | gtsd_3l
+# Bacth Size    | 64
+# Snap/Epoch    | 5
+# Max epochs    | 1000
+# Eval Criteria | 0.75
+##################################################
+train,trainNC,val,valNC,test,testNC,time,new_best
+0.00,2.62,0.00,2.49,0.00,2.60,0.00,True
+99.83,99.97,96.70,97.81,88.60,90.38,329.91,True
+99.87,99.92,96.70,97.56,90.28,91.70,682.99,True
+99.83,99.95,96.67,97.54,89.98,91.64,1007.15,False
+99.96,99.97,97.87,98.40,90.64,91.50,1330.04,True
+99.96,99.97,97.87,98.40,90.64,91.50,1330.04,True

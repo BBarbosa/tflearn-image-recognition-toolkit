@@ -1,7 +1,7 @@
 ################ TRAINING REPORT #################
 # Images path   | ./dataset/signals/train/
 # Validation    | 0.30
-# Images size   | (32,32)
+# Images shape  | (32,32,3)
 # Architecure   | cifar10
 # Bacth Size    | 64
 # Snap/Epoch    | 5

@@ -62,12 +62,12 @@ print(args,"\n")
 HEIGHT = args.height
 WIDTH  = args.width
 
-"""
+""" """
 # load dataset and get image dimensions
 try:
     if(args.val_set):
         CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, shuffled=True, 
-                                                                                            validation=vs, mean=False, gray=args.gray, 
+                                                                                            validation=args.val_set, mean=False, gray=args.gray, 
                                                                                             save_dd=False, data_aug=args.aug)
         classifier.HEIGHT   = HEIGHT
         classifier.WIDTH    = WIDTH
@@ -78,7 +78,9 @@ try:
                                                                                          save_dd=False, data_aug=args.aug)
         Xv = Yv = []
 
-except:
+except Exception as e:
+    print("[EXCEPTION]", e)
+
     X = Y = Xv = Yv = None
     # /////////////
     # set manually 
@@ -95,10 +97,9 @@ if(args.test_dir is not None):
     _, Xt, Yt, _, _, _, _, _, _, _ = dataset.load_dataset_windows(args.test_dir, HEIGHT, WIDTH, shuffled=True, mean=False, 
                                                                   gray=args.gray, save_dd=True, data_aug=args.aug)
 
-"""
 
 # to load CIFAR-10 or MNIST dataset
-if(True):
+if(False):
     print("Loading dataset (from directory)...")
 
     CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, Xt, Yt = dataset.load_mnist_dataset(data_dir=args.data_dir)
@@ -172,8 +173,8 @@ print(colored("[INFO] Showing dataset performance", "yellow"))
 
 # NOTE: Choose an image set
 if(Xv is not None):
-    image_set = Xt
-    label_set = Yt
+    image_set = Xv
+    label_set = Yv
 else:
     image_set = glob.glob(args.data_dir + "*")
 
@@ -188,7 +189,7 @@ show_image = True     # flag to (not) show tested images
 cmatrix = None        # NOTE: manually set by user
 
 if(args.save):
-    gridx = 8
+    gridx = 5
     gridy = 1
     fig, axes = plt.subplots(gridy, gridx)
     axes = axes.flat
@@ -283,12 +284,12 @@ for i in np.arange(0,len_is):
             if(show_image):
                 print("Predicted: {0:2d}, Actual: {1:2d}, Confidence: {2:3.3f}, Second guess: {3:2d}".format(int(guesses[0]), np.argmax(label_set[i]), confidence, int(guesses[1])))
                 rgb = np.fliplr(image.reshape(-1,CHANNELS)).reshape(image.shape)
-                factor = 3
+                factor = 1
                 rgb = cv2.resize(rgb, (WIDTH*factor,HEIGHT*factor), interpolation=cv2.INTER_CUBIC)
                 # add predicted label to the image
                 cv2.putText(rgb, str(true_label), (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
-                cv2.putText(rgb, str(guesses[0]), (5, HEIGHT*factor-20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
-                cv2.putText(rgb, str(guesses[1]), (WIDTH*factor-20, HEIGHT*factor-20), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
+                cv2.putText(rgb, str(guesses[0]), (5, HEIGHT*factor-10), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
+                cv2.putText(rgb, str(guesses[1]), (WIDTH*factor-20, HEIGHT*factor-10), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 255, 2)
                 # shows image
                 cv2.imshow("Test image", rgb)
                 key = cv2.waitKey(0)

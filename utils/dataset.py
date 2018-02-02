@@ -148,8 +148,8 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
         max_angle   = 10    # random rotate max angle
 
         # list of angles to rotate
-        angle_list = np.linspace(0, 360, 360//angle_step, endpoint=False)
         angle_list = random.sample(range(-max_angle, max_angle), max_rotates)                        
+        angle_list = np.linspace(0, 360, 360//angle_step, endpoint=False)
 
         flip = flop = rotate = allt = False     # enable/disable rotation data augmentation
         x_len = len(X)                          # total number of images
@@ -490,14 +490,16 @@ def convert_images_colorspace(images_array=None, fromc=None, convert_to=None):
 
     TODO: Add option from/to
     """
-    new_images_array = images_array
+    new_images_array = []
     nchannels = 3
 
     if(convert_to is not None):
         if(convert_to == 'HSV'):
             ccode = cv2.COLOR_RGB2HSV
+            nchannels = 2
         elif(convert_to == 'YCrCb'):
             ccode = cv2.COLOR_RGB2YCrCb
+            nchannels = 1
         elif(convert_to == 'YUV'):
             ccode = cv2.COLOR_RGB2YUV
         elif(convert_to == 'Gray'):
@@ -507,13 +509,20 @@ def convert_images_colorspace(images_array=None, fromc=None, convert_to=None):
             print(colored("[WARNING] Unknown colorspace %s! Returned original images." % convert_to, "yellow"))
             return images_array
         
-        lia = len(new_images_array) # length of images array
+        lia = len(images_array) # length of images array
         for i in range(lia):
-            new_images_array[i] = cv2.cvtColor(images_array[i], ccode)
+            converted_image = cv2.cvtColor(images_array[i], ccode)
+            #new_images_array[i] = converted_image[:,:,0]
+            new_images_array.append(converted_image[:,:,:2])
 
         print(colored("[INFO] Converted images to colorspace %s" % convert_to, "yellow"))
     else:
         print(colored("[WARNING] No colorspace selected! Returned original images.", "yellow"))
+
+    new_images_array = np.array(new_images_array)
+    new_images_array = np.reshape(new_images_array, (-1, 32, 32, nchannels))
+
+    print("[INFO] Converted images shape", new_images_array.shape)
 
     return new_images_array, nchannels
 

@@ -123,6 +123,32 @@ def build_myvgg16(network, classes):
                         learning_rate=0.001)
     return network
 
+# tyres
+def build_tyres(network, classes):
+    network = conv_2d(network, 8, 5, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+
+    network = conv_2d(network, 8, 1, activation='relu')
+    network = conv_2d(network, 16, 3, activation='relu')
+    network = conv_2d(network, 16, 3, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+
+    network = conv_2d(network, 16, 1, activation='relu')
+    network = conv_2d(network, 32, 3, activation='relu')
+    network = conv_2d(network, 32, 3, activation='relu')
+    network = conv_2d(network, 32, 3, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    
+    network = conv_2d(network, 16, 1, activation='relu')
+    network = max_pool_2d(network, 2, strides=2)
+    network = fully_connected(network, 256, activation='relu')
+    network = fully_connected(network, classes, activation='softmax')
+
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.00001)
+    return network
+
 # mnist 
 def build_mnist(network, classes):
     network = conv_2d(network, 32, 3, activation='relu', regularizer="L2")
@@ -1362,8 +1388,12 @@ def build_rnn(network, classes):
     return network
 
 # resnet (error)
-def build_resnet(network, classes):
-    n=5
+def build_resnet(network, classes, param):
+    try:
+        n = int(param)
+    except:
+        n = 5
+
     network = tflearn.conv_2d(network, 16, 3, regularizer='L2', weight_decay=0.0001)
     network = tflearn.residual_block(network, n, 16)
     network = tflearn.residual_block(network, 1, 32, downsample=True)
@@ -1381,6 +1411,27 @@ def build_resnet(network, classes):
     mom = tflearn.Momentum(0.1, lr_decay=0.1, decay_step=32000, staircase=True)
     network = tflearn.regression(network, optimizer=mom, 
                             loss='categorical_crossentropy')
+    
+    return network
+
+def build_resnet_v2(network, classes, depth=5):
+    n = int(depth)
+    network = tflearn.conv_2d(network, 16, 3, regularizer='L2', weight_decay=0.0001)
+    network = tflearn.residual_block(network, n, 16, batch_norm=False)
+    network = tflearn.residual_block(network, 1, 32, downsample=True, batch_norm=False)
+    
+    network = tflearn.residual_block(network, n-1, 32, batch_norm=False)
+    network = tflearn.residual_block(network, 1, 64, downsample=True, batch_norm=False)
+    
+    network = tflearn.residual_block(network, n-1, 64, batch_norm=False)
+    network = tflearn.activation(network, 'relu')
+    network = tflearn.global_avg_pool(network)
+    
+    # Regression
+    network = tflearn.fully_connected(network, classes, activation='softmax')
+    mom = tflearn.Momentum(0.1, lr_decay=0.1, decay_step=32000, staircase=True)
+    network = tflearn.regression(network, optimizer=mom, 
+                                 loss='categorical_crossentropy')
     
     return network
 
@@ -1904,6 +1955,22 @@ def build_googlenet(network, classes):
 # /////////////////////////////////////////////////////////////////////////
 # /////////////////////////////////////////////////////////////////////////
 
+def build_only_fc(network, classes, fc_units):
+    network = conv_2d(network, 1, 3, activation='relu')
+    network = conv_2d(network, 2)
+
+    network = flatten(network)
+
+    network = fully_connected(network, fc_units, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+
+    return network
+
 # ////////// learning rate //////////
 def buil_lrnet(network, classes, lr):
     network = conv_2d(network, 32, 3, activation='relu', regularizer="L2")
@@ -1986,9 +2053,14 @@ def build_fabric(network, classes, lr=0.0001):
 def build_gtsd(network, classes):
     network = conv_2d(network, 32, 3, activation='relu') 
     network = max_pool_2d(network, 2)
+    network = batch_normalization(network)
+
     network = conv_2d(network, 64, 3, activation='relu') 
     network = conv_2d(network, 64, 3, activation='relu') 
     network = max_pool_2d(network, 2)
+    network = batch_normalization(network)
+
+    network = flatten(network)
     
     network = fully_connected(network, 512, activation='relu')
     network = dropout(network, 0.5) 
@@ -2033,7 +2105,7 @@ def build_gtsd_2layer(network, classes, nfilters):
                          learning_rate=0.001)
     return network
 
-# layer network
+# 3 layer network
 def build_gtsd_3layer(network, classes, nfilters):
     nfilters = int(nfilters)
     
@@ -2053,6 +2125,7 @@ def build_gtsd_3layer(network, classes, nfilters):
                          learning_rate=0.001)
     return network
 
+# 4 layer network
 def build_gtsd_4layer(network, classes, nfilters):
     nfilters = int(nfilters)
     
@@ -2073,6 +2146,62 @@ def build_gtsd_4layer(network, classes, nfilters):
                          learning_rate=0.001)
     return network
 
+# 5 layer network
+def build_gtsd_5layer(network, classes, nfilters):
+    nfilters = int(nfilters)
+    
+    network = conv_2d(network, nfilters, 3, activation='relu')
+    network = conv_2d(network, nfilters, 3, activation='relu')
+    network = max_pool_2d(network, 2)
+
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = conv_2d(network, nfilters*2, 3, activation='relu')
+    network = max_pool_2d(network, 2)  
+
+    network = fully_connected(network, 256, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax')
+    
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.001)
+    
+    return network
+
+# net from https://navoshta.com/traffic-signs-classification/
+def build_blog(network, classes):
+    network1 = conv_2d(network, 32, 5, activation='relu')
+    network1 = max_pool_2d(network1, 2)
+    network1 = dropout(network1, 0.9)
+
+    network2 = conv_2d(network1, 64, 5, activation='relu')
+    network2 = max_pool_2d(network2, 2)
+    network2 = dropout(network2, 0.8)
+
+    network3 = conv_2d(network2, 128, 5, activation='relu')
+    network3 = max_pool_2d(network3, 2)
+    network3 = dropout(network3, 0.7)
+
+    network1 = max_pool_2d(network1, 4)
+    network2 = max_pool_2d(network2, 2)
+
+    network = merge([network1, network2, network3], axis=3, mode='concat')
+
+    network = flatten(network)
+
+    network = fully_connected(network, 3584, activation='relu')
+    network = dropout(network, 0.5)
+    network = fully_connected(network, 1024, activation='relu')
+    network = dropout(network, 0.5) 
+    network = fully_connected(network, classes, activation='softmax') 
+
+    network = regression(network, optimizer='adam', 
+                         loss='categorical_crossentropy', 
+                         learning_rate=0.0001)
+
+    return network
+
 # dynamic network VGG style
 def build_dynamic(network, classes, depth, norm=0):
     depth = int(depth)
@@ -2086,12 +2215,13 @@ def build_dynamic(network, classes, depth, norm=0):
 
     # ////////// feature extraction //////////
     for i in range(depth):
-        nfilters = 2 ** (i+4) # first = 16
+        nfilters = 2 ** (i+5) # first = 16, 32
         for j in range(i+1):
-            network = conv_2d(network, nfilters//2, 1, activation='relu')
             network = conv_2d(network, nfilters, fsize, activation='relu')
         
-        if(i < 2):
+        #network = conv_2d(network, nfilters//2, 1, activation='relu')
+        
+        if(i < 3):
             network = max_pool_2d(network, 2)
         if(b_norm):
             network = batch_normalization(network)
@@ -2109,7 +2239,7 @@ def build_dynamic(network, classes, depth, norm=0):
     
     network = regression(network, optimizer='adam', 
                          loss='categorical_crossentropy', 
-                         learning_rate=0.001)
+                         learning_rate=0.0001)
     return network
 
 
@@ -2133,12 +2263,12 @@ def my_inception_module(network, nfilters):
 def build_my_inception_net(network, classes, depth):
     depth = int(depth)
     filter_sizes = [32, 64, 64]
-    filter_sizes = [32, 64, 96, 128]
+    filter_sizes = [32, 64, 128, 128]
 
     for i in range(depth):
         network = my_inception_module(network, filter_sizes[i])
 
-        if(i < 2):
+        if(i < 3):
             network = max_pool_2d(network, 2)
     
     network = tflearn.global_avg_pool(network)
@@ -2147,15 +2277,37 @@ def build_my_inception_net(network, classes, depth):
     network = fully_connected(network, classes, activation='softmax')
     
     # momentum
-    network = regression(network, optimizer='adam', 
+    network = regression(network, optimizer='momentum', 
                          loss='categorical_crossentropy', 
                          learning_rate=0.001)
     
     return network
 
+def build_my_resnet(network, classes, depth):
+    n = int(depth)
+    network = tflearn.conv_2d(network, 16, 3, regularizer='L2', weight_decay=0.0001)
+    network = tflearn.residual_block(network, n, 16)
+    network = tflearn.residual_block(network, 1, 32, downsample=True)
+    
+    network = tflearn.residual_block(network, n-1, 32)
+    network = tflearn.residual_block(network, 1, 64, downsample=True)
+    
+    network = tflearn.residual_block(network, n-1, 64)
+    network = tflearn.batch_normalization(network)
+    network = tflearn.activation(network, 'relu')
+    network = tflearn.global_avg_pool(network)
+    
+    # Regression
+    network = tflearn.fully_connected(network, classes, activation='softmax')
+    mom = tflearn.Momentum(0.1, lr_decay=0.1, decay_step=32000, staircase=True)
+    network = tflearn.regression(network, optimizer=mom, 
+                            loss='categorical_crossentropy')
+    
+    return network
+
 # ///////////////////////////////////////////////////////////////////////////////////////////
 # network builder function
-def build_network(name, network, classes, param):
+def build_network(name, network, classes, param=0):
     """
     Function to create a network topology/architecture.
     """
@@ -2242,7 +2394,8 @@ def build_network(name, network, classes, param):
     elif(name == "mycifarv4"):     network = build_mycifar_v4(network, classes)
     elif(name == "mycifarv5"):     network = build_mycifar_v5(network, classes)
     elif(name == "mycifarv6"):     network = build_mycifar_v6(network, classes)       
-    elif(name == "resnet"):        network = build_resnet(network, classes)
+    elif(name == "resnet"):        network = build_resnet(network, classes, param)
+    elif(name == "resnetv2"):      network = build_resnet_v2(network, classes, param)
     elif(name == "densenet"):      network = build_densenet(network, classes) 
     elif(name == "alexnet"):       network = build_alex(network, classes)
     elif(name == "myalex"):        network = build_myalex(network, classes)          
@@ -2283,11 +2436,15 @@ def build_network(name, network, classes, param):
     elif(name == "gtsd_2l"):       network = build_gtsd_2layer(network, classes, param)
     elif(name == "gtsd_3l"):       network = build_gtsd_3layer(network, classes, param)
     elif(name == "gtsd_4l"):       network = build_gtsd_4layer(network, classes, param)
+    elif(name == "gtsd_5l"):       network = build_gtsd_5layer(network, classes, param)
 
     elif(name == "dynamic"):       network = build_dynamic(network, classes, param)
     elif(name == "inception"):     network = build_my_inception_net(network, classes, param)
-
+    elif(name == "blog"):          network = build_blog(network, classes)
     
+    # //////////////////////////////////////////////////////////////////////////
+    elif(name == "tyres"):         network = build_tyres(network, classes)
+
     else: sys.exit(colored("ERROR: Unknown architecture!", "red"))
 
     print("[INFO] Architecture:", name)
