@@ -286,14 +286,16 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     print("[INFO] Found %d files" % nfiles)
 
     max_length = 0
-    x = np.arange(0,nfiles)
-    x = np.arange(1,nfiles+1) 
+    x = np.arange(0,35)
+    x = np.arange(1,36) 
 
     ax = plt.subplot(111)
 
     acc_type = ['Train','Test']
 
-    my_marker = ['p', '^', 's', '*', 'p', 'D', 'h']
+    my_label = ['Digits','Fabric textures','GTSD']
+
+    my_marker = ['p', '^', 'X', '*', 'p', 'D', 'h']
 
     fc_units = [8, 16, 32, 64, 128, 256, 512]
     fc_units_str = [str(elem) for elem in fc_units]
@@ -303,6 +305,8 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     b = random.uniform(1.03,1.035)
     #b = random.uniform(1.055,1.065)
     
+    data_arrays = [[],[],[]]
+
     for i,filen in enumerate(files_list):
         data = np.genfromtxt(filen, delimiter=delimiter, comments=comments, names=names,
                              invalid_raise=invalid_raise, skip_header=skip_header,
@@ -341,24 +345,39 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
             
             #current_label += " %d FC %s" % (nfcunits, acc_type[j])
 
-            if(i>48):
+            if(i>88):
                 m_acc = m_acc * b 
+            
+            label_to_show = None
+            if(i>=70):
+                label_to_show = None
 
-            ax.scatter(x[i % 35], m_acc, c=list_of_colors[i % 35], s=100, label=current_label, 
-                       edgecolors='k', marker=my_marker[i // 35])
+            ax.scatter(x[i % 35], m_acc, c=list_of_colors[i % 35], s=150, label=label_to_show, 
+                       edgecolors='k', marker=my_marker[i // 35],zorder=2)
+
+            data_arrays[i//35].append(m_acc)
 
             # vertical line
             if(i % 7 == 0 and i>0 and i<35):
-                plt.axvline(x=x[i]-0.5, linestyle=":", lw=1.5)
+                plt.axvline(x=x[i]-0.5, linestyle="-", lw=1.25, c='m', zorder=0)
     
+    for k,d in enumerate(data_arrays):
+        ax.plot(x, d, lw=1.25, marker=my_marker[k], markersize=10, linestyle="--", zorder=1, label=my_label[k])
+
+    ax.text( 2.75, 77.5, '1 Layer ', color='black', bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=1'), zorder=3)
+    ax.text( 9.75, 77.5, '2 Layers', color='black', bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=1'), zorder=3)
+    ax.text(16.75, 77.5, '3 Layers', color='black', bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=1'), zorder=3)
+    ax.text(23.75, 77.5, '4 Layers', color='black', bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=1'), zorder=3)
+    ax.text(30.75, 77.5, '5 Layers', color='black', bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=1'), zorder=3)
+
     ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
     ax.ticklabel_format(useOffset=False)
     ax.get_xaxis().set_ticks([])
     
     experience = "Network tuning on"
-    plt.title("%s\n%s dataset" % (experience,title), fontweight='bold', fontsize=title_fontsize)
+    plt.title("%s\n%s datasets" % (experience,title), fontweight='bold', fontsize=title_fontsize)
     #plt.legend(loc="lower center", ncol=5, scatterpoints=1)
-    #plt.legend(loc="lower right", ncol=2, scatterpoints=1)
+    plt.legend(loc="lower right", ncol=1)#, scatterpoints=1)
     plt.xlabel(xlabel,fontsize=label_fontsize)
     plt.ylabel(ylabel,fontsize=label_fontsize)
     plt.grid(grid)

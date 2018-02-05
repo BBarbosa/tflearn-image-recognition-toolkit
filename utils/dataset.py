@@ -512,8 +512,7 @@ def convert_images_colorspace(images_array=None, fromc=None, convert_to=None):
         lia = len(images_array) # length of images array
         for i in range(lia):
             converted_image = cv2.cvtColor(images_array[i], ccode)
-            #new_images_array[i] = converted_image[:,:,0]
-            new_images_array.append(converted_image[:,:,:2])
+            new_images_array.append(converted_image[:,:,0])
 
         print(colored("[INFO] Converted images to colorspace %s" % convert_to, "yellow"))
     else:

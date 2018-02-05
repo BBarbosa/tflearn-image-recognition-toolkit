@@ -20,33 +20,34 @@ except:
 commands = ["python training.py"]
 
 datasets = ["./dataset/parking/pklot/subset_of_mypklot/training/"]
-datasets = ["./dataset/signals/train/"]
 datasets = ["./dataset/fabric/side64/training/"]
 datasets = ["./dataset/digits/digits_v7/training/"]
+datasets = ["./dataset/signals/train/"]
 
 testdirs = ["./dataset/parking/pklot/subset_of_mypklot/testing/"] 
-testdirs = ["./dataset/signals/test/"]
 testdirs = ["./dataset/fabric/side64/testing/"]
 testdirs = ["./dataset/digits/digits_v7/testing/"]
+testdirs = ["./dataset/signals/test/"]
 
 architectures = ["myvgg"]
-architectures = ["gtsd_1l","gtsd_2l","gtsd_3l","gtsd_4l","gtsd_5l"]
+architectures = ["gtsd_5l"]
+architectures = ["blog"]
 
 batches = [64]
 
-params = [""]
 params = ["64","32","16","08","04","02","01"]
 params.reverse()
+params = [""]
 
 cspaces = ["YCrCb", "HSV"]
-cspaces = [""]
+cspaces = ["YCrCb"]
 
 snap = 5
 
 nruns = 1
 
-width = height = 32
 width = height = 64
+width = height = 32
 
 try:
     for command in commands:
@@ -57,10 +58,10 @@ try:
                         for p in params:
                             for cs in cspaces:
                                 for run in range(0,nruns):
-                                    runid = "digits_" + arch + "_" + p + "f_fc256_bs" + str(bs) + "_r" + str(run)
+                                    runid = "digits_" + arch + "_" + p + "fc256_bs" + str(bs) + "_r" + str(run)
                                     execute =  "%s --data_dir=%s --arch=%s --bsize=%d --run_id=%s " % (command, data, arch, bs, runid)
                                     execute += "--width=%d --height=%d --test_dir=%s " % (width, height, testdir)
-                                    execute += "--param=%s " % p
+                                    execute += "--cspace=%s " % cs
                                     print(execute)
                                     if(ready):
                                         try: 
