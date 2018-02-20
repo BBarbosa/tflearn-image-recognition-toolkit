@@ -12,11 +12,12 @@ import PIL
 import math
 import time
 import glob
+import h5py
 import random
 import tflearn
 import numpy as np
 
-from tflearn.data_utils import shuffle, build_image_dataset_from_dir, image_preloader         
+from tflearn.data_utils import shuffle, build_image_dataset_from_dir, image_preloader , build_hdf5_image_dataset        
 from PIL import Image
 from colorama import init
 from termcolor import colored

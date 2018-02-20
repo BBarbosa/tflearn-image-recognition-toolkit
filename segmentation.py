@@ -39,8 +39,8 @@ init()
 parser = argparse.ArgumentParser(description="Automatic image segmentation using Deep Learning.", 
                                  prefix_chars='-') 
 # required arguments
-parser.add_argument("--arch", required=True, help="<required> architecture name", type=str)
-parser.add_argument("--run_id", required=True, help="<required> run identifier (id) / model's path", type=str)
+parser.add_argument("--arch", required=True, help="<REQUIRED> architecture name", type=str)
+parser.add_argument("--run_id", required=True, help="<REQUIRED> run identifier (id) / model's path", type=str)
 # optional arguments
 parser.add_argument("--data_dir", required=False, help="directory to the training data", type=str)
 parser.add_argument("--bsize", required=False, default=2, help="training batch size (default=2)", type=int)
@@ -51,7 +51,7 @@ parser.add_argument("--gray", required=False, help="convert images to grayscale 
 parser.add_argument("--video", required=False, help="use video capture device/video (default=0)", default=0)
 parser.add_argument("--save", required=False, help="save output image (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
 parser.add_argument("--freeze", required=False, help="flag to freeze model (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--show", required=False, help="Image show level (0-low; 1-medium; 2-high) (default=0)", default=0, type=int)
+parser.add_argument("--show", required=False, help="image show level (0-low; 1-medium; 2-high) (default=0)", default=0, type=int)
 
 # parse arguments
 args = parser.parse_args()

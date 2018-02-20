@@ -30,7 +30,7 @@ true_cases = ['true', 't', 'yes', '1']
 
 # argument parser
 custom_formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position=2000)
-parser = argparse.ArgumentParser(description="High level Tensorflow + TFLearn training script.", 
+parser = argparse.ArgumentParser(description="High level Tensorflow and TFLearn training script.", 
                                  prefix_chars='-',
                                  formatter_class=custom_formatter_class)
 # required arguments
@@ -66,7 +66,7 @@ WIDTH  = args.width
 # load dataset and get image dimensions
 if(args.val_set):
     CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, shuffled=True, 
-                                                                                        validation=args.val_set, gray=args.gray,
+                                                                                        validation=args.val_set, gray=args.gray, 
                                                                                         save_dd=False, data_aug=args.aug)
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
@@ -128,9 +128,9 @@ img_aug.add_random_rotation(max_angle=5.)
 tflearn.init_graph(num_cores=8, allow_growth=True)
 
 # network definition
-network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],    # shape=[None, IMAGE, IMAGE] for RNN
-                     data_preprocessing=img_prep,              # NOTE: always check PP
-                     data_augmentation=None)                   # NOTE: always check DA
+network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS], 
+                     data_preprocessing=img_prep,           
+                     data_augmentation=None)                
 
 # build network architecture
 network, _ = architectures.build_network(name=args.arch, network=network, classes=CLASSES, 
@@ -164,22 +164,20 @@ csv_filename = "%s_accuracies.txt" % args.run_id
 helper.create_accuracy_csv_file(filename=csv_filename, testdir=args.test_dir, traindir=args.data_dir, 
                                 vs=args.val_set, height=HEIGHT, width=WIDTH, ch=CHANNELS, arch=args.arch, 
                                 bs=args.bsize, epochs=args.n_epochs, ec=args.eval_crit, snap=args.snap)
-line = "train,trainNC,val,valNC,test,testNC,time,new_best\n"
-helper.write_string_on_file(filename=csv_filename, line=line, first=False)
 
 # training operation: can stop by reaching the max number of iterations OR Ctrl+C OR by not evolving
 try:
     it = 0
     while(it < iterations):
         stime = time.time()
-        train_acc, train_acc_nc = classifier.my_evaluate(model, X, Y, batch_size=64, criteria=args.eval_crit)
-        val_acc, val_acc_nc = classifier.my_evaluate(model, Xv, Yv, batch_size=64, criteria=args.eval_crit)
+        train_acc, train_acc_nc = classifier.my_evaluate(model, X, Y, batch_size=128, criteria=args.eval_crit)
+        val_acc, val_acc_nc = classifier.my_evaluate(model, Xv, Yv, batch_size=128, criteria=args.eval_crit)
 
         test_acc = 0
         test_acc_nc = 0
         min_acc = None
         if(args.test_dir is not None):
-            test_acc, test_acc_nc = classifier.my_evaluate(model, Xt, Yt, batch_size=64, criteria=args.eval_crit)
+            test_acc, test_acc_nc = classifier.my_evaluate(model, Xt, Yt, batch_size=128, criteria=args.eval_crit)
         ftime = time.time() - stime
 
         # save best model if there is a better validation accuracy
@@ -205,9 +203,9 @@ try:
             new_best = False
 
         # write to a .csv file the evaluation accuracy
-        line  = "%3.2f,%3.2f,%3.2f,%3.2f," % (train_acc, train_acc_nc, val_acc, val_acc_nc)
-        line += "%3.2f,%3.2f,%3.2f," % (test_acc, test_acc_nc, total_training_time) + str(new_best) + "\n"
-        helper.write_string_on_file(filename=csv_filename, line=line)
+        helper.write_accuracy_on_csv(filename=csv_filename, train_acc=(train_acc, train_acc_nc), 
+                                     val_acc=(val_acc, val_acc_nc), test_acc=(test_acc, test_acc_nc), 
+                                     time=total_training_time, best=new_best)
         
         # write accuracy's values on screen
         helper.print_accuracy(name="Evaluation", train_acc=train_acc, val_acc=val_acc, test_acc=test_acc, 
@@ -245,14 +243,14 @@ try:
 # to stop the training at any moment by pressing Ctrl+C
 except KeyboardInterrupt:
     # intermediate evaluation to check which is the best model once Ctrl+C was pressed
-    train_acc, train_acc_nc = classifier.my_evaluate(model, X, Y, batch_size=64, criteria=args.eval_crit)
-    val_acc, val_acc_nc = classifier.my_evaluate(model, Xv, Yv, batch_size=64, criteria=args.eval_crit)
+    train_acc, train_acc_nc = classifier.my_evaluate(model, X, Y, batch_size=128, criteria=args.eval_crit)
+    val_acc, val_acc_nc = classifier.my_evaluate(model, Xv, Yv, batch_size=128, criteria=args.eval_crit)
     
     test_acc = 0
     test_acc_nc = 0
     min_acc = None
     if(args.test_dir is not None):
-        test_acc, test_acc_nc = classifier.my_evaluate(model, Xt, Yt, batch_size=64, criteria=args.eval_crit)
+        test_acc, test_acc_nc = classifier.my_evaluate(model, Xt, Yt, batch_size=128, criteria=args.eval_crit)
 
 # load best model (need this check if Ctr+C was pressed)
 if(best_val_acc > val_acc or best_test_acc > test_acc_nc):
@@ -275,20 +273,20 @@ else:
 
 # final evaluation with the best model
 stime = time.time()
-train_acc, train_acc_nc = classifier.my_evaluate(model, X, Y, batch_size=64, criteria=args.eval_crit)
-val_acc, val_acc_nc = classifier.my_evaluate(model, Xv, Yv, batch_size=64, criteria=args.eval_crit)
+train_acc, train_acc_nc = classifier.my_evaluate(model, X, Y, batch_size=128, criteria=args.eval_crit)
+val_acc, val_acc_nc = classifier.my_evaluate(model, Xv, Yv, batch_size=128, criteria=args.eval_crit)
 
 test_acc = 0
 test_acc_nc = 0
 min_acc = None
 if(args.test_dir is not None):
-    test_acc, test_acc_nc = classifier.my_evaluate(model, Xt, Yt, batch_size=64, criteria=args.eval_crit)
+    test_acc, test_acc_nc = classifier.my_evaluate(model, Xt, Yt, batch_size=128, criteria=args.eval_crit)
 ftime = time.time() - stime
 
 # write to a .csv file the evaluation accuracy
-line  = "%3.2f,%3.2f,%3.2f,%3.2f," % (train_acc, train_acc_nc, val_acc, val_acc_nc)
-line += "%3.2f,%3.2f,%3.2f," % (test_acc, test_acc_nc, total_training_time) + str(new_best) + "\n"
-helper.write_string_on_file(filename=csv_filename, line=line)
+helper.write_accuracy_on_csv(filename=csv_filename, train_acc=(train_acc, train_acc_nc), 
+                             val_acc=(val_acc, val_acc_nc), test_acc=(test_acc, test_acc_nc), 
+                             time=total_training_time, best=new_best)
 
 # write accuracy's values on screen
 helper.print_accuracy(name="Final Eval", train_acc=train_acc, val_acc=val_acc, test_acc=test_acc, 

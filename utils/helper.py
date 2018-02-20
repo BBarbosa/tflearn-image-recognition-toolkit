@@ -9,8 +9,8 @@ init()
 
 # ///////////////////////////// print functions /////////////////////////////
 # function to print accuracy's values
-def print_accuracy(name="Accuracies",train_acc=None,val_acc=None,test_acc=None,
-                   min_acc=None,time=None,ctime=None, color="yellow"):
+def print_accuracy(name="Accuracies", train_acc=None, val_acc=None, test_acc=None,
+                   min_acc=None, time=None, ctime=None, color="yellow"):
     """
     Function to print accuracy's values.
 
@@ -35,7 +35,7 @@ def print_accuracy(name="Accuracies",train_acc=None,val_acc=None,test_acc=None,
     if(ctime is not None): print(colored("Time: %.3f seconds\n" % ctime,color))
 
 # function to print network's parameters
-def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None,
+def print_net_parameters(bs=None, vs=None, epochs=None, snap=None, use_criteria=None,
                          eval_criteria=None):
     """
     Function to print network's parameters.
@@ -59,35 +59,28 @@ def print_net_parameters(bs=None,vs=None,epochs=None,snap=None,use_criteria=None
 
 # /////////////////////// functions to deal with .csv files //////////////////////
 # function that creates a csv accuracy file
-def create_accuracy_csv_file(filename="accuracy.txt", testdir=None, traindir=None, vs=None,
-                             height=None, width=None, ch=None, arch=None, bs=None, epochs=None, 
-                             ec=None, snap=None):
+def create_accuracy_csv_file(filename="accuracy.txt", traindir=None, vs=None, height=None, 
+                             width=None, ch=None, arch=None, bs=None, snap=None, epochs=None, 
+                             ec=None):
     """
     Function to create a accuracy .csv file.
 
     Params:
         `filename` - filename.csv 
-        `testdir` - test data directory (used as a boolean)
     """
     fcsv = open(filename,"w+")
                 
     fcsv.write("################ TRAINING REPORT #################\n")
-    fcsv.write("# Images path   | %s\n"      % traindir)
-    fcsv.write("# Validation    | %.2f\n"    % vs)
+    fcsv.write("# Images path   | %s\n"         % traindir)
+    fcsv.write("# Validation    | %.2f\n"       % vs)
     fcsv.write("# Images shape  | (%d,%d,%d)\n" % (height, width,ch))
-    fcsv.write("# Architecure   | %s\n"      % arch)
-    fcsv.write("# Batch size    | %d\n"      % bs)
-    fcsv.write("# Snap/Epoch    | %d\n"      % snap)
-    fcsv.write("# Max epochs    | %d\n"      % epochs)
-    fcsv.write("# Eval criteria | %.2f\n"    % ec)
+    fcsv.write("# Architecure   | %s\n"         % arch)
+    fcsv.write("# Batch size    | %d\n"         % bs)
+    fcsv.write("# Snap/Epoch    | %d\n"         % snap)
+    fcsv.write("# Max epochs    | %d\n"         % epochs)
+    fcsv.write("# Eval criteria | %.2f\n"       % ec)
     fcsv.write("##################################################\n")
-    
-    """
-    if(testdir is not None or True):
-        fcsv.write("train,validation,test,min,time\n")
-    else:
-        fcsv.write("train,validation,time\n")
-    """
+    fcsv.write("train,trainNC,val,valNC,test,testNC,time,new_best\n")
     
     fcsv.close()
 
@@ -107,11 +100,8 @@ def write_accuracy_on_csv(filename="accuracy.txt", train_acc=None, val_acc=None,
     """
 
     fcsv = open(filename,"a+")
-    if(test_acc is not None):
-        fcsv.write("%.2f,%.2f,%.2f,%.3f,%s\n" % (train_acc, val_acc, test_acc, time, str(best)))
-    else:
-        fcsv.write("%.2f,%.2f,%.2f,%s\n" % (train_acc, val_acc, time, str(best)))
-    
+    fcsv.write("%.2f,%.2f,%.2f,%.2f," % (train_acc[0], train_acc[1], val_acc[0], val_acc[1]))
+    fcsv.write("%.2f,%.2f,%.3f,%s\n" % (test_acc[0], test_acc[1], time, str(best)))
     fcsv.close()
 
 # function to write a string to a file
