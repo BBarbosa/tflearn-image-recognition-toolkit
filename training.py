@@ -161,9 +161,9 @@ helper.print_net_parameters(bs=args.bsize, vs=args.val_set, epochs=args.n_epochs
 
 # creates a new accuracies file.csv
 csv_filename = "%s_accuracies.txt" % args.run_id
-helper.create_accuracy_csv_file(filename=csv_filename, testdir=args.test_dir, traindir=args.data_dir, 
-                                vs=args.val_set, height=HEIGHT, width=WIDTH, ch=CHANNELS, arch=args.arch, 
-                                bs=args.bsize, epochs=args.n_epochs, ec=args.eval_crit, snap=args.snap)
+helper.create_accuracy_csv_file(filename=csv_filename, traindir=args.data_dir, vs=args.val_set, 
+                                height=HEIGHT, width=WIDTH, ch=CHANNELS, arch=args.arch, bs=args.bsize, 
+                                epochs=args.n_epochs, ec=args.eval_crit, snap=args.snap)
 
 # training operation: can stop by reaching the max number of iterations OR Ctrl+C OR by not evolving
 try:
