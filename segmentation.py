@@ -72,7 +72,7 @@ else:
 if(args.data_dir is not None and args.bsize is not None):
     print("[INFO] Training image folder:", args.data_dir)
     X, _ = image_dirs_to_samples(args.data_dir, resize=(WIDTH, HEIGHT), convert_gray=args.gray, 
-                                filetypes=[".png", ".jpg", ".bmp"])
+                                 filetypes=[".png", ".jpg", ".bmp"])
     
     #Xgt, _ = image_dirs_to_samples(args.data_dir, resize=(WIDTH, HEIGHT), convert_gray=args.gray, 
     #                            filetypes=[".png", ".jpg", ".bmp"])
@@ -119,6 +119,7 @@ def compute_iou(y_pred_batch, y_true_batch):
     return np.mean(np.asarray([pixel_accuracy(y_pred_batch[i], y_true_batch[i]) for i in iterator])) 
 
 def pixel_accuracy(y_pred, y_true):
+    img_rows = img_cols = 256
     y_pred = np.reshape(y_pred,[CHANNELS,img_rows,img_cols])
     y_true = np.reshape(y_true,[CHANNELS,img_rows,img_cols])
     y_pred = y_pred * (y_true>0)
@@ -406,7 +407,7 @@ if(args.data_dir is not None and args.bsize is not None):
         # repeats the training operation until it reaches one stop criteria
         model.fit(Xim, Xgt, n_epoch=EPOCHS, shuffle=True, show_metric=True, 
                   batch_size=args.bsize, snapshot_step=None, snapshot_epoch=False, 
-                  run_id=args.run_id, validation_set=0, callbacks=saverMonitor)
+                  run_id=args.run_id, validation_set=0, callbacks=[])
 
     # to stop the training at any moment by pressing Ctrl+C
     except KeyboardInterrupt:
@@ -469,7 +470,7 @@ else:
 image_id = 0
 
 # flag to upsample prediction image show
-upsample = True
+upsample = False
 
 # while loop to constantly load images 
 while True:

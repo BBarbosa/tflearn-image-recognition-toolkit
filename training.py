@@ -1,14 +1,16 @@
 """
 Training script written in Tensorflow and TFLearn
-for image classification
+for image classification.
+
+Author: bbarbosa
 """
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 import os
-import platform
+import sys
 import time
+import platform
 import argparse
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -19,7 +21,7 @@ import tflearn.helpers.summarizer as s
 from tflearn.layers.core import input_data
 from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
-from utils import architectures, dataset, classifier, helper
+from utils import architectures, dataset, classifier, helper, plot    
 from colorama import init
 from termcolor import colored
 
@@ -298,11 +300,9 @@ helper.print_memory_usage()
 classifier.test_model_accuracy(model=model, image_set=Xv, label_set=Yv, eval_criteria=args.eval_crit, 
                                show_image=False, cmatrix=None)
 
-#try:
-#    out = model.evaluate(Xt, Yt)
-#    print(out)
-#except Exception as e:
-#    print(e)
-
 # sound a beep to notify that the training ended
 print(colored("[INFO] Training complete!\a","green"))
+
+# TODO: create a specific plot function
+plot.parse_report_file(files_dir=csv_filename, title=args.run_id, xlabel="Epochs", ylabel="Accuracy (%)",
+                       snap=args.snap)

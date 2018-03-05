@@ -1393,6 +1393,8 @@ def build_resnet(network, classes, param):
         n = int(param)
     except:
         n = 5
+    
+    n=5
 
     network = tflearn.conv_2d(network, 16, 3, regularizer='L2', weight_decay=0.0001)
     network = tflearn.residual_block(network, n, 16)

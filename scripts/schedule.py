@@ -17,68 +17,59 @@ try:
 except:
     ready = False
 
-commands = ["python training.py"]
+operations = ["python training.py"]
 
-datasets = ["./dataset/parking/pklot/subset_of_mypklot/training/"]
-datasets = ["./dataset/fabric/side64/training/"]
-datasets = ["./dataset/digits/digits_v7/training/"]
-datasets = ["./dataset/signals/train/"]
 
-testdirs = ["./dataset/parking/pklot/subset_of_mypklot/testing/"] 
-testdirs = ["./dataset/fabric/side64/testing/"]
-testdirs = ["./dataset/digits/digits_v7/testing/"]
-testdirs = ["./dataset/signals/test/"]
+train_dirs = ["./dataset/gtsd/train/",
+              "./dataset/fabric/training/"]
 
-architectures = ["myvgg"]
-architectures = ["gtsd_5l"]
-architectures = ["blog"]
+test_dirs = ["./dataset/gtsd/test/",
+             "./dataset/fabric/testing/"]
 
-batches = [64]
+architectures = ["alexnet", "resnet"]
 
-params = ["64","32","16","08","04","02","01"]
-params.reverse()
+batches = [256, 128]
+
 params = [""]
 
 cspaces = ["YCrCb", "HSV"]
 cspaces = ["YCrCb"]
 
-snap = 5
+n_runs = 2
 
-nruns = 1
-
-width = height = 64
 width = height = 32
 
 try:
-    for command in commands:
-        for data in datasets:
+    # for all operations
+    for op in operations:
+        # for all train/test pair combination
+        for traind,testd in zip(train_dirs, test_dirs):
+            # get data ID from path
+            data_id = traind.split(os.sep)
+            data_id.reverse()
+            data_id = data_id[2]
+            # for all architectures
             for arch in architectures:
+                # for all batch sizes
                 for bs in batches:
-                    for testdir in testdirs:
-                        for p in params:
-                            for cs in cspaces:
-                                for run in range(0,nruns):
-                                    runid = "digits_" + arch + "_" + p + "fc256_bs" + str(bs) + "_r" + str(run)
-                                    execute =  "%s --data_dir=%s --arch=%s --bsize=%d --run_id=%s " % (command, data, arch, bs, runid)
-                                    execute += "--width=%d --height=%d --test_dir=%s " % (width, height, testdir)
-                                    execute += "--cspace=%s " % cs
-                                    print(execute)
-                                    if(ready):
-                                        try: 
-                                            os.system(execute)
-                                        except Exception as e:
-                                            print(e)
-                                            continue
+                    # for all extra parameters
+                    for p in params:
+                        # for all colorspaces
+                        for cs in cspaces:
+                            # repeat experience for N times
+                            for run in range(0, n_runs):
+                                run_id = "%s_%s_bs%d_r%d" % (data_id, arch, bs, run)
+                                
+                                execute =  "%s --data_dir=%s --arch=%s --run_id=%s " % (op, traind, arch, run_id)
+                                execute += "--bsize=%d --width=%d --height=%d "      % (bs, width, height)
+                                execute += "--test_dir=%s --param=%s --cspace=%s"    % (testd, p, cs)
+                                
+                                print(execute)
+                                if(ready):
+                                    try: 
+                                        os.system(execute)
+                                    except Exception as e:
+                                        print(e)
+                                        continue
 except Exception as e:
     print(e)
-
-"""
-NOTE: Useful methods for generating the run ID automatically
-
-did = data.split("\\") # data ID
-did.reverse()
-did = did[1]
-did = did.split("_")
-did.reverse()
-did = did[0]
-"""

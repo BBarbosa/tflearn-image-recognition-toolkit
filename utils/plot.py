@@ -1,10 +1,13 @@
 """
 Auxiliary script to automatically generate plots.
 
+Author: bbarbosa
+
 NOTE: Some code from 
 https://matplotlib.org/examples/lines_bars_and_markers/marker_reference.html
 """
 
+import os
 import re
 import sys
 import glob
@@ -27,23 +30,24 @@ if(platform.system() == 'Windows'):
 
 #///////////////////////////////////////////////
 # NOTE: Global parameters to get data from .csv 
-delimiter      = ","
-comments       = '#'
-names          = True
-invalid_raise  = False
-skip_header    = 10
-autostrip      = True,
-usecols        = (0,1,2) 
-label_fontsize = 15
-title_fontsize = 23
+global_delimiter      = ","
+global_comments       = '#'
+global_names          = True
+global_invalid_raise  = False
+global_skip_header    = 10
+global_autostrip      = True,
+global_usecols        = (0,1,2) 
+global_label_fontsize = 15
+global_title_fontsize = 23
 #///////////////////////////////////////////////
 
 #///////////////////////////////////////////////
 # NOTE:
 # index    0  1  2
-# data = [(x1,y1,z1),
-#         (x2,y2,z2),
-#             ...    ]
+# data = [[x1,y1,z1],
+#         [x2,y2,z2],
+#             ...   ,
+#         [xn,yn,zn]]
 #
 # len(data[0]) == number of columns
 # len(data)    == number of lines
@@ -113,6 +117,57 @@ def plot_accuracies(x,y,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
     plt.show()
 
+# function to parse training report file
+def parse_report_file(files_dir, title="Title", xlabel="X", ylabel="Y", grid=True, xlim=None, 
+                      ylim=None, snap=5, show=False):
+    """
+    Function to parse and plot training report file.
+
+    Params:
+        `files_dir` - (string) path to .csv file
+        `title`     - (string) plot title
+        `xlabel`    - (string) x-axis label 
+        `ylabel`    - (string) y-axis label
+        `grid`      - (bool) show grid
+        `xlim`      - (tuple) x-axis limits
+        `ylim`      - (tuple) y-axis limits
+    """
+    usecols = (1,2,5)
+    markers = ["r--","g--","b-"]
+    lwidth  = [1.5,1.5,2.5]
+    labels  = ["training","validation","testing"]
+
+    data = np.genfromtxt(fname=files_dir, delimiter=global_delimiter, comments=global_comments, 
+                         names=global_names,invalid_raise=global_invalid_raise, skip_header=global_skip_header,
+                         autostrip=global_autostrip, usecols=usecols)
+
+    data_length = len(data)
+    x = np.arange(0, data_length) 
+    x = x*snap
+
+    ax = plt.subplot(111)
+
+    for index,label in enumerate(data.dtype.names):
+        ax.plot(x, data[label], markers[index], label=labels[index], lw=lwidth[index], zorder=index+1)
+
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
+    ax.ticklabel_format(useOffset=False)
+
+    plt.title("Training report: %s " % title, fontweight='bold', fontsize=global_title_fontsize)
+    plt.legend(loc=0)
+    plt.xlabel(xlabel, fontsize=global_label_fontsize)
+    plt.ylabel(ylabel, fontsize=global_label_fontsize)
+    plt.grid(grid)
+    
+    if(ylim): plt.ylim(ylim)
+    if(xlim): plt.xlim(xlim)
+    
+    plt.tight_layout()
+    plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
+    if(show): plt.show()
+
+
+
 # function to plot one .csv file
 def plot_csv_file(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=None,ylim=None):
     """
@@ -122,13 +177,13 @@ def plot_csv_file(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
         * Taining stop criteria 
 
     Params:
-        `infile` - (string) path to .csv file
-        `title` - (string) plot title
-        `xlabel` - (string) x-axis label 
-        `ylabel` - (string) y-axis label
-        `grid` - (bool) show grid
-        `xlim` - (tuple) x-axis limits
-        `ylim` - (tuple) y-axis limits
+        `files_dir` - (string) path to .csv file
+        `title`     - (string) plot title
+        `xlabel`    - (string) x-axis label 
+        `ylabel`    - (string) y-axis label
+        `grid`      - (bool) show grid
+        `xlim`      - (tuple) x-axis limits
+        `ylim`      - (tuple) y-axis limits
 
     NOTE: Always check the usecols parameter
     """
@@ -144,9 +199,9 @@ def plot_csv_file(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     snap = 1
 
     for i in range(1):
-        data = np.genfromtxt(files_dir, delimiter=delimiter, comments=comments, names=names,
-                             invalid_raise=invalid_raise, skip_header=skip_header,
-                             autostrip=autostrip, usecols=usecols)
+        data = np.genfromtxt(files_dir, delimiter=global_delimiter, comments=global_comments, names=global_names,
+                             invalid_raise=global_invalid_raise, skip_header=global_skip_header,
+                             autostrip=global_autostrip, usecols=usecols)
         
         length = len(data)
         x = np.arange(0,length) 
@@ -173,13 +228,13 @@ def plot_csv_file(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     
     ax.plot(x, [top_limit]*length, 'm-.', label="Stop criteria (97.5%)", lw=2.5, zorder=1)
 
-    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     ax.ticklabel_format(useOffset=False)
 
-    plt.title("Impact of using stop criteria\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    plt.title("Impact of using stop criteria\non %s dataset" % title, fontweight='bold', fontsize=global_title_fontsize)
     plt.legend(loc=0)
-    plt.xlabel(xlabel,fontsize=label_fontsize)
-    plt.ylabel(ylabel,fontsize=label_fontsize)
+    plt.xlabel(xlabel,fontsize=global_label_fontsize)
+    plt.ylabel(ylabel,fontsize=global_label_fontsize)
     plt.grid(grid)
     
     if(ylim): plt.ylim(ylim)
@@ -228,9 +283,9 @@ def plot_lrate_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xli
     ax = plt.subplot(111)
 
     for i,filen in enumerate(files_list):
-        data = np.genfromtxt(filen, delimiter=delimiter, comments=comments, names=names,
-                             invalid_raise=invalid_raise, skip_header=skip_header,
-                             autostrip=autostrip, usecols=usecols)
+        data = np.genfromtxt(filen, delimiter=global_delimiter, comments=global_comments, names=global_names,
+                             invalid_raise=global_invalid_raise, skip_header=global_skip_header,
+                             autostrip=global_autostrip, usecols=usecols)
     
         length = len(data)
         if (length > max_length): max_length = length
@@ -246,15 +301,15 @@ def plot_lrate_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xli
     x = np.arange(0,max_length) * snap
     ax.plot(x, [top_limit]*max_length, 'm-.', label="Stop criteria (97.5%)", lw=2.5, zorder=1)
 
-    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     ax.ticklabel_format(useOffset=False)
 
     experience = "Learning rate tuning"
-    plt.title("%s\non %s dataset" % (experience,title), fontweight='bold', fontsize=title_fontsize)
+    plt.title("%s\non %s dataset" % (experience,title), fontweight='bold', fontsize=global_title_fontsize)
     plt.legend(loc=0)
     plt.legend(loc='best')# bbox_to_anchor=(1, 0.5))
-    plt.xlabel(xlabel,fontsize=label_fontsize)
-    plt.ylabel(ylabel,fontsize=label_fontsize)
+    plt.xlabel(xlabel,fontsize=global_label_fontsize)
+    plt.ylabel(ylabel,fontsize=global_label_fontsize)
     plt.grid(grid)
     
     if(ylim): plt.ylim(ylim)
@@ -308,9 +363,9 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     data_arrays = [[],[],[]]
 
     for i,filen in enumerate(files_list):
-        data = np.genfromtxt(filen, delimiter=delimiter, comments=comments, names=names,
-                             invalid_raise=invalid_raise, skip_header=skip_header,
-                             autostrip=autostrip, usecols=usecols)
+        data = np.genfromtxt(filen, delimiter=global_delimiter, comments=global_comments, names=global_names,
+                             invalid_raise=global_invalid_raise, skip_header=global_skip_header,
+                             autostrip=global_autostrip, usecols=usecols)
     
         length = len(data)
         if (length > max_length): max_length = length
@@ -370,16 +425,16 @@ def plot_net_tune(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=N
     ax.text(23.75, 77.5, '4 Layers', color='black', bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=1'), zorder=3)
     ax.text(30.75, 77.5, '5 Layers', color='black', bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=1'), zorder=3)
 
-    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     ax.ticklabel_format(useOffset=False)
     ax.get_xaxis().set_ticks([])
     
     experience = "Network tuning on"
-    plt.title("%s\n%s datasets" % (experience,title), fontweight='bold', fontsize=title_fontsize)
+    plt.title("%s\n%s datasets" % (experience,title), fontweight='bold', fontsize=global_title_fontsize)
     #plt.legend(loc="lower center", ncol=5, scatterpoints=1)
     plt.legend(loc="lower right", ncol=1)#, scatterpoints=1)
-    plt.xlabel(xlabel,fontsize=label_fontsize)
-    plt.ylabel(ylabel,fontsize=label_fontsize)
+    plt.xlabel(xlabel,fontsize=global_label_fontsize)
+    plt.ylabel(ylabel,fontsize=global_label_fontsize)
     plt.grid(grid)
     
     if(ylim): plt.ylim(ylim)
@@ -404,9 +459,9 @@ def parse_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     for infile in sorted(glob.glob(files_dir + '*accuracies.txt'), key=numericalSort):
         print("File: " + infile)
         
-        data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
-                             invalid_raise=invalid_raise,skip_header=skip_header,
-                             autostrip=autostrip,usecols=usecols)
+        data = np.genfromtxt(infile,delimiter=global_delimiter,comments=global_comments,names=global_names,
+                             invalid_raise=global_invalid_raise,skip_header=global_skip_header,
+                             autostrip=global_autostrip,usecols=usecols)
         
         mean = [0] * len(data[0])   # creates an empty array to store mean of each line
         print("mean",len(mean))
@@ -472,9 +527,9 @@ def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     for i,infile in enumerate(files):
         print("Parsing file: " + infile)
         
-        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, 
-                             names=names, invalid_raise=invalid_raise, skip_header=10,
-                             autostrip=autostrip, usecols=usecols)
+        data = np.genfromtxt(infile, delimiter=global_delimiter, comments=global_comments, 
+                             names=global_names, invalid_raise=global_invalid_raise, skip_header=10,
+                             autostrip=global_autostrip, usecols=usecols)
         
         data_length = len(data)
 
@@ -490,21 +545,21 @@ def plot_batch_size(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim
     ax2.plot(x, times, 'r--', markersize=20, lw=5.0)
     ax3.plot(x, sopkl_ram, 'b--', markersize=20, lw=5.0)
 
-    ax1.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax1.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     ax1.ticklabel_format(useOffset=False)
     ax1.set_xticklabels(xtl)
     
-    ax2.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='red')
-    ax3.tick_params(axis='y', which='major', labelsize=label_fontsize, colors='blue')
+    ax2.tick_params(axis='y', which='major', labelsize=global_label_fontsize, colors='red')
+    ax3.tick_params(axis='y', which='major', labelsize=global_label_fontsize, colors='blue')
 
-    plt.title("Batch size tuning\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    plt.title("Batch size tuning\non %s dataset" % title, fontweight='bold', fontsize=global_title_fontsize)
     
     #ax1.legend((train, val, test), ('train', 'val', 'test'), loc=9)
-    ax1.set_xlabel(xlabel, fontsize=label_fontsize)
-    ax1.set_ylabel(ylabel, fontsize=label_fontsize)
+    ax1.set_xlabel(xlabel, fontsize=global_label_fontsize)
+    ax1.set_ylabel(ylabel, fontsize=global_label_fontsize)
     
-    ax2.set_ylabel("Time/Epoch (s)", fontsize=label_fontsize, color='red')
-    ax3.set_ylabel("GPU Memory Usage (MB)", fontsize=label_fontsize, color='blue')
+    ax2.set_ylabel("Time/Epoch (s)", fontsize=global_label_fontsize, color='red')
+    ax3.set_ylabel("GPU Memory Usage (MB)", fontsize=global_label_fontsize, color='blue')
     
     plt.grid(grid)
     plt.xticks(x,xtl)
@@ -538,9 +593,9 @@ def plot_cspace(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=Non
     for i,infile in enumerate(files):
         print("Parsing file: " + infile)
         
-        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, 
-                             names=names, invalid_raise=invalid_raise, skip_header=10,
-                             autostrip=autostrip, usecols=usecols)
+        data = np.genfromtxt(infile, delimiter=global_delimiter, comments=global_comments, 
+                             names=global_names, invalid_raise=global_invalid_raise, skip_header=10,
+                             autostrip=global_autostrip, usecols=usecols)
         
         length = len(data)
         if (length > max_length): max_length = length
@@ -554,15 +609,15 @@ def plot_cspace(files_dir,title="Title",xlabel="X",ylabel="Y",grid=True,xlim=Non
 
         ax1.bar(x[i], m_acc * random.uniform(1.02,1.04), 0.75, align='center', color='g')
 
-    ax1.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax1.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     ax1.ticklabel_format(useOffset=False)
     ax1.set_xticklabels(xtl)
 
-    plt.title("Image colorspace impact \non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    plt.title("Image colorspace impact \non %s dataset" % title, fontweight='bold', fontsize=global_title_fontsize)
     
     ax1.legend(loc=9)
-    ax1.set_xlabel(xlabel, fontsize=label_fontsize)
-    ax1.set_ylabel(ylabel, fontsize=label_fontsize)
+    ax1.set_xlabel(xlabel, fontsize=global_label_fontsize)
+    ax1.set_ylabel(ylabel, fontsize=global_label_fontsize)
     
     plt.grid(grid)
     plt.xticks(x,xtl)
@@ -602,9 +657,9 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
     for i,infile in enumerate(files):
         print("Parsing file: " + infile)
         
-        data = np.genfromtxt(infile, delimiter=delimiter, comments=comments, 
-                             names=names, invalid_raise=invalid_raise, skip_header=10,
-                             autostrip=autostrip,usecols=usecols[i])
+        data = np.genfromtxt(infile, delimiter=global_delimiter, comments=global_comments, 
+                             names=global_names, invalid_raise=global_invalid_raise, skip_header=10,
+                             autostrip=global_autostrip,usecols=usecols[i])
         
         data_length = len(data)
         #x.append(data_length*5) 
@@ -629,13 +684,13 @@ def plot_several_csv_files(files_dir,title="Title",xlabel="X",ylabel="Y",grid=Tr
             
 
     ax = plt.subplot(111)
-    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     ax.ticklabel_format(useOffset=False)
 
-    plt.title("Impact of using stop criteria\non %s dataset" % title, fontweight='bold', fontsize=title_fontsize)
+    plt.title("Impact of using stop criteria\non %s dataset" % title, fontweight='bold', fontsize=global_title_fontsize)
     plt.legend(loc=0)
-    plt.xlabel(xlabel,fontsize=label_fontsize)#,fontweight='bold')
-    plt.ylabel(ylabel,fontsize=label_fontsize)#,fontweight='bold')
+    plt.xlabel(xlabel,fontsize=global_label_fontsize)#,fontweight='bold')
+    plt.ylabel(ylabel,fontsize=global_label_fontsize)#,fontweight='bold')
     plt.grid(grid)
     #plt.xticks(x,x)
     
@@ -676,9 +731,9 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
     yticks = yticks * 5
 
     for enum,infile in enumerate(files_list):
-        data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
-                             invalid_raise=invalid_raise,skip_header=skip_header,
-                             autostrip=autostrip,usecols=usecols)
+        data = np.genfromtxt(infile,delimiter=global_delimiter,comments=global_comments,names=global_names,
+                             invalid_raise=global_invalid_raise,skip_header=global_skip_header,
+                             autostrip=global_autostrip,usecols=usecols)
         
         file_lenght = len(data)
 
@@ -698,15 +753,15 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
     boxprops = dict(linewidth=1)
 
     ax = plt.subplot(111)
-    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     #inds = np.arange(epoch_ticks)
     #inds = [x*5 for x in inds]
     #ax.bar(inds,counter,1)
     ax.boxplot(counter,boxprops=boxprops)
 
-    ax.set_title("Number of epochs needed to finish training\n on %s dataset" % dataset_id,fontweight='bold',fontsize=title_fontsize)
+    ax.set_title("Number of epochs needed to finish training\n on %s dataset" % dataset_id,fontweight='bold',fontsize=global_title_fontsize)
     #plt.xlabel("Epochs")
-    plt.ylabel("Epochs",fontsize=label_fontsize)
+    plt.ylabel("Epochs",fontsize=global_label_fontsize)
     ax.set_xticklabels(['training'])
     #plt.xticks(inds,inds)
     #plt.yticks(yticks,yticks)
@@ -720,16 +775,16 @@ def info_from_all_files(files_dir, title="Title", xlabel="X", ylabel="Y", grid=T
     # ---------------------------------------------------------
     #ax = plt.subplot(212)
     ax = plt.subplot(111)
-    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     ax.ticklabel_format(useOffset=False)
     #plt.hist(tr_accs,alpha=0.7,color='r',label='training')
     #plt.hist(va_accs,alpha=0.5,color='g',label='validation')
     merged_data = [tr_accs, va_accs, ts_accs]
     plt.boxplot(merged_data,boxprops=boxprops)
     
-    ax.set_title("Accuracy's values distribution \n on %s dataset" % dataset_id,fontweight='bold',fontsize=title_fontsize)
-    plt.ylabel("Accuracy (%)",fontsize=label_fontsize)
-    ax.set_xticklabels(['training','validation','testing'],fontsize=label_fontsize)
+    ax.set_title("Accuracy's values distribution \n on %s dataset" % dataset_id,fontweight='bold',fontsize=global_title_fontsize)
+    plt.ylabel("Accuracy (%)",fontsize=global_label_fontsize)
+    ax.set_xticklabels(['training','validation','testing'],fontsize=global_label_fontsize)
     plt.grid(grid)
     plt.tight_layout()
     plt.ylim(ylim)
@@ -747,9 +802,9 @@ def generate_cmatrix(files_dir,title="Title"):
         `title` - plot title 
     """
 
-    data = np.genfromtxt(files_dir,delimiter=delimiter,comments=comments,names=names,
-                         invalid_raise=invalid_raise,skip_header=0,
-                         autostrip=autostrip,usecols=(0,1))
+    data = np.genfromtxt(files_dir,delimiter=global_delimiter,comments=global_comments,names=global_names,
+                         invalid_raise=global_invalid_raise,skip_header=0,
+                         autostrip=global_autostrip,usecols=(0,1))
     
     nclasses = 7 # NOTE: defined manually
     matrix   = np.zeros((nclasses,nclasses))  
@@ -764,7 +819,7 @@ def generate_cmatrix(files_dir,title="Title"):
     fig = plt.figure()
     
     ax = fig.add_subplot(111)
-    ax.tick_params(axis='both', which='major', labelsize=label_fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=global_label_fontsize)
     #cax = ax.matshow(matrix)
     cax = ax.imshow(matrix,cmap=plt.cm.jet,interpolation='nearest')
     fig.colorbar(cax)
@@ -787,18 +842,18 @@ def generate_cmatrix(files_dir,title="Title"):
     ax.set_yticks(ticks)
     #print(ticks)
     
-    ax.set_xticklabels([''] + labels,rotation=45,fontsize=label_fontsize)
-    ax.set_xticklabels(labels,rotation=45,fontsize=label_fontsize)
+    ax.set_xticklabels([''] + labels,rotation=45,fontsize=global_label_fontsize)
+    ax.set_xticklabels(labels,rotation=45,fontsize=global_label_fontsize)
     #ax.xaxis.set_label_position('bottom')
 
     ax.xaxis.tick_bottom()
 
-    ax.set_yticklabels([''] + labels,fontsize=label_fontsize)
+    ax.set_yticklabels([''] + labels,fontsize=global_label_fontsize)
     ax.set_yticklabels(labels)
 
-    plt.title(title,fontweight='bold',fontsize=title_fontsize)
-    plt.ylabel('Predicted',fontsize=label_fontsize)
-    plt.xlabel('Actual',fontsize=label_fontsize)
+    plt.title(title,fontweight='bold',fontsize=global_title_fontsize)
+    plt.ylabel('Predicted',fontsize=global_label_fontsize)
+    plt.xlabel('Actual',fontsize=global_label_fontsize)
     plt.tight_layout()
 
     plt.savefig('%s.pdf' % title,format='pdf',dpi=300)
@@ -808,9 +863,9 @@ def generate_cmatrix(files_dir,title="Title"):
 def accuracy_comparison(files_dir,title="Title",grid=None,ylim=None,
                         xlim=None,xlabel="Epochs",ylabel="Accuracy (%)"):
     
-    data = np.genfromtxt(infile,delimiter=delimiter,comments=comments,names=names,
-                         invalid_raise=invalid_raise,skip_header=skip_header,
-                         autostrip=autostrip,usecols=usecols)
+    data = np.genfromtxt(infile,delimiter=global_delimiter,comments=global_comments,names=global_names,
+                         invalid_raise=global_invalid_raise,skip_header=global_skip_header,
+                         autostrip=global_autostrip,usecols=usecols)
 
     file_lenght = len(data) - 1
     for i in range(file_lenght):
@@ -867,80 +922,79 @@ def limits(s):
 """
 Script definition
 """
-# NOTE: arguments' parser
-parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
-                                 prefix_chars='-') 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Auxiliary script to plot one or many .csv files",
+                                     prefix_chars='-') 
 
-functions_opts = "plot/parse/plots/info/acc/cmatrix/bsize"
-# required arguments
-parser.add_argument("--function",required=True,help="<REQUIRED> plot function to be used\n (%s)" % functions_opts)
-parser.add_argument("--file",required=True,help="<REQUIRED> path to the file/folder")
-# optional arguments
-parser.add_argument("--title",help="plot's title (string)")
-parser.add_argument("--xlabel",help="plot's x-axis label (string)")
-parser.add_argument("--ylabel",help="plot's y-axis label (string)")
-parser.add_argument("--grid",help="toggle plot's grid (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-parser.add_argument("--xlim",help="x-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
-parser.add_argument("--ylim",help="y-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
+    functions_opts = "plot/parse/plots/info/acc/cmatrix/bsize"
+    # required arguments
+    parser.add_argument("--function",required=True,help="<REQUIRED> plot function to be used\n (%s)" % functions_opts)
+    parser.add_argument("--file",required=True,help="<REQUIRED> path to the file/folder")
+    # optional arguments
+    parser.add_argument("--title",help="plot's title (string)")
+    parser.add_argument("--xlabel",help="plot's x-axis label (string)")
+    parser.add_argument("--ylabel",help="plot's y-axis label (string)")
+    parser.add_argument("--grid",help="toggle plot's grid (boolean)",type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+    parser.add_argument("--xlim",help="x-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
+    parser.add_argument("--ylim",help="y-axis limits (tuple)",type=limits) # issue with negative values: change prefix_char
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-print(args)
+    print(args)
 
-if(args.title == None):
-    # NOTE: if title isn't specified then uses filename as title
-    # args.file = 'mynet\\mynet_r0_accuracies.txt' OR
-    # args.file = 'mynet\\mynet_folder\\'
-    try:
-        parts = args.file.split("\\")   # parts = ['mynet','mynet_r0_acc.txt']
-    except:
-        parts = args.file
+    if(args.title == None):
+        # NOTE: if title isn't specified then uses filename as title
+        # args.file = 'mynet\\mynet_r0_accuracies.txt' OR
+        # args.file = 'mynet\\mynet_folder\\'
+        try:
+            parts = args.file.split(os.sep)   # parts = ['mynet','mynet_r0_acc.txt']
+        except:
+            parts = args.file
 
-    parts.reverse()
-    try:                     # parts = ['mynet_r0_acc.txt','mynet']
-        args.title = parts[1]
-    except:
-        pass
+        parts.reverse()
+        try:                     # parts = ['mynet_r0_acc.txt','mynet']
+            args.title = parts[1]
+        except:
+            pass
     
-if(args.function == "plot"):
-    #args.title = parts[0].split(".")[0]   # new_title = 'mynet_r0_acc'    
-    plot_csv_file(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                  xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+    if(args.function == "plot"):    
+        plot_csv_file(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                      xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
-elif(args.function == "parse"):
-    parse_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                    xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
-
-elif(args.function == "plots"):
-    plot_several_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                           xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
-
-elif(args.function == "info"):
-    info_from_all_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+    elif(args.function == "parse"):
+        parse_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                         xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
-elif(args.function == "acc"):
-    accuracy_comparison(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+    elif(args.function == "plots"):
+        plot_several_csv_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                               xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+    elif(args.function == "info"):
+        info_from_all_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                            xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+    elif(args.function == "acc"):
+        accuracy_comparison(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                            xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+    elif(args.function == "cmatrix"):
+        generate_cmatrix(files_dir=args.file,title=args.title)
+
+    elif(args.function == "bsize"):
+        plot_batch_size(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                         xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
-elif(args.function == "cmatrix"):
-    generate_cmatrix(files_dir=args.file,title=args.title)
+    elif(args.function == "lrate"):
+        plot_lrate_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                         xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
-elif(args.function == "bsize"):
-    plot_batch_size(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+    elif(args.function == "ntune"):
+        plot_net_tune(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
+                      xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
+
+    elif(args.function == "cspace"):
+        plot_cspace(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
 
-elif(args.function == "lrate"):
-    plot_lrate_files(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                     xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
-
-elif(args.function == "ntune"):
-    plot_net_tune(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                  xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
-
-elif(args.function == "cspace"):
-    plot_cspace(files_dir=args.file,title=args.title,grid=args.grid,ylim=args.ylim,
-                xlim=args.xlim,xlabel=args.xlabel,ylabel=args.ylabel)
-
-else:
-    print("[ERROR] Unknown function!")
+    else:
+        print("[ERROR] Unknown function!")
