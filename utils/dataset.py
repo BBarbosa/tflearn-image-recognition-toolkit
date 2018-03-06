@@ -122,11 +122,11 @@ def load_dataset_windows(train_path, height=None, width=None, test=None, shuffle
     print("[INFO] Loading dataset (from directory)...")
     if(width and height):
         X, Y = build_image_dataset_from_dir(train_path, resize=(width, height), convert_gray=gray, 
-                                            filetypes=[".bmp", ".ppm", ".jpg", ".png"], 
+                                            filetypes=[".bmp", ".ppm", ".jpg", ".png"],
                                             shuffle_data=False, categorical_Y=True)
     else:
         X, Y = build_image_dataset_from_dir(train_path, resize=(width, height), convert_gray=gray, 
-                                            filetypes=[".bmp", ".ppm", ".jpg", ".png"], 
+                                            filetypes=[".bmp", ".ppm", ".jpg", ".png"],
                                             shuffle_data=False, categorical_Y=True)
     
     # get images dimensions automatically

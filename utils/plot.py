@@ -131,6 +131,7 @@ def parse_report_file(files_dir, title="Title", xlabel="X", ylabel="Y", grid=Tru
         `grid`      - (bool) show grid
         `xlim`      - (tuple) x-axis limits
         `ylim`      - (tuple) y-axis limits
+        `show`      - (bool) show report plot
     """
     usecols = (1,2,5)
     markers = ["r--","g--","b-"]

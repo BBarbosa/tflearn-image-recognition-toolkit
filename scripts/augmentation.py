@@ -2,12 +2,14 @@
 Script to artificially generate more images through 
 geometric transformations like flips, flops, transpose 
 and transverse.
+
+Author: bbarbosa
 """
 
-import argparse
-import glob
 import os
 import PIL
+import glob
+import argparse
 from PIL import Image
 
 parser = argparse.ArgumentParser(description="Script to artificially generate more images through " 

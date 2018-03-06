@@ -147,8 +147,8 @@ model = tflearn.DNN(network, checkpoint_path="./models/%s" % args.run_id, tensor
 iterations = args.n_epochs // args.snap     # number of iterations (or evaluations)
 use_criteria = True                         # use stop criteria
 
-best_val_acc     = 0    # best validation accuracy (75% confidence)
-best_test_acc    = 0    # best test accuracy (normal)
+best_val_acc  = 0    # best validation accuracy (75% confidence)
+best_test_acc = 0    # best test accuracy (normal)
 
 no_progress         = 0     # counter of how many snapshots without learning process
 iteration_time      = 0     # time between each snapshot
@@ -303,6 +303,10 @@ classifier.test_model_accuracy(model=model, image_set=Xv, label_set=Yv, eval_cri
 # sound a beep to notify that the training ended
 print(colored("[INFO] Training complete!\a","green"))
 
-# TODO: create a specific plot function
+# Report plot function
+print("[INFO] Generating PDF refort plot...")
 plot.parse_report_file(files_dir=csv_filename, title=args.run_id, xlabel="Epochs", ylabel="Accuracy (%)",
-                       snap=args.snap)
+                       snap=args.snap, show=False)
+
+print("[INFO] Report plot generated!")
+print(colored("[INFO] All done!\a","green"))
