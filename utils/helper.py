@@ -61,13 +61,17 @@ def print_net_parameters(bs=None, vs=None, epochs=None, snap=None, use_criteria=
 # function that creates a csv accuracy file
 def create_accuracy_csv_file(filename="accuracy.txt", traindir=None, vs=None, height=None, 
                              width=None, ch=None, arch=None, bs=None, snap=None, epochs=None, 
-                             ec=None):
+                             ec=None, retraining=False):
     """
     Function to create a accuracy .csv file.
 
     Params:
         `filename` - filename.csv 
     """
+
+    if(retraining):
+        return None
+
     fcsv = open(filename,"w+")
                 
     fcsv.write("################ TRAINING REPORT #################\n")

@@ -1,46 +1,99 @@
-# call example: 
-# $ python crop.py filename.jpg
-# ----------------------------- 
+"""
+Python script for image crop using a square sliding window.
+
+Author: bbarbosa@neadvance.com
+Date: 19-03-2018
+"""
+
+import os
+import sys
+import glob
+import argparse
+
 from PIL import Image
-from random import random
-import sys,os
 
-CROP    = 96        # for square images
+# argument parser
+custom_formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position=2000)
+parser = argparse.ArgumentParser(description="Python script for cropping images using a square sliding window.", 
+                                 prefix_chars='-',
+                                 formatter_class=custom_formatter_class)
+# required arguments
+parser.add_argument("--images_path", required=True, help="<REQUIRED> Path to input images", type=str)
+parser.add_argument("--output_path", required=True, help="<REQUIRED> Path to save output images", type=str)
+# optional arguments
+parser.add_argument("--crop_size", required=False, help="Square crop size (default=64)", type=int, default=64)
+parser.add_argument("--crop_step", required=False, help="Crop step based on crop size (deafault=1)", type=int, default=1)
+parser.add_argument("--n_crops", required=False, help="Maximum number of crops (deafault=1)", type=int, default=1)
+parser.add_argument("--x_initial", required=False, help="Initial X coordinate (deafault=0)", type=int, default=0)
+parser.add_argument("--y_initial", required=False, help="Initial Y coordinate (deafault=0)", type=int, default=0)
+parser.add_argument("--x_final", required=False, help="Final X coordinate (deafault=0)", type=int, default=0)
+parser.add_argument("--y_final", required=False, help="Final Y coordinate (deafault=0)", type=int, default=0)
 
-CROPw   = 64       # for rectangular images
-CROPh   = 64        # for rectangular images
+# parse arguments
+args = parser.parse_args()
+print(args, "\n")
 
-NIMAGES = 324
+# accepts regular exceptions as *.png
+images_list = glob.glob(args.images_path)
+total_images = len(images_list)
 
-fname = os.path.splitext(sys.argv[1])[0]   # /canvas1/canvas1-a-p001.png -> /canvas1/canvas1-a-p001~
+image_id = 0
 
-# loads image
-img = Image.open(sys.argv[1])
+for img_id, image_path in enumerate(images_list):
+    print("[INFO] Processing image %d of %d" % (img_id+1, total_images))
+    
+    crop_id = 0
+    parts = image_path.split(os.sep)
+    parts.reverse()
+    filename, ext = os.path.splitext(parts[0])
+    directory = parts[1]
 
-# get image dimensions 
-width,height = img.size                       
+    image = Image.open(image_path)
+    
+    width, height = image.size
 
-limit_w = width-CROPw             # to avoid segmentation faults 
-limit_h = height-CROPh            # to avoid segmentation faults      
+    args.x_final = width
+    args.y_final = height
 
-# step for sliding window 
-stepW = limit_w // 250
-stepH = limit_h // 1               
+    # check if selected area fits on image
+    if(args.x_initial > width  or args.x_final > width  or
+       args.x_initial < 0      or args.x_final < 0      or 
+       args.y_initial > height or args.y_final > height or
+       args.y_initial < 0      or args.y_final < 0):
+        print("[ERROR]  Init (%d, %d)" % (args.x_initial, args.y_initial))
+        print("[ERROR] Final (%d, %d)" % (args.x_final, args.y_final))
+        sys.exit("[ERROR] Selected area gets out of image's dimensions!")
 
-stepW = max(1, stepW)
-stepH = max(1,stepH)
+    # to ensure that the crop area doesn't get out of the image
+    args.x_final -= args.crop_size     
+    args.y_final -= args.crop_size 
 
-# sliding window to crop image
-h=0
-i=0
-while (h <= limit_h):
-    w=0
-    while (w <= limit_w):
-        # ALWAYS check the place where the crops are going to be stored!!!
-        #filename = "../../../cropped/defects/%s_%d.jpg" % (fname, i)
-        filename = "train/bad/%s_%d.jpg" % (fname, i)
-        img2 = img.crop((w,h,w+CROPw,h+CROPh))
-        img2.save(filename)
-        w = w + stepW
-        i = i + 1
-    h = h + stepH        
+    # check that selected area has enough space
+    if(args.x_final < args.x_initial or args.y_final < args.y_initial): 
+        print("[ERROR]  Init (%d, %d)" % (args.x_initial, args.y_initial))
+        print("[ERROR] Final (%d, %d)" % (args.x_final, args.y_final))
+        sys.exit("[ERROR] Selected area isn't big enough for these crops!")
+
+    # sliding window step
+    stepW = (args.x_final - args.x_initial) // args.n_crops
+    stepH = (args.y_final - args.y_initial) // args.n_crops                    
+
+    # sliding window step based one crop_size
+    stepW = args.crop_size // args.crop_step
+    stepH = args.crop_size // args.crop_step 
+
+    # sliding window to crop image
+    h = args.y_initial  # current Height 
+
+    while (h < args.y_final):
+        w = args.x_initial # current Width
+        while (w < args.x_final):
+            # NOTE: ALWAYS check the output directory
+            out_path = "%s%s/%s-crop%d.png" % (args.output_path, directory, filename, crop_id)
+            print("\t", out_path)
+            
+            crop = image.crop((w, h, w+args.crop_size, h+args.crop_size))
+            crop.save(out_path)
+            w = w + stepW
+            crop_id += 1
+        h = h + stepH     

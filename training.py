@@ -19,8 +19,8 @@ import tensorflow as tf
 
 import tflearn.helpers.summarizer as s  
 from tflearn.layers.core import input_data
-from tflearn.data_preprocessing import ImagePreprocessing
 from tflearn.data_augmentation import ImageAugmentation
+from tflearn.data_preprocessing import ImagePreprocessing
 from utils import architectures, dataset, classifier, helper, plot    
 from colorama import init
 from termcolor import colored
@@ -36,9 +36,9 @@ parser = argparse.ArgumentParser(description="High level Tensorflow and TFLearn 
                                  prefix_chars='-',
                                  formatter_class=custom_formatter_class)
 # required arguments
-parser.add_argument("--data_dir", required=True, help="<REQUIRED> directory to the training data", type=str)
+parser.add_argument("--train_dir", required=True, help="<REQUIRED> directory to the training data", type=str)
 parser.add_argument("--arch", required=True, help="<REQUIRED> architecture name", type=str)
-parser.add_argument("--run_id", required=True, help="<REQUIRED> model's path", type=str)
+parser.add_argument("--model_name", required=True, help="<REQUIRED> Model name / Path to trained model", type=str)
 # optional arguments
 parser.add_argument("--bsize", required=False, help="batch size (default=16)", default=16, type=int)
 parser.add_argument("--test_dir", required=False, help="directory to the testing data (default=None)", type=str)
@@ -54,6 +54,7 @@ parser.add_argument("--n_epochs", required=False, help="maximum number of traini
 parser.add_argument("--eval_crit", required=False, help="classification confidence threshold (default=0.75)", default=0.75, type=float)
 parser.add_argument("--cspace", required=False, help="convert images color space (default=None)", default=None, type=str)
 parser.add_argument("--param", required=False, help="versatile extra parameter (default=None)", default=None)
+parser.add_argument("--show", required=False, help="show test model & PDF report (default=False)", default=False, type=lambda s: s.lower() in true_cases)
 
 # parse arguments
 args = parser.parse_args()
@@ -67,7 +68,7 @@ WIDTH  = args.width
 """ """
 # load dataset and get image dimensions
 if(args.val_set):
-    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, shuffled=True, 
+    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, _, _ = dataset.load_dataset_windows(args.train_dir, HEIGHT, WIDTH, shuffled=True, 
                                                                                         validation=args.val_set, gray=args.gray, 
                                                                                         save_dd=False, data_aug=args.aug)
     classifier.HEIGHT   = HEIGHT
@@ -75,7 +76,7 @@ if(args.val_set):
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 else:
-    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, _, _, _, _= dataset.load_dataset_windows(args.data_dir, HEIGHT, WIDTH, shuffled=True,
+    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, _, _, _, _= dataset.load_dataset_windows(args.train_dir, HEIGHT, WIDTH, shuffled=True,
                                                                                      save_dd=False, data_aug=args.aug)
     Xv = Yv = []
 
@@ -89,15 +90,15 @@ if(args.test_dir is not None):
 if(False):
     print("[INFO] Loading dataset (from directory)...")
 
-    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, Xt, Yt = dataset.load_mnist_dataset(data_dir=args.data_dir)
-    #CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, Xt, Yt = dataset.load_cifar10_dataset(data_dir=args.data_dir)
+    CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, Xt, Yt = dataset.load_mnist_dataset(train_dir=args.train_dir)
+    #CLASSES, X, Y, HEIGHT, WIDTH, CHANNELS, Xv, Yv, Xt, Yt = dataset.load_cifar10_dataset(train_dir=args.train_dir)
 
     classifier.HEIGHT   = HEIGHT
     classifier.WIDTH    = WIDTH
     classifier.IMAGE    = HEIGHT
     classifier.CHANNELS = CHANNELS
 
-    print("[INFO] \t         Path:", args.data_dir)
+    print("[INFO] \t         Path:", args.train_dir)
     print("[INFO] \tShape (train):", X.shape, Y.shape)
     print("[INFO] \tShape   (val):", Xv.shape, Yv.shape)
     print("[INFO] Data loaded!\n")
@@ -138,8 +139,19 @@ network = input_data(shape=[None, HEIGHT, WIDTH, CHANNELS],
 network, _ = architectures.build_network(name=args.arch, network=network, classes=CLASSES, 
                                          param=args.param)
 
-# model definition
-model = tflearn.DNN(network, checkpoint_path="./models/%s" % args.run_id, tensorboard_dir="./logs/", 
+# ////////////////////////////////////////////////////
+#                Model definition
+# ////////////////////////////////////////////////////
+retraining = False
+training_id = args.model_name
+
+if(os.path.isfile(args.model_name + ".data-00000-of-00001")):
+    retraining = True
+    parts = args.model_name.split(os.sep)
+    parts.reverse()
+    training_id = parts[0].split('.')[0]
+
+model = tflearn.DNN(network, checkpoint_path="./models/%s" % training_id, tensorboard_dir="./logs/", 
                     max_checkpoints=None, tensorboard_verbose=0, best_val_accuracy=0.95, 
                     best_checkpoint_path=None)
 
@@ -162,12 +174,22 @@ helper.print_net_parameters(bs=args.bsize, vs=args.val_set, epochs=args.n_epochs
                             eval_criteria=args.eval_crit, use_criteria=use_criteria)
 
 # creates a new accuracies file.csv
-csv_filename = "%s_accuracies.txt" % args.run_id
-helper.create_accuracy_csv_file(filename=csv_filename, traindir=args.data_dir, vs=args.val_set, 
+csv_filename = "%s_accuracies.txt" % training_id
+helper.create_accuracy_csv_file(filename=csv_filename, traindir=args.train_dir, vs=args.val_set, 
                                 height=HEIGHT, width=WIDTH, ch=CHANNELS, arch=args.arch, bs=args.bsize, 
-                                epochs=args.n_epochs, ec=args.eval_crit, snap=args.snap)
+                                epochs=args.n_epochs, ec=args.eval_crit, snap=args.snap, retraining=retraining)
 
 # training operation: can stop by reaching the max number of iterations OR Ctrl+C OR by not evolving
+if(retraining):
+    # re-training operation. load trained model
+    print("")
+    print("[INFO] Loading pre-trained model for re-training...")  
+    model.load(args.model_name)
+    print("[INFO] Model:", args.model_name)
+    print("[INFO] Trained model loaded!\n")
+
+print("[INFO] Starting training operation...")
+print("[INFO] Training ID:", training_id)
 try:
     it = 0
     while(it < iterations):
@@ -192,10 +214,10 @@ try:
             if(args.freeze):
                 # NOTE: use it for freezing model
                 del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
-                model.save("./models/%s_frozen.tflearn" % args.run_id)
+                model.save("./models/%s_frozen.tflearn" % training_id)
 
             print(colored("[INFO] Saving new best trained model soo far...", "yellow"))
-            modelname = "./models/%s.tflearn" % args.run_id
+            modelname = "./models/%s.tflearn" % training_id
             print(colored("[INFO] Model: %s" % modelname, "yellow"))
             model.save(modelname)
             print(colored("[INFO] Best trained model saved!\n", "yellow"))
@@ -214,13 +236,13 @@ try:
                               min_acc=min_acc, time=total_training_time, ctime=ftime)
         
         # NOTE: stop criteria check - accuracy AND no progress
-        # NOTE: change to a callback
+        # NOTE/TODO: change to a callback
         if(use_criteria and helper.check_stop_criteria(val_acc=val_acc, maximum=99.5, no_progress=no_progress, limit=20*args.snap)): break
         if(use_criteria and False):
             # NOTE: for stop criteria experience
             if(val_acc_nc >= top_limit and not no_criteria_flag):
                 print(colored("[INFO] NO_CRITERIA: Saving new best trained  model soo far...", "yellow"))
-                modelname = "./models/nc_%s.tflearn" % args.run_id
+                modelname = "./models/nc_%s.tflearn" % training_id
                 print(colored("[INFO] Model: %s" % modelname, "yellow"))
                 model.save(modelname)
                 print(colored("[INFO] NO_CRITERIA: Best trained model saved!\n", "yellow"))
@@ -228,7 +250,7 @@ try:
             
             if(val_acc >= top_limit):
                 print(colored("[INFO] W_CRITERIA: Saving new best trained  model soo far...", "yellow"))
-                modelname = "./models/wc_%s.tflearn" % args.run_id
+                modelname = "./models/wc_%s.tflearn" % training_id
                 print(colored("[INFO] Model: %s" % modelname, "yellow"))
                 model.save(modelname)
                 print(colored("[INFO] W_CRITERIA: Best trained model saved!\n", "yellow"))
@@ -237,7 +259,7 @@ try:
         # repeats the training operation until it reaches one stop criteria
         iteration_time = time.time()
         model.fit(X, Y, n_epoch=args.snap, shuffle=True, show_metric=True, batch_size=args.bsize, snapshot_step=False, 
-                  snapshot_epoch=False, run_id=args.run_id, validation_set=(Xv, Yv), callbacks=None)
+                  snapshot_epoch=False, run_id=training_id, validation_set=(Xv, Yv), callbacks=None)
         iteration_time = time.time() - iteration_time
         total_training_time += iteration_time
 
@@ -257,18 +279,18 @@ except KeyboardInterrupt:
 # load best model (need this check if Ctr+C was pressed)
 if(best_val_acc > val_acc or best_test_acc > test_acc_nc):
     print(colored("[INFO] Loading best trained model...", "yellow"))
-    model.load("./models/%s.tflearn" % args.run_id)
-    print(colored("[INFO] Model: models/%s.tflearn" % args.run_id, "yellow"))
+    model.load("./models/%s.tflearn" % training_id)
+    print(colored("[INFO] Model: models/%s.tflearn" % training_id, "yellow"))
     print(colored("[INFO] Restored the best model!", "yellow"))
 else:
     # save actual trained model
     if(args.freeze):
         # NOTE: use it for freezing model
         del tf.get_collection_ref(tf.GraphKeys.TRAIN_OPS)[:]
-        model.save("./models/%s_frozen.tflearn" % args.run_id)
+        model.save("./models/%s_frozen.tflearn" % training_id)
 
     print(colored("[INFO] Saving trained model...", "yellow"))
-    modelname = "./models/%s.tflearn" % args.run_id
+    modelname = "./models/%s.tflearn" % training_id
     print(colored("[INFO] Model: %s" % modelname, "yellow"))
     model.save(modelname)
     print(colored("[INFO] Trained model saved!\n", "yellow"))
@@ -298,15 +320,15 @@ helper.print_memory_usage()
 
 # NOTE: Turn show_image to FALSE when scheduling many trainings
 classifier.test_model_accuracy(model=model, image_set=Xv, label_set=Yv, eval_criteria=args.eval_crit, 
-                               show_image=False, cmatrix=None)
+                               show_image=args.show, cmatrix=None)
 
 # sound a beep to notify that the training ended
 print(colored("[INFO] Training complete!\a","green"))
 
 # Report plot function
 print("[INFO] Generating PDF refort plot...")
-plot.parse_report_file(files_dir=csv_filename, title=args.run_id, xlabel="Epochs", ylabel="Accuracy (%)",
-                       snap=args.snap, show=False)
+plot.parse_report_file(files_dir=csv_filename, title=training_id, xlabel="Epochs", ylabel="Accuracy (%)",
+                       snap=args.snap, show=args.show)
 
 print("[INFO] Report plot generated!")
 print(colored("[INFO] All done!\a","green"))
