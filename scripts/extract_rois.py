@@ -7,12 +7,77 @@ Date: 12-12-2017
 TODO: add feature to load from camera
 """
 
+import cv2
 import sys
 import time
-import cv2
-import argparse
 import glob
+import yaml
+import argparse
 import numpy as np
+
+def yaml_parser(filename, skip_header=3, write=None):
+    """
+    Function to parse YAML formatted files and extract ROIs from it.
+    
+    Format:
+    - { nspot: 1, polyx: [20,121,120,25], polyy: [188,193,222,225] }
+    
+    Params:
+    `filename`    (str) - Path to YAML file.
+    `skip_header` (int) - Number of header lines to skip.
+    `write`       (str) - Write coords to temporary file ready for copy/paste. 
+    
+    Returns:
+    `points` - List of ROIs object defined by 4 points. Shape (NROIS, 4).
+    """
+
+    print("[INFO] Start parsing %s YAML file..." % filename)
+    
+    with open(filename, 'r') as stream:
+        try:
+            for _ in range(skip_header):
+                _ = stream.readline()
+        
+            data = yaml.load(stream)
+        except yaml.YAMLError as exc:
+            print("[ERROR]", exc)
+            sys.exit("[ERROR] Error on loading data!")
+
+    # creates temporary file to store coords ready for copy/paste
+    if(write is not None):
+        ftxt = open(write, "w+")
+
+    # creates data structure to save coords from first coord
+    n_rois = len(data)
+
+    if(n_rois > 0):
+        n_coords = len(data[0]['polyx'])
+        points = np.ndarray(shape=(n_rois, 4), dtype=object)
+        if(write is not None):
+            ftxt.write("points = np.ndarray(shape=(%d, 4), dtype=object)\n" % n_rois)
+    else:
+        sys.exit("[ERROR] There is no ROIs to load!")
+
+    # iterate over coords
+    for line, elem in enumerate(data):
+        polyx = elem['polyx']
+        polyy = elem['polyy']
+
+        for column in range(n_coords):
+            x = polyx[column]
+            y = polyy[column]
+
+            points[line][column] = (x, y)
+            
+            if(write is not None):    
+                ftxt.write("points[%d][%d] = (%d,%d)\n" % (line, column, x, y))
+
+    if(write is not None):
+        ftxt.close()
+    
+    print("[INFO] YAML parsing done!")
+
+    return points
 
 # number of ROIs to exract
 NPOLY = 6 * 2
@@ -21,74 +86,22 @@ NPOLY = 6 * 2
 offset = 50
 
 # function to create ROIs 
-def create_rois(file=None):
-    # NOTE: ROIs from the furthest to the closest
-    # TODO: add option to load from ROIs from file 
+def create_rois(filename=None):
+    global NPOLY
 
-    points = np.ndarray(shape=(NPOLY, 4), dtype=object)
-    
-    points[0][0] = (3,180) #
-    points[0][1] = (103,180)
-    points[0][2] = (103,222)
-    points[0][3] = (3,222)
-    points[1][0] = (103,180) #
-    points[1][1] = (203,180)
-    points[1][2] = (203,222)
-    points[1][3] = (103,222)
-    points[2][0] = (203,180) #
-    points[2][1] = (303,180)
-    points[2][2] = (303,222)
-    points[2][3] = (203,222)
-    points[3][0] = (303,180) #
-    points[3][1] = (403,180)
-    points[3][2] = (403,222)
-    points[3][3] = (303,222)
-    points[4][0] = (403,180) #
-    points[4][1] = (503,180)
-    points[4][2] = (503,222)
-    points[4][3] = (403,222)
-    points[5][0] = (503,180) # 
-    points[5][1] = (603,180)
-    points[5][2] = (603,222)
-    points[5][3] = (503,222)
+    points = yaml_parser(filename, skip_header=3, write=None)
 
-    points[6][0]  = (points[0][0][0], points[0][0][1]+offset)
-    points[6][1]  = (points[0][1][0], points[0][1][1]+offset)
-    points[6][2]  = (points[0][2][0], points[0][2][1]+offset)
-    points[6][3]  = (points[0][3][0], points[0][3][1]+offset)
-    points[7][0]  = (points[1][0][0], points[1][0][1]+offset)
-    points[7][1]  = (points[1][1][0], points[1][1][1]+offset)
-    points[7][2]  = (points[1][2][0], points[1][2][1]+offset)
-    points[7][3]  = (points[1][3][0], points[1][3][1]+offset)
-    points[8][0]  = (points[2][0][0], points[2][0][1]+offset)
-    points[8][1]  = (points[2][1][0], points[2][1][1]+offset)
-    points[8][2]  = (points[2][2][0], points[2][2][1]+offset)
-    points[8][3]  = (points[2][3][0], points[2][3][1]+offset)
-    points[9][0]  = (points[3][0][0], points[3][0][1]+offset)
-    points[9][1]  = (points[3][1][0], points[3][1][1]+offset)
-    points[9][2]  = (points[3][2][0], points[3][2][1]+offset)
-    points[9][3]  = (points[3][3][0], points[3][3][1]+offset)
-    points[10][0] = (points[4][0][0], points[4][0][1]+offset)
-    points[10][1] = (points[4][1][0], points[4][1][1]+offset)
-    points[10][2] = (points[4][2][0], points[4][2][1]+offset)
-    points[10][3] = (points[4][3][0], points[4][3][1]+offset)
-    points[11][0] = (points[5][0][0], points[5][0][1]+offset)
-    points[11][1] = (points[5][1][0], points[5][1][1]+offset)
-    points[11][2] = (points[5][2][0], points[5][2][1]+offset)
-    points[11][3] = (points[5][3][0], points[5][3][1]+offset)
-
-    new_offset = 120
-    for i in range(NPOLY):
-        for j in range(4):
-            points[i][j] = (points[i][j][0], (points[i][j][1]) + new_offset)
-
+    NPOLY = len(points)
 
     return points
 
 # function to iterate over all ROIs 
-def iterate_over_slots(image, save, imageID, show=False, delay=100):
+def iterate_over_slots(image, save, imageID, show=False, delay=100, add_border=False):
     # image to draw
-    image_to_draw = image.copy()
+    try:
+        image_to_draw = image.copy()
+    except:
+        return None
 
     # iterate over all slots
     for slot in np.arange(0, NPOLY):
@@ -108,36 +121,58 @@ def iterate_over_slots(image, save, imageID, show=False, delay=100):
         x, y, w, h = cv2.boundingRect(mask)
         
         # extract desired ROI
-        roi = image[y:y+h, x:x+w]
+        roi = image[y:y+h, x:x+w].copy()
         
+        # add black borders
+        if(add_border):
+            smask = mask[y:y+h, x:x+w].copy()
+            for a in range(h):
+                for b in range(w):
+                    if(smask[a][b] == 0):
+                        roi[a][b] = [0,0,0]
+    
         # show ROI to extract
         if(show):
-            cv2.imshow('ROI',roi)
+            upsampled_roi = cv2.resize(roi, (w*2, h*2), interpolation=cv2.INTER_CUBIC)
+            cv2.imshow('ROI', upsampled_roi)
             box = np.array([points[slot][0], points[slot][1], points[slot][2], points[slot][3]], np.int32)
             box = box.reshape((-1,1,2))
             cv2.polylines(image_to_draw, [box], True, (0,255,0))
             # show image
             cv2.imshow("Image",image_to_draw)
-        
+
+            # check if key was pressed
+            key = cv2.waitKey(delay)
+            if(key == 27):
+                sys.exit("[INFO] Pressed ESC")
+            
+            if(delay == 0):
+                if(key == 98):
+                    # b - busy
+                    cv2.imwrite('d:/datasets/urban_probe_cameras/agueda_cameras/crops/training/busy/agueda348-img%d-s%d.jpg' % (imageID,slot), roi)
+                elif(key == 102):
+                    # f - free
+                    cv2.imwrite('d:/datasets/urban_probe_cameras/agueda_cameras/crops/training/free/agueda348-img%d-s%d.jpg' % (imageID,slot), roi)
+
         # save extracted ROI
         if(save):
-            cv2.imwrite('./temp/%d%d-s%d.jpg' % (imageID,imageID,slot), roi)
+            # D:\datasets\dst_cameras\crops\camera2
+            cv2.imwrite('d:/datasets/urban_probe_cameras/agueda_cameras/crops/agueda348-img%d-s%d.jpg' % (imageID,slot), roi)
 
-        # check if key was pressed
-        key = cv2.waitKey(delay)
-        if(key == 27):
-            sys.exit("[INFO] Pressed ESC")
 
 # main function
 if __name__ == '__main__':
+    true_cases = ['true', 't', 'yes', '1']
     parser = argparse.ArgumentParser(description="Automatic pre-defined ROI extractor.", 
                                      prefix_chars='-') 
     
     # optional arguments
-    parser.add_argument("--folder", required=False, help="path to images folder", type=str)
+    parser.add_argument("--folder", required=False, help="path to images folder (default=None)", type=str)
     parser.add_argument("--camera", required=False, help="use video capture device (default=None)", default=None)
-    parser.add_argument("--save", required=False, help="save ROIs (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
-    parser.add_argument("--show", required=False, help="show ROIS (default=False)", default=False, type=lambda s: s.lower() in ['true', 't', 'yes', '1'])
+    parser.add_argument("--yaml", required=False, help="Path to .YAML file (default=None)", type=str)
+    parser.add_argument("--save", required=False, help="save ROIs (default=False)", default=False, type=lambda s: s.lower() in true_cases)
+    parser.add_argument("--show", required=False, help="show ROIS (default=False)", default=False, type=lambda s: s.lower() in true_cases)
+    parser.add_argument("--delay", required=False, help="imshow delay (default=100)", default=100, type=int)
 
     # parse arguments
     args = parser.parse_args()
@@ -148,7 +183,10 @@ if __name__ == '__main__':
         sys.exit("[ERROR] User must specify an image folder or a camera to load images!")
 
     # load pre-defined ROIs
-    points = create_rois()
+    if(args.yaml is None):
+        sys.exit("[ERROR] No YAML file specified!")
+    
+    points = create_rois(args.yaml)
 
     # counter of current image ID for saving
     imageID = 0
@@ -167,7 +205,7 @@ if __name__ == '__main__':
             # load image from folder
             image = cv2.imread(image_path, 1)
             print("[INFO] Image %d of %d" % (imageID+1, number_of_images))
-            iterate_over_slots(image=image, save=args.save, imageID=imageID, show=args.show, delay=100)
+            iterate_over_slots(image=image, save=args.save, imageID=imageID, show=args.show, delay=args.delay, add_border=False)
             imageID += 1
 
     # /////////////////////// load images from camera ///////////////////////
@@ -185,7 +223,7 @@ if __name__ == '__main__':
             # load image from camera
             ret_val, image = cam.read()
             print("[INFO] Image %d of -1" % (imageID+1))
-            iterate_over_slots(image=image, save=args.save, imageID=imageID, show=args.show, delay=100)
+            iterate_over_slots(image=image, save=args.save, imageID=imageID, show=args.show, delay=args.delay, add_border=False)
             imageID +=1
 
     print("[INFO] All done!")
